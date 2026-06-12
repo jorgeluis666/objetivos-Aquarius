@@ -1,0 +1,8 @@
+node_modules/
+dist/
+credentials/
+*.log
+.env
+*.local
+.DS_Store
+.claude/
