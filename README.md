@@ -4,8 +4,6 @@ Dashboard de Agencia Lima Retail para controlar la inversion publicitaria de Ama
 
 ## Modulo activo
 
-El modulo activo muestra:
-
 - Gasto mensual total.
 - Distribucion entre Branding y Ventas.
 - Campanas por mes.
@@ -15,9 +13,7 @@ Los modulos Comparativo YoY, Distribucion, Productos Web y Usuarios y Claves se 
 
 ## Datos
 
-La fuente normalizada esta en `data/amador-ads-2026.json`. El CSV original se conserva en `data/source/` como respaldo.
-
-Los datos llegan hasta el 12 de junio de 2026.
+La fuente normalizada del dashboard esta en `data/amador-ads-2026.json` y contiene informacion hasta el 12 de junio de 2026.
 
 ## Desarrollo
 
