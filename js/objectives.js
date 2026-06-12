@@ -1,0 +1,78 @@
+(function () {
+  const DATA_URL = 'data/amador-ads-2026.json';
+  const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const SHORT_MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const SERIES = {
+    total: { label: 'Total', color: '#2563eb', fill: 'rgba(37,99,235,.11)' },
+    sales: { label: 'Ventas', color: '#b91c1c', fill: 'rgba(185,28,28,.10)' },
+    branding: { label: 'Branding', color: '#7c3aed', fill: 'rgba(124,58,237,.10)' },
+  };
+  const state = { data: null, type: 'total', month: 'Junio', chart: null };
+  const fmtMoney = value => value == null ? '-' : `S/. ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtShort = value => {
+    if (value == null) return '';
+    if (value >= 1000) return `S/. ${(value / 1000).toFixed(2).replace(/0$/, '').replace(/\.0$/, '')}k`;
+    return `S/. ${Math.round(value)}`;
+  };
+  function sourceMonth(name) { return state.data.months.find(month => month.name === name); }
+  function valueFor(name, type) {
+    const month = sourceMonth(name);
+    if (!month) return null;
+    if (type === 'total') return month.spend;
+    return month.spendBreakdown?.[type] ?? null;
+  }
+  function renderTabs() {
+    const host = document.getElementById('month-tabs');
+    host.innerHTML = MONTHS.map(name => {
+      const available = !!sourceMonth(name);
+      const selected = name === state.month;
+      return `<button type="button" class="month-tab ${selected ? 'active' : ''}" data-month="${name}" ${available ? '' : 'disabled'}>${name}${name === 'Junio' ? '<span class="current-dot"></span>' : ''}</button>`;
+    }).join('');
+    host.querySelectorAll('.month-tab:not(:disabled)').forEach(button => {
+      button.addEventListener('click', () => { state.month = button.dataset.month; renderTabs(); renderCampaigns(); });
+    });
+  }
+  function statusClass(status) {
+    const normalized = String(status || '').toLowerCase();
+    if (normalized === 'activa') return 'green';
+    if (normalized === 'finalizada') return 'red';
+    return 'muted';
+  }
+  function renderAdLinks(urls) {
+    if (!urls?.length) return '<span class="no-data">Sin URL</span>';
+    return `<div class="ad-links">${urls.map((url,index) => `<a href="${url}" target="_blank" rel="noopener noreferrer">Anuncio ${index + 1}</a>`).join('')}</div>`;
+  }
+  function renderCampaigns() {
+    const month = sourceMonth(state.month);
+    const campaigns = month.campaigns || [];
+    const active = campaigns.filter(campaign => campaign.status === 'Activa').length;
+    document.getElementById('campaigns-title').textContent = `Campanas de ${month.name} 2026`;
+    document.getElementById('campaigns-sub').textContent = campaigns.length ? `${active} activas de ${campaigns.length} campanas registradas.` : 'Sin detalle de campanas en el archivo fuente.';
+    const body = document.getElementById('campaigns-body');
+    if (!campaigns.length) { body.innerHTML = '<tr><td colspan="7" class="table-empty">Sin campanas registradas para este mes.</td></tr>'; return; }
+    body.innerHTML = campaigns.map(campaign => `<tr><td class="campaign-name">${campaign.name}</td><td><span class="status-pill ${statusClass(campaign.status)}">${campaign.status}</span></td><td><span class="objective-pill">${campaign.objective || '-'}</span></td><td class="num">${fmtMoney(campaign.budget)}</td><td class="num">${fmtMoney(campaign.spent)}</td><td class="num">${fmtMoney(campaign.dailyAmount)}</td><td>${renderAdLinks(campaign.adUrls)}</td></tr>`).join('');
+  }
+  function chartOptions(series) {
+    return { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 24, right: 12, left: 4 } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${series.label}: ${fmtMoney(context.raw)}` } } }, scales: { x: { grid: { display: false }, border: { color: '#cbd5e1' }, ticks: { color: '#7890b5', font: { size: 10 } } }, y: { beginAtZero: true, suggestedMax: 3500, border: { display: false }, grid: { color: 'rgba(148,163,184,.20)' }, ticks: { color: '#7890b5', font: { size: 10 }, callback: value => value === 0 ? 'S/. 0' : `S/. ${(value / 1000).toFixed(1)}k` } } } };
+  }
+  function renderChart() {
+    const series = SERIES[state.type];
+    const values = MONTHS.map(name => valueFor(name, state.type));
+    document.getElementById('chart-title').textContent = `Evolucion mensual | ${series.label} | 2026`;
+    document.getElementById('legend-label').textContent = series.label;
+    document.querySelector('.legend-line').className = `legend-line ${state.type}`;
+    const canvas = document.getElementById('chart-monthly');
+    if (typeof Chart === 'undefined') { canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Grafico no disponible sin conexion.</strong><span>Los totales mensuales siguen visibles debajo.</span></div>'; return; }
+    if (state.chart) state.chart.destroy();
+    state.chart = new Chart(canvas, { type: 'line', data: { labels: SHORT_MONTHS, datasets: [{ label: series.label, data: values, borderColor: series.color, backgroundColor: series.fill, borderWidth: 2.5, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: series.color, pointBorderColor: series.color, tension: .25, fill: true, spanGaps: false }] }, options: chartOptions(series), plugins: [{ id: 'valueLabels', afterDatasetsDraw(chart) { const ctx = chart.ctx; const meta = chart.getDatasetMeta(0); ctx.save(); ctx.fillStyle = series.color; ctx.font = '600 10px Inter, sans-serif'; ctx.textAlign = 'center'; meta.data.forEach((point,index) => { const value = values[index]; if (value == null) return; ctx.fillText(fmtShort(value), point.x, point.y - 13); }); ctx.restore(); } }] });
+  }
+  function wireSelector() { document.getElementById('spend-type-select').addEventListener('change', event => { state.type = event.target.value; renderChart(); }); }
+  async function init() {
+    try {
+      if (window.AMADOR_ADS_DATA) state.data = window.AMADOR_ADS_DATA;
+      else { const response = await fetch(DATA_URL, { cache: 'no-store' }); if (!response.ok) throw new Error(`HTTP ${response.status}`); state.data = await response.json(); }
+      wireSelector(); renderChart(); renderTabs(); renderCampaigns();
+    } catch (error) { document.getElementById('view-obj').innerHTML = '<div class="data-notice error"><strong>No se pudo cargar la informacion de Amador.</strong></div>'; console.error(error); }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
