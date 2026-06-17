@@ -38,19 +38,61 @@
     if (normalized === 'finalizada') return 'red';
     return 'muted';
   }
+  function computeDuration(start, end) {
+    if (!start || !end) return null;
+    const MON = {Ene:0,Feb:1,Mar:2,Abr:3,May:4,Jun:5,Jul:6,Ago:7,Sep:8,Oct:9,Nov:10,Dic:11,Jan:0,Apr:3,Jun:5,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const parse = s => { const m = s.match(/^(\d{1,2})-([A-Za-z]{3})$/); return m && MON[m[2]] !== undefined ? new Date(2026, MON[m[2]], +m[1]) : new Date(s); };
+    try { return Math.round((parse(end) - parse(start)) / 86400000) + 1; } catch { return null; }
+  }
   function renderAdLinks(urls) {
-    if (!urls?.length) return '<span class="no-data">Sin URL</span>';
-    return `<div class="ad-links">${urls.map((url,index) => `<a href="${url}" target="_blank" rel="noopener noreferrer">Anuncio ${index + 1}</a>`).join('')}</div>`;
+    if (!urls?.length) return '<span class="no-data">—</span>';
+    return `<div class="ad-links">${urls.map((url,i) => `<a href="${url}" target="_blank" rel="noopener noreferrer">Anuncio ${i+1}</a>`).join('')}</div>`;
   }
   function renderCampaigns() {
     const month = sourceMonth(state.month);
     const campaigns = month.campaigns || [];
-    const active = campaigns.filter(campaign => campaign.status === 'Activa').length;
+    const active = campaigns.filter(c => c.status === 'Activa').length;
     document.getElementById('campaigns-title').textContent = `Campanas de ${month.name} 2026`;
     document.getElementById('campaigns-sub').textContent = campaigns.length ? `${active} activas de ${campaigns.length} campanas registradas.` : 'Sin detalle de campanas en el archivo fuente.';
     const body = document.getElementById('campaigns-body');
-    if (!campaigns.length) { body.innerHTML = '<tr><td colspan="7" class="table-empty">Sin campanas registradas para este mes.</td></tr>'; return; }
-    body.innerHTML = campaigns.map(campaign => `<tr><td class="campaign-name">${campaign.name}</td><td><span class="status-pill ${statusClass(campaign.status)}">${campaign.status}</span></td><td><span class="objective-pill">${campaign.objective || '-'}</span></td><td class="num">${fmtMoney(campaign.budget)}</td><td class="num">${fmtMoney(campaign.spent)}</td><td class="num">${fmtMoney(campaign.dailyAmount)}</td><td>${renderAdLinks(campaign.adUrls)}</td></tr>`).join('');
+    if (!campaigns.length) { body.innerHTML = '<tr><td colspan="14" class="table-empty">Sin campanas registradas para este mes.</td></tr>'; return; }
+    const rows = [];
+    for (const c of campaigns) {
+      const ads = c.ads?.length ? c.ads : [null];
+      const span = ads.length;
+      ads.forEach((ad, i) => {
+        const budget      = ad?.budget      ?? c.budget;
+        const spent       = ad?.spent       ?? (span === 1 ? c.spent : null);
+        const daily       = ad?.dailyAmount ?? c.dailyAmount;
+        const obj         = ad?.objective   ?? c.objective;
+        const st          = ad?.status      ?? c.status;
+        const start       = ad?.startDate   ?? c.startDate ?? null;
+        const end         = ad?.endDate     ?? c.endDate   ?? null;
+        const dur         = ad?.duration    ?? c.duration  ?? computeDuration(start, end);
+        const pct         = (budget && spent != null) ? Math.round(spent / budget * 100) : null;
+        const adUrl       = ad?.adUrl       ?? c.adUrls?.[i] ?? null;
+        const adName      = ad?.name        ?? (c.adUrls?.[i] ? `Anuncio ${i+1}` : '—');
+        const rs          = span > 1 ? ` rowspan="${span}"` : '';
+        let tr = '<tr>';
+        if (i === 0) tr += `<td class="campaign-name"${rs}>${c.name}</td>`;
+        tr += `<td class="ad-name-col">${adName}</td>`;
+        tr += `<td><span class="objective-pill">${obj || '—'}</span></td>`;
+        tr += `<td><span class="status-pill ${statusClass(st)}">${st || '—'}</span></td>`;
+        tr += `<td class="date-col">${start || '—'}</td>`;
+        tr += `<td class="date-col">${end || '—'}</td>`;
+        tr += `<td class="num">${dur != null ? dur + ' d' : '—'}</td>`;
+        tr += `<td class="num">${fmtMoney(daily)}</td>`;
+        tr += `<td class="num">${fmtMoney(budget)}</td>`;
+        if (i === 0) tr += `<td class="num campaign-total"${rs}>${fmtMoney(c.budget)}</td>`;
+        tr += `<td class="num pct-col">${pct != null ? pct + '%' : '—'}</td>`;
+        tr += `<td class="num">${fmtMoney(spent)}</td>`;
+        tr += `<td class="resultados-col">${c.resultados || '—'}</td>`;
+        tr += `<td>${adUrl ? `<div class="ad-links"><a href="${adUrl}" target="_blank" rel="noopener noreferrer">${adName !== '—' ? adName : 'Ver'}</a></div>` : (i === 0 && !ad ? renderAdLinks(c.adUrls) : '<span class="no-data">—</span>')}</td>`;
+        tr += '</tr>';
+        rows.push(tr);
+      });
+    }
+    body.innerHTML = rows.join('');
   }
   function chartOptions(series) {
     return { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 24, right: 12, left: 4 } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${series.label}: ${fmtMoney(context.raw)}` } } }, scales: { x: { grid: { display: false }, border: { color: '#cbd5e1' }, ticks: { color: '#7890b5', font: { size: 10 } } }, y: { beginAtZero: true, suggestedMax: 3500, border: { display: false }, grid: { color: 'rgba(148,163,184,.20)' }, ticks: { color: '#7890b5', font: { size: 10 }, callback: value => value === 0 ? 'S/. 0' : `S/. ${(value / 1000).toFixed(1)}k` } } } };
