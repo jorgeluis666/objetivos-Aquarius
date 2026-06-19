@@ -8,6 +8,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="css/dashboard.css">
+<style>
+  .reservations-total-row td { border-top: 2px solid #cbd5e1 !important; color: #0f172a !important; background: #f8fafc; font-weight: 800; }
+  .reservations-total-row td:first-child { text-align: right; }
+  .reservations-total-row .resultados-col { font-size: 12px; }
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
   if (location.protocol === 'file:' && !location.pathname.replace(/\\/g, '/').includes('/dist/')) {
@@ -43,7 +48,7 @@
           <div class="chart-wrap h-360"><canvas id="chart-monthly"></canvas></div>
         </div>
         <div class="month-tabs" id="month-tabs"></div>
-        <div class="panel campaigns-panel"><div class="panel-head"><div><div class="panel-title" id="campaigns-title">Campanas de Junio 2026</div><div class="panel-sub" id="campaigns-sub"></div></div></div><div class="table-scroll"><table class="data-table campaigns-table"><thead><tr><th>Campana</th><th>Anuncio</th><th>Objetivo</th><th>Estado</th><th>Fecha inicio</th><th>Fecha fin</th><th class="num">Dur.</th><th class="num">Imp. diario</th><th class="num">Pres. x anuncio</th><th class="num">Pres. x campaña</th><th class="num">% Gas.</th><th class="num">Imp. gastado</th><th>Reservas</th><th>URL anuncios</th></tr></thead><tbody id="campaigns-body"></tbody></table></div></div>
+        <div class="panel campaigns-panel"><div class="panel-head"><div><div class="panel-title" id="campaigns-title">Campanas de Junio 2026</div><div class="panel-sub" id="campaigns-sub"></div></div></div><div class="table-scroll"><table class="data-table campaigns-table"><thead><tr><th>Campana</th><th>Anuncio</th><th>Objetivo</th><th>Reservas</th><th>Estado</th><th>Fecha inicio</th><th>Fecha fin</th><th class="num">Dur.</th><th class="num">Imp. diario</th><th class="num">Pres. x anuncio</th><th class="num">Pres. x campaña</th><th class="num">% Gas.</th><th class="num">Imp. gastado</th><th>URL anuncios</th></tr></thead><tbody id="campaigns-body"></tbody></table></div></div>
       </section>
       <div class="site-footer"><span>Fuente: Distribucion-amador + Registro de reservas x DM</span><span>Sincronizado por Agencia Lima Retail</span></div>
     </div>
