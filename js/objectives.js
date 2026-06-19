@@ -55,28 +55,32 @@
     document.getElementById('campaigns-title').textContent = `Campanas de ${month.name} 2026`;
     document.getElementById('campaigns-sub').textContent = campaigns.length ? `${active} activas de ${campaigns.length} campanas registradas.` : 'Sin detalle de campanas en el archivo fuente.';
     const body = document.getElementById('campaigns-body');
-    if (!campaigns.length) { body.innerHTML = '<tr><td colspan="14" class="table-empty">Sin campanas registradas para este mes.</td></tr>'; return; }
+    if (!campaigns.length) { body.innerHTML = '<tr><td colspan="21" class="table-empty">Sin campanas registradas para este mes.</td></tr>'; return; }
     const rows = [];
     let totalReservas = 0;
     for (const c of campaigns) {
       const ads = c.ads?.length ? c.ads : [null];
       const span = ads.length;
       ads.forEach((ad, i) => {
-        const budget      = ad?.budget      ?? c.budget;
-        const spent       = ad?.spent       ?? (span === 1 ? c.spent : null);
-        const daily       = ad?.dailyAmount ?? c.dailyAmount;
-        const obj         = ad?.objective   ?? c.objective;
-        const st          = ad?.status      ?? c.status;
-        const start       = ad?.startDate   ?? c.startDate ?? null;
-        const end         = ad?.endDate     ?? c.endDate   ?? null;
-        const dur         = ad?.duration    ?? c.duration  ?? computeDuration(start, end);
-        const pct         = (budget && spent != null) ? Math.round(spent / budget * 100) : null;
-        const adUrl       = ad?.adUrl       ?? c.adUrls?.[i] ?? null;
-        const adName      = ad?.name        ?? (c.adUrls?.[i] ? `Anuncio ${i+1}` : '—');
-        const reservas    = Number(ad?.reservas ?? (span === 1 ? c.reservas : 0) ?? 0);
+        const budget = ad?.budget ?? c.budget;
+        const spent = ad?.spent ?? (span === 1 ? c.spent : null);
+        const daily = ad?.dailyAmount ?? c.dailyAmount;
+        const obj = ad?.objective ?? c.objective;
+        const st = ad?.status ?? c.status;
+        const start = ad?.startDate ?? c.startDate ?? null;
+        const end = ad?.endDate ?? c.endDate ?? null;
+        const dur = ad?.duration ?? c.duration ?? computeDuration(start, end);
+        const adUrl = ad?.adUrl ?? c.adUrls?.[i] ?? null;
+        const adName = ad?.name ?? (c.adUrls?.[i] ? `Anuncio ${i+1}` : '—');
+        const reservas = Number(ad?.reservas ?? (span === 1 ? c.reservas : 0) ?? 0);
+        const daysLeft = ad?.daysRemaining ?? null;
+        const adBalance = ad?.balance ?? (budget != null && spent != null ? budget - spent : null);
+        const newDaily = ad?.newDailyAmount ?? null;
+        const observation = ad?.observation ?? (i === 0 ? c.observation : null);
         totalReservas += reservas;
-        const rs          = span > 1 ? ` rowspan="${span}"` : '';
+        const rs = span > 1 ? ` rowspan="${span}"` : '';
         let tr = '<tr>';
+        if (i === 0) tr += `<td class="type-col"${rs}>${c.type || '—'}</td>`;
         if (i === 0) tr += `<td class="campaign-name"${rs}>${c.name}</td>`;
         tr += `<td class="ad-name-col">${adName}</td>`;
         tr += `<td><span class="objective-pill">${obj || '—'}</span></td>`;
@@ -85,17 +89,23 @@
         tr += `<td class="date-col">${start || '—'}</td>`;
         tr += `<td class="date-col">${end || '—'}</td>`;
         tr += `<td class="num">${dur != null ? dur + ' d' : '—'}</td>`;
+        tr += `<td class="num">${daysLeft != null ? daysLeft : '—'}</td>`;
         tr += `<td class="num">${fmtMoney(daily)}</td>`;
         tr += `<td class="num">${fmtMoney(budget)}</td>`;
-        if (i === 0) tr += `<td class="num campaign-total"${rs}>${fmtMoney(c.budget)}</td>`;
-        tr += `<td class="num pct-col">${pct != null ? pct + '%' : '—'}</td>`;
         tr += `<td class="num">${fmtMoney(spent)}</td>`;
+        if (i === 0) tr += `<td class="num campaign-total"${rs}>${fmtMoney(c.budget)}</td>`;
+        if (i === 0) tr += `<td class="num campaign-total"${rs}>${fmtMoney(c.spent)}</td>`;
+        tr += `<td class="num">${fmtMoney(adBalance)}</td>`;
+        if (i === 0) tr += `<td class="num campaign-total"${rs}>${fmtMoney(c.balance)}</td>`;
+        if (i === 0) tr += `<td class="num campaign-total"${rs}>${fmtMoney(c.realBalance)}</td>`;
+        tr += `<td class="num">${fmtMoney(newDaily)}</td>`;
+        tr += `<td class="observation-col">${observation || '—'}</td>`;
         tr += `<td>${adUrl ? `<div class="ad-links"><a href="${adUrl}" target="_blank" rel="noopener noreferrer">${adName !== '—' ? adName : 'Ver'}</a></div>` : (i === 0 && !ad ? renderAdLinks(c.adUrls) : '<span class="no-data">—</span>')}</td>`;
         tr += '</tr>';
         rows.push(tr);
       });
     }
-    rows.push(`<tr class="reservations-total-row"><td colspan="3">Total reservas</td><td class="resultados-col">${totalReservas}</td><td colspan="10"></td></tr>`);
+    rows.push(`<tr class="reservations-total-row"><td colspan="4">Total actualizado ${month.name.toLowerCase()}</td><td class="resultados-col">${totalReservas}</td><td colspan="7"></td><td class="num">${fmtMoney(month.adSpendTotal)}</td><td class="num">${fmtMoney(month.budgetTotal)}</td><td class="num">${fmtMoney(month.spend)}</td><td class="num">${fmtMoney(month.balanceTotal)}</td><td class="num">${fmtMoney(month.balanceTotal)}</td><td></td><td class="num">${fmtMoney(month.newDailyTotal)}</td><td>${month.totalObservation || ''}</td><td></td></tr>`);
     body.innerHTML = rows.join('');
   }
   function chartOptions(series) {
