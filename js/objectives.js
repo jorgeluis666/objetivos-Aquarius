@@ -57,6 +57,7 @@
     const body = document.getElementById('campaigns-body');
     if (!campaigns.length) { body.innerHTML = '<tr><td colspan="14" class="table-empty">Sin campanas registradas para este mes.</td></tr>'; return; }
     const rows = [];
+    let totalReservas = 0;
     for (const c of campaigns) {
       const ads = c.ads?.length ? c.ads : [null];
       const span = ads.length;
@@ -72,6 +73,8 @@
         const pct         = (budget && spent != null) ? Math.round(spent / budget * 100) : null;
         const adUrl       = ad?.adUrl       ?? c.adUrls?.[i] ?? null;
         const adName      = ad?.name        ?? (c.adUrls?.[i] ? `Anuncio ${i+1}` : '—');
+        const reservas    = Number(ad?.reservas ?? (span === 1 ? c.reservas : 0) ?? 0);
+        totalReservas += reservas;
         const rs          = span > 1 ? ` rowspan="${span}"` : '';
         let tr = '<tr>';
         if (i === 0) tr += `<td class="campaign-name"${rs}>${c.name}</td>`;
@@ -86,12 +89,13 @@
         if (i === 0) tr += `<td class="num campaign-total"${rs}>${fmtMoney(c.budget)}</td>`;
         tr += `<td class="num pct-col">${pct != null ? pct + '%' : '—'}</td>`;
         tr += `<td class="num">${fmtMoney(spent)}</td>`;
-        tr += `<td class="resultados-col">${ad?.reservas ?? c.reservas ?? 0}</td>`;
+        tr += `<td class="resultados-col">${reservas}</td>`;
         tr += `<td>${adUrl ? `<div class="ad-links"><a href="${adUrl}" target="_blank" rel="noopener noreferrer">${adName !== '—' ? adName : 'Ver'}</a></div>` : (i === 0 && !ad ? renderAdLinks(c.adUrls) : '<span class="no-data">—</span>')}</td>`;
         tr += '</tr>';
         rows.push(tr);
       });
     }
+    rows.push(`<tr class="reservations-total-row"><td colspan="12" style="text-align:right;font-weight:800;background:#f8fafc;border-top:2px solid #cbd5e1">Total reservas</td><td class="resultados-col" style="font-size:12px;font-weight:800;background:#f8fafc;border-top:2px solid #cbd5e1">${totalReservas}</td><td style="background:#f8fafc;border-top:2px solid #cbd5e1"></td></tr>`);
     body.innerHTML = rows.join('');
   }
   function chartOptions(series) {
