@@ -34,8 +34,8 @@
   }
   function statusClass(status) {
     const normalized = String(status || '').toLowerCase();
-    if (normalized === 'activa') return 'green';
-    if (normalized === 'finalizada') return 'red';
+    if (normalized === 'activa' || normalized === 'activo') return 'green';
+    if (normalized === 'finalizada' || normalized === 'finalizado') return 'red';
     return 'muted';
   }
   function computeDuration(start, end) {
@@ -51,7 +51,7 @@
   function renderCampaigns() {
     const month = sourceMonth(state.month);
     const campaigns = month.campaigns || [];
-    const active = campaigns.filter(c => c.status === 'Activa').length;
+    const active = campaigns.filter(c => ['activa', 'activo'].includes(String(c.status || '').toLowerCase())).length;
     document.getElementById('campaigns-title').textContent = `Campanas de ${month.name} 2026`;
     document.getElementById('campaigns-sub').textContent = campaigns.length ? `${active} activas de ${campaigns.length} campanas registradas.` : 'Sin detalle de campanas en el archivo fuente.';
     const body = document.getElementById('campaigns-body');
@@ -86,7 +86,7 @@
         if (i === 0) tr += `<td class="num campaign-total"${rs}>${fmtMoney(c.budget)}</td>`;
         tr += `<td class="num pct-col">${pct != null ? pct + '%' : '—'}</td>`;
         tr += `<td class="num">${fmtMoney(spent)}</td>`;
-        tr += `<td class="resultados-col">${c.resultados || '—'}</td>`;
+        tr += `<td class="resultados-col">${ad?.reservas ?? c.reservas ?? 0}</td>`;
         tr += `<td>${adUrl ? `<div class="ad-links"><a href="${adUrl}" target="_blank" rel="noopener noreferrer">${adName !== '—' ? adName : 'Ver'}</a></div>` : (i === 0 && !ad ? renderAdLinks(c.adUrls) : '<span class="no-data">—</span>')}</td>`;
         tr += '</tr>';
         rows.push(tr);
