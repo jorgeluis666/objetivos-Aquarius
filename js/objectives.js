@@ -1,5 +1,6 @@
 (function () {
   const DATA_URL = 'data/amador-ads-2026.json';
+  const JUNE_DATA_URL = 'data/amador-june-sheet-2026.json';
   const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const SHORT_MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const SERIES = {
@@ -21,6 +22,19 @@
     if (type === 'total') return month.spend;
     return month.spendBreakdown?.[type] ?? null;
   }
+  function prepareDeadlineColumn() {
+    const headers = Array.from(document.querySelectorAll('.campaigns-table thead th'));
+    const endHeader = headers.find(header => header.textContent.trim().toLowerCase() === 'fecha fin');
+    const daysHeader = headers.find(header => header.textContent.trim().toLowerCase() === 'dias restantes');
+    if (endHeader) endHeader.textContent = 'Fecha fin / dias restantes';
+    if (daysHeader) daysHeader.remove();
+    if (!document.getElementById('deadline-counter-style')) {
+      const style = document.createElement('style');
+      style.id = 'deadline-counter-style';
+      style.textContent = '.deadline-cell{min-width:92px}.days-counter{display:block;margin-top:5px;color:#64748b;font-size:9px;font-weight:700;white-space:nowrap}.days-counter.urgent{color:#b91c1c}.days-counter.closed{color:#94a3b8}';
+      document.head.appendChild(style);
+    }
+  }
   function renderTabs() {
     const host = document.getElementById('month-tabs');
     host.innerHTML = MONTHS.map(name => {
@@ -40,9 +54,30 @@
   }
   function computeDuration(start, end) {
     if (!start || !end) return null;
-    const MON = {Ene:0,Feb:1,Mar:2,Abr:3,May:4,Jun:5,Jul:6,Ago:7,Sep:8,Oct:9,Nov:10,Dic:11,Jan:0,Apr:3,Jun:5,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-    const parse = s => { const m = s.match(/^(\d{1,2})-([A-Za-z]{3})$/); return m && MON[m[2]] !== undefined ? new Date(2026, MON[m[2]], +m[1]) : new Date(s); };
+    const MON = {Ene:0,Feb:1,Mar:2,Abr:3,May:4,Jun:5,Jul:6,Ago:7,Sep:8,Oct:9,Nov:10,Dic:11,Jan:0,Apr:3,Aug:7,Dec:11};
+    const parse = value => { const match = value.match(/^(\d{1,2})-([A-Za-z]{3})$/); return match && MON[match[2]] !== undefined ? new Date(2026, MON[match[2]], Number(match[1])) : new Date(value); };
     try { return Math.round((parse(end) - parse(start)) / 86400000) + 1; } catch { return null; }
+  }
+  function parseCampaignDate(value) {
+    if (!value) return null;
+    const months = { Ene:0, Feb:1, Mar:2, Abr:3, May:4, Jun:5, Jul:6, Ago:7, Sep:8, Oct:9, Nov:10, Dic:11 };
+    const match = String(value).match(/^(\d{1,2})-([A-Za-z]{3})$/);
+    if (!match || months[match[2]] === undefined) return null;
+    return new Date(2026, months[match[2]], Number(match[1]));
+  }
+  function daysRemaining(endDate) {
+    const deadline = parseCampaignDate(endDate);
+    if (!deadline) return null;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.max(0, Math.floor((deadline - today) / 86400000) + 1);
+  }
+  function renderDeadline(endDate) {
+    const remaining = daysRemaining(endDate);
+    if (remaining == null) return endDate || '—';
+    const counterClass = remaining === 0 ? 'closed' : remaining <= 3 ? 'urgent' : '';
+    const label = remaining === 0 ? 'Plazo finalizado' : `${remaining} ${remaining === 1 ? 'dia restante' : 'dias restantes'}`;
+    return `${endDate}<span class="days-counter ${counterClass}">${label}</span>`;
   }
   function renderAdLinks(urls) {
     if (!urls?.length) return '<span class="no-data">—</span>';
@@ -55,7 +90,7 @@
     document.getElementById('campaigns-title').textContent = `Campanas de ${month.name} 2026`;
     document.getElementById('campaigns-sub').textContent = campaigns.length ? `${active} activas de ${campaigns.length} campanas registradas.` : 'Sin detalle de campanas en el archivo fuente.';
     const body = document.getElementById('campaigns-body');
-    if (!campaigns.length) { body.innerHTML = '<tr><td colspan="21" class="table-empty">Sin campanas registradas para este mes.</td></tr>'; return; }
+    if (!campaigns.length) { body.innerHTML = '<tr><td colspan="20" class="table-empty">Sin campanas registradas para este mes.</td></tr>'; return; }
     const rows = [];
     let totalReservas = 0;
     for (const c of campaigns) {
@@ -73,7 +108,6 @@
         const adUrl = ad?.adUrl ?? c.adUrls?.[i] ?? null;
         const adName = ad?.name ?? (c.adUrls?.[i] ? `Anuncio ${i+1}` : '—');
         const reservas = Number(ad?.reservas ?? (span === 1 ? c.reservas : 0) ?? 0);
-        const daysLeft = ad?.daysRemaining ?? null;
         const adBalance = ad?.balance ?? (budget != null && spent != null ? budget - spent : null);
         const newDaily = ad?.newDailyAmount ?? null;
         const observation = ad?.observation ?? (i === 0 ? c.observation : null);
@@ -87,9 +121,8 @@
         tr += `<td class="resultados-col">${reservas}</td>`;
         tr += `<td><span class="status-pill ${statusClass(st)}">${st || '—'}</span></td>`;
         tr += `<td class="date-col">${start || '—'}</td>`;
-        tr += `<td class="date-col">${end || '—'}</td>`;
+        tr += `<td class="date-col deadline-cell">${renderDeadline(end)}</td>`;
         tr += `<td class="num">${dur != null ? dur + ' d' : '—'}</td>`;
-        tr += `<td class="num">${daysLeft != null ? daysLeft : '—'}</td>`;
         tr += `<td class="num">${fmtMoney(daily)}</td>`;
         tr += `<td class="num">${fmtMoney(budget)}</td>`;
         tr += `<td class="num">${fmtMoney(spent)}</td>`;
@@ -105,7 +138,7 @@
         rows.push(tr);
       });
     }
-    rows.push(`<tr class="reservations-total-row"><td colspan="4">Total actualizado ${month.name.toLowerCase()}</td><td class="resultados-col">${totalReservas}</td><td colspan="7"></td><td class="num">${fmtMoney(month.adSpendTotal)}</td><td class="num">${fmtMoney(month.budgetTotal)}</td><td class="num">${fmtMoney(month.spend)}</td><td class="num">${fmtMoney(month.balanceTotal)}</td><td class="num">${fmtMoney(month.balanceTotal)}</td><td></td><td class="num">${fmtMoney(month.newDailyTotal)}</td><td>${month.totalObservation || ''}</td><td></td></tr>`);
+    rows.push(`<tr class="reservations-total-row"><td colspan="4">Total actualizado ${month.name.toLowerCase()}</td><td class="resultados-col">${totalReservas}</td><td colspan="6"></td><td class="num">${fmtMoney(month.adSpendTotal)}</td><td class="num">${fmtMoney(month.budgetTotal)}</td><td class="num">${fmtMoney(month.spend)}</td><td class="num">${fmtMoney(month.balanceTotal)}</td><td class="num">${fmtMoney(month.balanceTotal)}</td><td></td><td class="num">${fmtMoney(month.newDailyTotal)}</td><td>${month.totalObservation || ''}</td><td></td></tr>`);
     body.innerHTML = rows.join('');
   }
   function chartOptions(series) {
@@ -127,7 +160,16 @@
     try {
       if (window.AMADOR_ADS_DATA) state.data = window.AMADOR_ADS_DATA;
       else { const response = await fetch(DATA_URL, { cache: 'no-store' }); if (!response.ok) throw new Error(`HTTP ${response.status}`); state.data = await response.json(); }
+      if (!window.AMADOR_ADS_DATA) {
+        const juneResponse = await fetch(JUNE_DATA_URL, { cache: 'no-store' });
+        if (!juneResponse.ok) throw new Error(`HTTP ${juneResponse.status}`);
+        const juneData = await juneResponse.json();
+        const juneIndex = state.data.months.findIndex(month => month.name === 'Junio');
+        if (juneIndex >= 0) state.data.months[juneIndex] = juneData;
+      }
+      prepareDeadlineColumn();
       wireSelector(); renderChart(); renderTabs(); renderCampaigns();
+      setInterval(renderCampaigns, 60000);
     } catch (error) { document.getElementById('view-obj').innerHTML = '<div class="data-notice error"><strong>No se pudo cargar la informacion de Amador.</strong></div>'; console.error(error); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
