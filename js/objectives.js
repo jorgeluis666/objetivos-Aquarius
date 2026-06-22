@@ -22,19 +22,6 @@
     if (type === 'total') return month.spend;
     return month.spendBreakdown?.[type] ?? null;
   }
-  function prepareDeadlineColumn() {
-    const headers = Array.from(document.querySelectorAll('.campaigns-table thead th'));
-    const endHeader = headers.find(header => header.textContent.trim().toLowerCase() === 'fecha fin');
-    const daysHeader = headers.find(header => header.textContent.trim().toLowerCase() === 'dias restantes');
-    if (endHeader) endHeader.textContent = 'Fecha fin / dias restantes';
-    if (daysHeader) daysHeader.remove();
-    if (!document.getElementById('deadline-counter-style')) {
-      const style = document.createElement('style');
-      style.id = 'deadline-counter-style';
-      style.textContent = '.deadline-cell{min-width:92px}.days-counter{display:block;margin-top:5px;color:#64748b;font-size:9px;font-weight:700;white-space:nowrap}.days-counter.urgent{color:#b91c1c}.days-counter.closed{color:#94a3b8}';
-      document.head.appendChild(style);
-    }
-  }
   function renderTabs() {
     const host = document.getElementById('month-tabs');
     host.innerHTML = MONTHS.map(name => {
@@ -54,8 +41,8 @@
   }
   function computeDuration(start, end) {
     if (!start || !end) return null;
-    const MON = {Ene:0,Feb:1,Mar:2,Abr:3,May:4,Jun:5,Jul:6,Ago:7,Sep:8,Oct:9,Nov:10,Dic:11,Jan:0,Apr:3,Aug:7,Dec:11};
-    const parse = value => { const match = value.match(/^(\d{1,2})-([A-Za-z]{3})$/); return match && MON[match[2]] !== undefined ? new Date(2026, MON[match[2]], Number(match[1])) : new Date(value); };
+    const MON = {Ene:0,Feb:1,Mar:2,Abr:3,May:4,Jun:5,Jul:6,Ago:7,Sep:8,Oct:9,Nov:10,Dic:11,Jan:0,Apr:3,Jun:5,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const parse = s => { const m = s.match(/^(\d{1,2})-([A-Za-z]{3})$/); return m && MON[m[2]] !== undefined ? new Date(2026, MON[m[2]], +m[1]) : new Date(s); };
     try { return Math.round((parse(end) - parse(start)) / 86400000) + 1; } catch { return null; }
   }
   function parseCampaignDate(value) {
@@ -76,8 +63,14 @@
     const remaining = daysRemaining(endDate);
     if (remaining == null) return endDate || '—';
     const counterClass = remaining === 0 ? 'closed' : remaining <= 3 ? 'urgent' : '';
-    const label = remaining === 0 ? 'Plazo finalizado' : `${remaining} ${remaining === 1 ? 'dia restante' : 'dias restantes'}`;
+    const label = remaining === 0 ? 'Plazo finalizado' : `${remaining} ${remaining === 1 ? 'día restante' : 'días restantes'}`;
     return `${endDate}<span class="days-counter ${counterClass}">${label}</span>`;
+  }
+  function renderReservationProgress(value, goal) {
+    if (goal == null || Number(goal) <= 0) return `${value}`;
+    const reached = Number(value) >= Number(goal);
+    const label = reached ? 'Sobre el objetivo' : 'Debajo del objetivo';
+    return `<span class="reservation-value">${value}</span><span class="reservation-trend ${reached ? 'up' : 'down'}" title="${label}: ${value}/${goal}" aria-label="${label}: ${value} de ${goal}">${reached ? '▲' : '▼'} Objetivo: ${goal}</span>`;
   }
   function renderAdLinks(urls) {
     if (!urls?.length) return '<span class="no-data">—</span>';
@@ -97,28 +90,30 @@
       const ads = c.ads?.length ? c.ads : [null];
       const span = ads.length;
       ads.forEach((ad, i) => {
-        const budget = ad?.budget ?? c.budget;
-        const spent = ad?.spent ?? (span === 1 ? c.spent : null);
-        const daily = ad?.dailyAmount ?? c.dailyAmount;
-        const obj = ad?.objective ?? c.objective;
-        const st = ad?.status ?? c.status;
-        const start = ad?.startDate ?? c.startDate ?? null;
-        const end = ad?.endDate ?? c.endDate ?? null;
-        const dur = ad?.duration ?? c.duration ?? computeDuration(start, end);
-        const adUrl = ad?.adUrl ?? c.adUrls?.[i] ?? null;
-        const adName = ad?.name ?? (c.adUrls?.[i] ? `Anuncio ${i+1}` : '—');
-        const reservas = Number(ad?.reservas ?? (span === 1 ? c.reservas : 0) ?? 0);
-        const adBalance = ad?.balance ?? (budget != null && spent != null ? budget - spent : null);
-        const newDaily = ad?.newDailyAmount ?? null;
+        const budget      = ad?.budget      ?? c.budget;
+        const spent       = ad?.spent       ?? (span === 1 ? c.spent : null);
+        const daily       = ad?.dailyAmount ?? c.dailyAmount;
+        const obj         = ad?.objective   ?? c.objective;
+        const st          = ad?.status      ?? c.status;
+        const start       = ad?.startDate   ?? c.startDate ?? null;
+        const end         = ad?.endDate     ?? c.endDate   ?? null;
+        const dur         = ad?.duration    ?? c.duration  ?? computeDuration(start, end);
+        const pct         = (budget && spent != null) ? Math.round(spent / budget * 100) : null;
+        const adUrl       = ad?.adUrl       ?? c.adUrls?.[i] ?? null;
+        const adName      = ad?.name        ?? (c.adUrls?.[i] ? `Anuncio ${i+1}` : '—');
+        const reservas    = Number(ad?.reservas ?? (span === 1 ? c.reservas : 0) ?? 0);
+        const reservationGoal = ad?.reservationGoal ?? null;
+        const adBalance   = ad?.balance ?? (budget != null && spent != null ? budget - spent : null);
+        const newDaily    = ad?.newDailyAmount ?? null;
         const observation = ad?.observation ?? (i === 0 ? c.observation : null);
         totalReservas += reservas;
-        const rs = span > 1 ? ` rowspan="${span}"` : '';
+        const rs          = span > 1 ? ` rowspan="${span}"` : '';
         let tr = '<tr>';
         if (i === 0) tr += `<td class="type-col"${rs}>${c.type || '—'}</td>`;
         if (i === 0) tr += `<td class="campaign-name"${rs}>${c.name}</td>`;
         tr += `<td class="ad-name-col">${adName}</td>`;
         tr += `<td><span class="objective-pill">${obj || '—'}</span></td>`;
-        tr += `<td class="resultados-col">${reservas}</td>`;
+        tr += `<td class="resultados-col">${renderReservationProgress(reservas, reservationGoal)}</td>`;
         tr += `<td><span class="status-pill ${statusClass(st)}">${st || '—'}</span></td>`;
         tr += `<td class="date-col">${start || '—'}</td>`;
         tr += `<td class="date-col deadline-cell">${renderDeadline(end)}</td>`;
@@ -160,14 +155,16 @@
     try {
       if (window.AMADOR_ADS_DATA) state.data = window.AMADOR_ADS_DATA;
       else { const response = await fetch(DATA_URL, { cache: 'no-store' }); if (!response.ok) throw new Error(`HTTP ${response.status}`); state.data = await response.json(); }
-      if (!window.AMADOR_ADS_DATA) {
+      if (window.AMADOR_JUNE_DATA) {
+        const juneIndex = state.data.months.findIndex(month => month.name === 'Junio');
+        if (juneIndex >= 0) state.data.months[juneIndex] = window.AMADOR_JUNE_DATA;
+      } else {
         const juneResponse = await fetch(JUNE_DATA_URL, { cache: 'no-store' });
         if (!juneResponse.ok) throw new Error(`HTTP ${juneResponse.status}`);
         const juneData = await juneResponse.json();
         const juneIndex = state.data.months.findIndex(month => month.name === 'Junio');
         if (juneIndex >= 0) state.data.months[juneIndex] = juneData;
       }
-      prepareDeadlineColumn();
       wireSelector(); renderChart(); renderTabs(); renderCampaigns();
       setInterval(renderCampaigns, 60000);
     } catch (error) { document.getElementById('view-obj').innerHTML = '<div class="data-notice error"><strong>No se pudo cargar la informacion de Amador.</strong></div>'; console.error(error); }

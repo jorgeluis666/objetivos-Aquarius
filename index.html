@@ -12,28 +12,19 @@
   .reservations-total-row td { border-top: 2px solid #cbd5e1 !important; color: #0f172a !important; background: #f8fafc; font-weight: 800; }
   .reservations-total-row td:first-child { text-align: right; }
   .reservations-total-row .resultados-col { font-size: 12px; }
+  .deadline-cell { min-width: 92px; }
+  .days-counter { display: block; margin-top: 5px; color: #64748b; font-size: 9px; font-weight: 700; white-space: nowrap; }
+  .days-counter.urgent { color: #b91c1c; }
+  .days-counter.closed { color: #94a3b8; }
+  .reservation-value { display: block; }
+  .reservation-trend { display: block; margin-top: 3px; font-size: 9px; font-weight: 800; line-height: 1.2; white-space: nowrap; }
+  .reservation-trend.up { color: #16a34a; }
+  .reservation-trend.down { color: #dc2626; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
   if (location.protocol === 'file:' && !location.pathname.replace(/\\/g, '/').includes('/dist/')) {
     location.replace(new URL('dist/index.html', location.href));
-  }
-  if (location.protocol !== 'file:') {
-    const originalFetch = window.fetch.bind(window);
-    window.fetch = async (input, init) => {
-      const response = await originalFetch(input, init);
-      if (String(input).includes('data/amador-ads-2026.json')) {
-        const baseData = await response.clone().json();
-        const juneResponse = await originalFetch('data/amador-june-sheet-2026.json', { cache: 'no-store' });
-        if (juneResponse.ok) {
-          const juneData = await juneResponse.json();
-          const juneIndex = baseData.months.findIndex(month => month.name === 'Junio');
-          if (juneIndex >= 0) baseData.months[juneIndex] = juneData;
-        }
-        return new Response(JSON.stringify(baseData), { status: response.status, headers: { 'Content-Type': 'application/json' } });
-      }
-      return response;
-    };
   }
 </script>
 </head>
@@ -42,7 +33,10 @@
   <aside class="sidebar">
     <div class="s-brand"><div class="s-title">Amador</div><div class="s-sub">Lima Retail | 2026</div></div>
     <div class="s-group-lbl">Modulo activo</div>
-    <button class="s-item active" type="button"><div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div><div class="s-text"><div class="s-title-nav">Gasto publicitario</div><div class="s-desc-nav">Branding y ventas</div></div></button>
+    <button class="s-item active" type="button">
+      <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+      <div class="s-text"><div class="s-title-nav">Gasto publicitario</div><div class="s-desc-nav">Branding y ventas</div></div>
+    </button>
     <div class="s-group-lbl paused-label">Modulos pausados</div>
     <button class="s-item disabled" type="button" disabled aria-disabled="true"><div class="s-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><div class="s-text"><div class="s-title-nav">Comparativo YoY</div><div class="s-desc-nav">Evolucion interanual</div></div><span class="module-status">Proximamente</span></button>
     <button class="s-item disabled" type="button" disabled aria-disabled="true"><div class="s-icon"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><div class="s-text"><div class="s-title-nav">Distribucion</div><div class="s-desc-nav">Inversion por plataforma</div></div><span class="module-status">Proximamente</span></button>
@@ -57,16 +51,22 @@
         <div class="sec-lbl">01 - Inversion publicitaria</div>
         <h1 class="section-title">Gasto 2026 por mes</h1>
         <p class="section-desc">Evolucion mensual de la inversion publicitaria. Usa el selector para revisar el gasto total o su distribucion entre Branding y Ventas.</p>
-        <div class="panel chart-panel"><div class="panel-head chart-panel-head"><div><div class="panel-title" id="chart-title">Evolucion mensual | Total | 2026</div><div class="panel-sub">Gasto real registrado de enero a junio</div></div><div class="chart-controls"><select id="spend-type-select" class="ch-select"><option value="total">Total</option><option value="sales">Ventas</option><option value="branding">Branding</option></select><div class="chart-legend"><span><i class="legend-line total"></i><b id="legend-label">Total</b></span></div></div></div><div class="chart-wrap h-360"><canvas id="chart-monthly"></canvas></div></div>
+        <div class="panel chart-panel">
+          <div class="panel-head chart-panel-head"><div><div class="panel-title" id="chart-title">Evolucion mensual | Total | 2026</div><div class="panel-sub">Gasto real registrado de enero a junio</div></div><div class="chart-controls"><select id="spend-type-select" class="ch-select"><option value="total">Total</option><option value="sales">Ventas</option><option value="branding">Branding</option></select><div class="chart-legend"><span><i class="legend-line total"></i><b id="legend-label">Total</b></span></div></div></div>
+          <div class="chart-wrap h-360"><canvas id="chart-monthly"></canvas></div>
+        </div>
         <div class="month-tabs" id="month-tabs"></div>
-        <div class="panel campaigns-panel"><div class="panel-head"><div><div class="panel-title" id="campaigns-title">Campanas de Junio 2026</div><div class="panel-sub" id="campaigns-sub"></div></div></div><div class="table-scroll"><table class="data-table campaigns-table"><thead><tr><th>Tipo</th><th>Campana</th><th>Anuncio</th><th>Objetivo</th><th>Reservas</th><th>Estado</th><th>Fecha inicio</th><th>Fecha fin</th><th class="num">Duracion</th><th class="num">Dias restantes</th><th class="num">Importe diario</th><th class="num">Presupuesto x anuncio</th><th class="num">Gasto x anuncio</th><th class="num">Presupuesto x campana</th><th class="num">Gasto x campana</th><th class="num">Saldo x anuncio</th><th class="num">Saldo por campana</th><th class="num">Saldo x campana real</th><th class="num">Nuevo ppto diario</th><th>Observaciones</th><th>URL anuncios</th></tr></thead><tbody id="campaigns-body"></tbody></table></div></div>
+        <div class="panel campaigns-panel"><div class="panel-head"><div><div class="panel-title" id="campaigns-title">Campanas de Junio 2026</div><div class="panel-sub" id="campaigns-sub"></div></div></div><div class="table-scroll"><table class="data-table campaigns-table"><thead><tr><th>Tipo</th><th>Campana</th><th>Anuncio</th><th>Objetivo</th><th>Reservas</th><th>Estado</th><th>Fecha inicio</th><th>Fecha fin / dias restantes</th><th class="num">Duracion</th><th class="num">Importe diario</th><th class="num">Presupuesto x anuncio</th><th class="num">Gasto x anuncio</th><th class="num">Presupuesto x campana</th><th class="num">Gasto x campana</th><th class="num">Saldo x anuncio</th><th class="num">Saldo por campana</th><th class="num">Saldo x campana real</th><th class="num">Nuevo ppto diario</th><th>Observaciones</th><th>URL anuncios</th></tr></thead><tbody id="campaigns-body"></tbody></table></div></div>
       </section>
       <div class="site-footer"><span>Fuente: Distribucion-amador + Registro de reservas x DM</span><span>Sincronizado por Agencia Lima Retail</span></div>
     </div>
   </main>
 </div>
 <script src="js/objectives.js"></script>
+<script src="js/reservation-goals.js"></script>
 <script src="auth-login.js"></script>
-<script>AuthLogin.init({ password: 'Amador2026' });</script>
+<script>
+  AuthLogin.init({ password: 'Amador2026' });
+</script>
 </body>
 </html>

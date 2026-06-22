@@ -15,7 +15,9 @@ function main() {
   let html = readFile('index.html');
   const css = readFile('css/dashboard.css');
   const app = readFile('js/objectives.js');
+  const reservationGoals = readFile('js/reservation-goals.js');
   const data = readFile('data/amador-ads-2026.json').replace(/</g, '\\u003c');
+  const juneData = readFile('data/amador-june-sheet-2026.json').replace(/</g, '\\u003c');
 
   html = html.replace(
     '<link rel="stylesheet" href="css/dashboard.css">',
@@ -26,8 +28,12 @@ function main() {
     `<script>${app}</script>`
   );
   html = html.replace(
+    '<script src="js/reservation-goals.js"></script>',
+    `<script>${reservationGoals}</script>`
+  );
+  html = html.replace(
     '</head>',
-    `<script>window.AMADOR_ADS_DATA = ${data};</script></head>`
+    `<script>window.AMADOR_ADS_DATA = ${data};window.AMADOR_JUNE_DATA = ${juneData};</script></head>`
   );
 
   fs.rmSync(DIST_DIR, { recursive: true, force: true });

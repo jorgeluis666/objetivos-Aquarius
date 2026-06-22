@@ -13,7 +13,7 @@ Los modulos Comparativo YoY, Distribucion, Productos Web y Usuarios y Claves se 
 
 ## Datos
 
-La fuente normalizada del dashboard esta en `data/amador-ads-2026.json` y contiene informacion hasta el 12 de junio de 2026.
+La fuente normalizada del dashboard esta en `data/amador-ads-2026.json`. Junio se sincronizo el 19 de junio de 2026 desde `Distribucion-amador` y `Registro de reservas x DM - Amador 2026`.
 
 ## Desarrollo
 

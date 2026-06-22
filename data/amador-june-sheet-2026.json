@@ -1,1 +1,97 @@
-{"name":"Junio","spend":2085.41,"adSpendTotal":2083.49,"budgetTotal":3525,"balanceTotal":1439.59,"newDailyTotal":148.6729166667,"totalObservation":"Total ajustado = presupuesto actualizado considerando Padrísimo con un solo video, Jueves OFF y extra de almuerzos.","spendBreakdown":{"sales":1758.8,"branding":326.61},"campaigns":[{"name":"Padrísimo - Una noche mexa","type":"Evento","status":"Activo","budget":500,"spent":305.67,"balance":194.33,"realBalance":null,"reservas":1,"ads":[{"name":"Video 1","objective":"Mensajes","status":"Activo","reservas":0,"startDate":"13-Jun","endDate":"23-Jun","duration":10,"daysRemaining":5,"dailyAmount":25,"budget":250,"spent":54.21,"balance":194.33,"newDailyAmount":38.866,"adUrl":null},{"name":"Video 2","objective":"Reservas","status":"Finalizado","reservas":1,"reservationGoal":10,"startDate":"04-Jun","endDate":"09-Jun","duration":5,"daysRemaining":0,"dailyAmount":50,"budget":250,"spent":251.46,"balance":0,"newDailyAmount":0,"adUrl":null}]},{"name":"Relatos - Tributo al Unplugged de Soda Stereo","type":"Evento","status":"Activo","budget":500,"spent":245.11,"balance":254.89,"realBalance":null,"observation":"Alerta el 30-Jun para decidir si se reactiva hasta el 07-Jul.","reservas":0,"ads":[{"name":"Video 1","objective":"Reservas","status":"Activo","reservas":0,"reservationGoal":10,"startDate":"20-Jun","endDate":"30-Jun","duration":10,"daysRemaining":12,"dailyAmount":50,"budget":500,"spent":245.11,"balance":254.89,"newDailyAmount":21.2408333333,"adUrl":null}]},{"name":"Watch Party (partido 27-Jun)","type":"Evento","status":"Activo","budget":600,"spent":105.57,"balance":494.43,"realBalance":null,"reservas":2,"ads":[{"name":"Video 1","objective":"Reservas/Mensajes","status":"Activo","reservas":2,"reservationGoal":10,"startDate":"17-Jun","endDate":"26-Jun","duration":9,"daysRemaining":8,"dailyAmount":33.3333333333,"budget":300,"spent":70.47,"balance":494.43,"newDailyAmount":61.80375,"adUrl":null},{"name":"Video 2","objective":"Reservas/Mensajes","status":"Activo","reservas":0,"reservationGoal":10,"startDate":"17-Jun","endDate":"26-Jun","duration":9,"daysRemaining":8,"dailyAmount":33.3333333333,"budget":300,"spent":33.18,"balance":0,"newDailyAmount":0,"adUrl":null}]},{"name":"Amador de día / Reserva web almuerzos","type":"Always On","status":"OFF","budget":725,"spent":793.77,"balance":-68.77,"realBalance":null,"observation":"Presupuesto base casi agotado. Para sostener S/40 diarios hasta fin de mes se propone +S/560.","reservas":0,"ads":[{"name":"Video 1","objective":"Reservas web","status":"OFF","reservas":0,"reservationGoal":10,"startDate":"01-Jun","endDate":"30-Jun","duration":29,"daysRemaining":12,"dailyAmount":25,"budget":725,"spent":793.77,"balance":-68.77,"newDailyAmount":-5.7308333333,"adUrl":null}]},{"name":"Jueves x Amador","type":"Always On","status":"OFF","budget":600,"spent":308.68,"balance":291.32,"realBalance":null,"observation":"Campaña apagada por solicitud. Gasto conocido: S/271.85; saldo no usado: S/328.15.","reservas":0,"review":"Sin par en Registro de reservas x DM - Amador 2026, Hoja 1, bloque Junio.","ads":[{"name":"Video 1","objective":"Interacción/Reservas","status":"OFF","reservas":0,"startDate":"07-Jul","endDate":"18-Jul","duration":11,"daysRemaining":30,"dailyAmount":20,"budget":220,"spent":308.68,"balance":291.32,"newDailyAmount":9.7106666667,"adUrl":null}]},{"name":"Nueva carta coctelería de autor","type":"Always On","status":"OFF","budget":600,"spent":326.61,"balance":273.39,"realBalance":null,"observation":"Campaña always on del mes.","reservas":0,"ads":[{"name":"Video 1","objective":"Reconocimiento/Interacción","status":"OFF","reservas":0,"startDate":"01-Jun","endDate":"30-Jun","duration":29,"daysRemaining":12,"dailyAmount":20,"budget":580,"spent":326.61,"balance":273.39,"newDailyAmount":22.7825,"adUrl":null}]}]}
+{
+  "name": "Junio",
+  "spend": 2085.41,
+  "adSpendTotal": 2083.49,
+  "budgetTotal": 3525,
+  "balanceTotal": 1439.59,
+  "newDailyTotal": 148.6729166667,
+  "totalObservation": "Total ajustado = presupuesto actualizado considerando Padrísimo con un solo video, Jueves OFF y extra de almuerzos.",
+  "spendBreakdown": { "sales": 1758.8, "branding": 326.61 },
+  "campaigns": [
+    {
+      "name": "Padrísimo - Una noche mexa",
+      "type": "Evento",
+      "status": "Activo",
+      "budget": 500,
+      "spent": 305.67,
+      "balance": 194.33,
+      "realBalance": null,
+      "reservas": 1,
+      "ads": [
+        { "name": "Video 1", "objective": "Mensajes", "status": "Activo", "reservas": 0, "startDate": "13-Jun", "endDate": "23-Jun", "duration": 10, "daysRemaining": 5, "dailyAmount": 25, "budget": 250, "spent": 54.21, "balance": 194.33, "newDailyAmount": 38.866, "adUrl": null },
+        { "name": "Video 2", "objective": "Reservas", "status": "Finalizado", "reservas": 1, "reservationGoal": 10, "startDate": "04-Jun", "endDate": "09-Jun", "duration": 5, "daysRemaining": 0, "dailyAmount": 50, "budget": 250, "spent": 251.46, "balance": 0, "newDailyAmount": 0, "adUrl": null }
+      ]
+    },
+    {
+      "name": "Relatos - Tributo al Unplugged de Soda Stereo",
+      "type": "Evento",
+      "status": "Activo",
+      "budget": 500,
+      "spent": 245.11,
+      "balance": 254.89,
+      "realBalance": null,
+      "observation": "Alerta el 30-Jun para decidir si se reactiva hasta el 07-Jul.",
+      "reservas": 0,
+      "ads": [
+        { "name": "Video 1", "objective": "Reservas", "status": "Activo", "reservas": 0, "reservationGoal": 10, "startDate": "20-Jun", "endDate": "30-Jun", "duration": 10, "daysRemaining": 12, "dailyAmount": 50, "budget": 500, "spent": 245.11, "balance": 254.89, "newDailyAmount": 21.2408333333, "adUrl": null }
+      ]
+    },
+    {
+      "name": "Watch Party (partido 27-Jun)",
+      "type": "Evento",
+      "status": "Activo",
+      "budget": 600,
+      "spent": 105.57,
+      "balance": 494.43,
+      "realBalance": null,
+      "reservas": 2,
+      "ads": [
+        { "name": "Video 1", "objective": "Reservas/Mensajes", "status": "Activo", "reservas": 2, "reservationGoal": 10, "startDate": "17-Jun", "endDate": "26-Jun", "duration": 9, "daysRemaining": 8, "dailyAmount": 33.3333333333, "budget": 300, "spent": 70.47, "balance": 494.43, "newDailyAmount": 61.80375, "adUrl": null },
+        { "name": "Video 2", "objective": "Reservas/Mensajes", "status": "Activo", "reservas": 0, "reservationGoal": 10, "startDate": "17-Jun", "endDate": "26-Jun", "duration": 9, "daysRemaining": 8, "dailyAmount": 33.3333333333, "budget": 300, "spent": 33.18, "balance": 0, "newDailyAmount": 0, "adUrl": null }
+      ]
+    },
+    {
+      "name": "Amador de día / Reserva web almuerzos",
+      "type": "Always On",
+      "status": "OFF",
+      "budget": 725,
+      "spent": 793.77,
+      "balance": -68.77,
+      "realBalance": null,
+      "observation": "Presupuesto base casi agotado. Para sostener S/40 diarios hasta fin de mes se propone +S/560.",
+      "reservas": 0,
+      "ads": [
+        { "name": "Video 1", "objective": "Reservas web", "status": "OFF", "reservas": 0, "reservationGoal": 10, "startDate": "01-Jun", "endDate": "30-Jun", "duration": 29, "daysRemaining": 12, "dailyAmount": 25, "budget": 725, "spent": 793.77, "balance": -68.77, "newDailyAmount": -5.7308333333, "adUrl": null }
+      ]
+    },
+    {
+      "name": "Jueves x Amador",
+      "type": "Always On",
+      "status": "OFF",
+      "budget": 600,
+      "spent": 308.68,
+      "balance": 291.32,
+      "realBalance": null,
+      "observation": "Campaña apagada por solicitud. Gasto conocido: S/271.85; saldo no usado: S/328.15.",
+      "reservas": 0,
+      "review": "Sin par en Registro de reservas x DM - Amador 2026, Hoja 1, bloque Junio.",
+      "ads": [
+        { "name": "Video 1", "objective": "Interacción/Reservas", "status": "OFF", "reservas": 0, "startDate": "07-Jul", "endDate": "18-Jul", "duration": 11, "daysRemaining": 30, "dailyAmount": 20, "budget": 220, "spent": 308.68, "balance": 291.32, "newDailyAmount": 9.7106666667, "adUrl": null }
+      ]
+    },
+    {
+      "name": "Nueva carta coctelería de autor",
+      "type": "Always On",
+      "status": "OFF",
+      "budget": 600,
+      "spent": 326.61,
+      "balance": 273.39,
+      "realBalance": null,
+      "observation": "Campaña always on del mes.",
+      "reservas": 0,
+      "ads": [
+        { "name": "Video 1", "objective": "Reconocimiento/Interacción", "status": "OFF", "reservas": 0, "startDate": "01-Jun", "endDate": "30-Jun", "duration": 29, "daysRemaining": 12, "dailyAmount": 20, "budget": 580, "spent": 326.61, "balance": 273.39, "newDailyAmount": 22.7825, "adUrl": null }
+      ]
+    }
+  ]
+}
