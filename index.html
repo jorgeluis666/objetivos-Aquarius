@@ -18,6 +18,23 @@
   if (location.protocol === 'file:' && !location.pathname.replace(/\\/g, '/').includes('/dist/')) {
     location.replace(new URL('dist/index.html', location.href));
   }
+  if (location.protocol !== 'file:') {
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (input, init) => {
+      const response = await originalFetch(input, init);
+      if (String(input).includes('data/amador-ads-2026.json')) {
+        const baseData = await response.clone().json();
+        const juneResponse = await originalFetch('data/amador-june-sheet-2026.json', { cache: 'no-store' });
+        if (juneResponse.ok) {
+          const juneData = await juneResponse.json();
+          const juneIndex = baseData.months.findIndex(month => month.name === 'Junio');
+          if (juneIndex >= 0) baseData.months[juneIndex] = juneData;
+        }
+        return new Response(JSON.stringify(baseData), { status: response.status, headers: { 'Content-Type': 'application/json' } });
+      }
+      return response;
+    };
+  }
 </script>
 </head>
 <body>
