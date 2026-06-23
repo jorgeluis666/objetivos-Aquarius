@@ -16,6 +16,9 @@ function main() {
   const css = readFile('css/dashboard.css');
   const app = readFile('js/objectives.js');
   const reservationGoals = readFile('js/reservation-goals.js');
+  const messagesCalculator = readFile('js/messages-calculator.js');
+  const navigation = readFile('js/navigation.js');
+  const sidebar = readFile('js/sidebar.js');
   const data = readFile('data/amador-ads-2026.json').replace(/</g, '\\u003c');
   const juneData = readFile('data/amador-june-sheet-2026.json').replace(/</g, '\\u003c');
 
@@ -30,6 +33,18 @@ function main() {
   html = html.replace(
     '<script src="js/reservation-goals.js"></script>',
     `<script>${reservationGoals}</script>`
+  );
+  html = html.replace(
+    '<script src="js/messages-calculator.js"></script>',
+    `<script>${messagesCalculator}</script>`
+  );
+  html = html.replace(
+    '<script src="js/navigation.js"></script>',
+    `<script>${navigation}</script>`
+  );
+  html = html.replace(
+    '<script src="js/sidebar.js"></script>',
+    `<script>${sidebar}</script>`
   );
   html = html.replace(
     '</head>',

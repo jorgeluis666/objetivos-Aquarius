@@ -4,11 +4,11 @@
   const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const SHORT_MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const SERIES = {
-    total: { label: 'Total', color: '#2563eb', fill: 'rgba(37,99,235,.11)' },
-    sales: { label: 'Ventas', color: '#b91c1c', fill: 'rgba(185,28,28,.10)' },
-    branding: { label: 'Branding', color: '#7c3aed', fill: 'rgba(124,58,237,.10)' },
+    investment: { label: 'Inversion', unit: 'money', color: '#2563eb', fill: 'rgba(37,99,235,.11)' },
+    messages: { label: 'Mensajes', unit: 'count', color: '#16a34a', fill: 'rgba(22,163,74,.10)' },
+    reservations: { label: 'Reservas', unit: 'count', color: '#ea580c', fill: 'rgba(234,88,12,.10)' },
   };
-  const state = { data: null, type: 'total', month: 'Junio', chart: null };
+  const state = { data: null, type: 'investment', month: 'Junio', chart: null };
   const fmtMoney = value => value == null ? '-' : `S/. ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const fmtShort = value => {
     if (value == null) return '';
@@ -19,8 +19,17 @@
   function valueFor(name, type) {
     const month = sourceMonth(name);
     if (!month) return null;
-    if (type === 'total') return month.spend;
-    return month.spendBreakdown?.[type] ?? null;
+    if (type === 'investment') return month.spend;
+    if (Number.isFinite(Number(month[type]))) return Number(month[type]);
+    const field = type === 'reservations' ? 'reservas' : 'messages';
+    const ads = (month.campaigns || []).flatMap(campaign => campaign.ads || []);
+    if (!ads.some(ad => ad[field] != null)) return null;
+    return ads.reduce((total, ad) => total + Number(ad[field] || 0), 0);
+  }
+  function formatSeriesValue(value, series, short = false) {
+    if (value == null) return '';
+    if (series.unit === 'money') return short ? fmtShort(value) : fmtMoney(value);
+    return Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 });
   }
   function renderTabs() {
     const host = document.getElementById('month-tabs');
@@ -137,7 +146,8 @@
     body.innerHTML = rows.join('');
   }
   function chartOptions(series) {
-    return { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 24, right: 12, left: 4 } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${series.label}: ${fmtMoney(context.raw)}` } } }, scales: { x: { grid: { display: false }, border: { color: '#cbd5e1' }, ticks: { color: '#7890b5', font: { size: 10 } } }, y: { beginAtZero: true, suggestedMax: 3500, border: { display: false }, grid: { color: 'rgba(148,163,184,.20)' }, ticks: { color: '#7890b5', font: { size: 10 }, callback: value => value === 0 ? 'S/. 0' : `S/. ${(value / 1000).toFixed(1)}k` } } } };
+    const isMoney = series.unit === 'money';
+    return { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 24, right: 12, left: 4 } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${series.label}: ${formatSeriesValue(context.raw, series)}` } } }, scales: { x: { grid: { display: false }, border: { color: '#cbd5e1' }, ticks: { color: '#7890b5', font: { size: 10 } } }, y: { beginAtZero: true, suggestedMax: isMoney ? 3500 : undefined, border: { display: false }, grid: { color: 'rgba(148,163,184,.20)' }, ticks: { precision: 0, color: '#7890b5', font: { size: 10 }, callback: value => isMoney ? (value === 0 ? 'S/. 0' : `S/. ${(value / 1000).toFixed(1)}k`) : Number(value).toLocaleString('es-PE') } } } };
   }
   function renderChart() {
     const series = SERIES[state.type];
@@ -148,7 +158,7 @@
     const canvas = document.getElementById('chart-monthly');
     if (typeof Chart === 'undefined') { canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Grafico no disponible sin conexion.</strong><span>Los totales mensuales siguen visibles debajo.</span></div>'; return; }
     if (state.chart) state.chart.destroy();
-    state.chart = new Chart(canvas, { type: 'line', data: { labels: SHORT_MONTHS, datasets: [{ label: series.label, data: values, borderColor: series.color, backgroundColor: series.fill, borderWidth: 2.5, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: series.color, pointBorderColor: series.color, tension: .25, fill: true, spanGaps: false }] }, options: chartOptions(series), plugins: [{ id: 'valueLabels', afterDatasetsDraw(chart) { const ctx = chart.ctx; const meta = chart.getDatasetMeta(0); ctx.save(); ctx.fillStyle = series.color; ctx.font = '600 10px Inter, sans-serif'; ctx.textAlign = 'center'; meta.data.forEach((point,index) => { const value = values[index]; if (value == null) return; ctx.fillText(fmtShort(value), point.x, point.y - 13); }); ctx.restore(); } }] });
+    state.chart = new Chart(canvas, { type: 'line', data: { labels: SHORT_MONTHS, datasets: [{ label: series.label, data: values, borderColor: series.color, backgroundColor: series.fill, borderWidth: 2.5, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: series.color, pointBorderColor: series.color, tension: .25, fill: true, spanGaps: false }] }, options: chartOptions(series), plugins: [{ id: 'valueLabels', afterDatasetsDraw(chart) { const ctx = chart.ctx; const meta = chart.getDatasetMeta(0); ctx.save(); ctx.fillStyle = series.color; ctx.font = '600 10px Inter, sans-serif'; ctx.textAlign = 'center'; meta.data.forEach((point,index) => { const value = values[index]; if (value == null) return; ctx.fillText(formatSeriesValue(value, series, true), point.x, point.y - 13); }); ctx.restore(); } }] });
   }
   function wireSelector() { document.getElementById('spend-type-select').addEventListener('change', event => { state.type = event.target.value; renderChart(); }); }
   async function init() {

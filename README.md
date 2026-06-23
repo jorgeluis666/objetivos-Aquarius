@@ -2,6 +2,16 @@
 
 Dashboard de Agencia Lima Retail para controlar la inversion publicitaria de Amador.
 
+Version actual: `v1.1.0`.
+
+## Versionado
+
+El proyecto usa la nomenclatura `vMAJOR.MINOR.PATCH`:
+
+- `MAJOR`: cambios incompatibles o una nueva etapa del tablero.
+- `MINOR`: nuevos modulos, indicadores o funciones compatibles.
+- `PATCH`: correcciones visuales, de datos o funcionamiento.
+
 ## Modulo activo
 
 - Gasto mensual total.

@@ -30,12 +30,16 @@
 </head>
 <body>
 <div class="shell">
-  <aside class="sidebar">
-    <div class="s-brand"><div class="s-title">Amador</div><div class="s-sub">Lima Retail | 2026</div></div>
-    <div class="s-group-lbl">Modulo activo</div>
-    <button class="s-item active" type="button">
+  <aside class="sidebar" id="amador-sidebar">
+    <div class="s-brand"><div class="s-title">Amador</div><div class="s-sub">Lima Retail | 2026 <span class="app-version">v1.1.0</span></div></div>
+    <div class="s-group-lbl">Modulos activos</div>
+    <button class="s-item active" type="button" data-view-target="view-obj">
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
       <div class="s-text"><div class="s-title-nav">Gasto publicitario</div><div class="s-desc-nav">Branding y ventas</div></div>
+    </button>
+    <button class="s-item" type="button" data-view-target="view-messages">
+      <div class="s-icon"><svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg></div>
+      <div class="s-text"><div class="s-title-nav">Calculadora de Mensajes</div><div class="s-desc-nav">WhatsApp por CPL</div></div>
     </button>
     <div class="s-group-lbl paused-label">Modulos pausados</div>
     <button class="s-item disabled" type="button" disabled aria-disabled="true"><div class="s-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><div class="s-text"><div class="s-title-nav">Comparativo YoY</div><div class="s-desc-nav">Evolucion interanual</div></div><span class="module-status">Proximamente</span></button>
@@ -44,26 +48,115 @@
     <button class="s-item disabled" type="button" disabled aria-disabled="true"><div class="s-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div class="s-text"><div class="s-title-nav">Usuarios y Claves</div><div class="s-desc-nav">Accesos y alertas</div></div><span class="module-status">Proximamente</span></button>
     <div class="s-modulo-activo"><div class="s-ma-label">CUENTA</div><div class="s-ma-name">Amador</div><div class="s-ma-desc">Control de pauta digital</div></div>
   </aside>
+  <button
+    class="sidebar-toggle"
+    type="button"
+    data-sidebar-toggle
+    aria-controls="amador-sidebar"
+    aria-expanded="true"
+    aria-label="Ocultar panel lateral"
+    title="Ocultar panel lateral"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+  </button>
   <main class="main">
-    <div class="topbar"><div><div class="topbar-title">Gasto publicitario 2026</div><div class="topbar-caption">Agencia Lima Retail</div></div><div class="topbar-meta"><span class="topbar-pill sync ok"><span class="sync-dot"></span><span>Datos al 19 de junio</span></span></div></div>
+    <div class="topbar"><div><div class="topbar-title" id="topbar-title">Gasto publicitario 2026</div><div class="topbar-caption" id="topbar-caption">Agencia Lima Retail</div></div><div class="topbar-meta"><span class="topbar-pill sync ok"><span class="sync-dot"></span><span id="topbar-status">Datos al 19 de junio</span></span></div></div>
     <div class="content">
       <section class="view visible" id="view-obj">
         <div class="sec-lbl">01 - Inversion publicitaria</div>
-        <h1 class="section-title">Gasto 2026 por mes</h1>
-        <p class="section-desc">Evolucion mensual de la inversion publicitaria. Usa el selector para revisar el gasto total o su distribucion entre Branding y Ventas.</p>
+        <h1 class="section-title">Indicadores 2026 por mes</h1>
+        <p class="section-desc">Evolucion mensual de la inversion publicitaria, los mensajes y las reservas registradas.</p>
         <div class="panel chart-panel">
-          <div class="panel-head chart-panel-head"><div><div class="panel-title" id="chart-title">Evolucion mensual | Total | 2026</div><div class="panel-sub">Gasto real registrado de enero a junio</div></div><div class="chart-controls"><select id="spend-type-select" class="ch-select"><option value="total">Total</option><option value="sales">Ventas</option><option value="branding">Branding</option></select><div class="chart-legend"><span><i class="legend-line total"></i><b id="legend-label">Total</b></span></div></div></div>
+          <div class="panel-head chart-panel-head"><div><div class="panel-title" id="chart-title">Evolucion mensual | Inversion | 2026</div><div class="panel-sub">Indicadores reales registrados de enero a junio</div></div><div class="chart-controls"><select id="spend-type-select" class="ch-select"><option value="investment">Inversion</option><option value="messages">Mensajes</option><option value="reservations">Reservas</option></select><div class="chart-legend"><span><i class="legend-line investment"></i><b id="legend-label">Inversion</b></span></div></div></div>
           <div class="chart-wrap h-360"><canvas id="chart-monthly"></canvas></div>
         </div>
         <div class="month-tabs" id="month-tabs"></div>
         <div class="panel campaigns-panel"><div class="panel-head"><div><div class="panel-title" id="campaigns-title">Campanas de Junio 2026</div><div class="panel-sub" id="campaigns-sub"></div></div></div><div class="table-scroll"><table class="data-table campaigns-table"><thead><tr><th>Tipo</th><th>Campana</th><th>Anuncio</th><th>Objetivo</th><th>Reservas</th><th>Estado</th><th>Fecha inicio</th><th>Fecha fin / dias restantes</th><th class="num">Duracion</th><th class="num">Importe diario</th><th class="num">Presupuesto x anuncio</th><th class="num">Gasto x anuncio</th><th class="num">Presupuesto x campana</th><th class="num">Gasto x campana</th><th class="num">Saldo x anuncio</th><th class="num">Saldo por campana</th><th class="num">Saldo x campana real</th><th class="num">Nuevo ppto diario</th><th>Observaciones</th><th>URL anuncios</th></tr></thead><tbody id="campaigns-body"></tbody></table></div></div>
       </section>
-      <div class="site-footer"><span>Fuente: Distribucion-amador + Registro de reservas x DM</span><span>Sincronizado por Agencia Lima Retail</span></div>
+
+      <section class="view" id="view-messages">
+        <div class="sec-lbl">02 - Planificacion de mensajes</div>
+        <h1 class="section-title">Calculadora de Mensajes</h1>
+        <p class="section-desc">Proyecta la inversion necesaria para campañas de WhatsApp según la facturación pendiente, el ticket promedio y el costo por lead de cada conjunto de anuncios.</p>
+
+        <div class="messages-layout">
+          <div class="panel messages-planner">
+            <div class="panel-head messages-panel-head">
+              <div>
+                <div class="messages-kicker">Campaña de Mensajes / WhatsApp</div>
+                <div class="panel-title">Objetivo comercial e inversión por CPL</div>
+                <div class="panel-sub">Los resultados se actualizan y guardan automáticamente.</div>
+              </div>
+              <button class="messages-btn secondary" id="messages-reset" type="button">Restablecer valores</button>
+            </div>
+
+            <div class="messages-controls">
+              <label class="messages-field" for="messages-target">
+                <span>Facturación objetivo</span>
+                <span class="messages-input-wrap"><b>S/</b><input id="messages-target" type="number" min="0" step="100"></span>
+              </label>
+              <label class="messages-field" for="messages-actual">
+                <span>Facturación ya realizada</span>
+                <span class="messages-input-wrap"><b>S/</b><input id="messages-actual" type="number" min="0" step="100"></span>
+              </label>
+              <label class="messages-field" for="messages-ticket">
+                <span>Ticket promedio</span>
+                <span class="messages-input-wrap"><b>S/</b><input id="messages-ticket" type="number" min="0.01" step="10"></span>
+              </label>
+              <label class="messages-field" for="messages-cpl">
+                <span>CPL promedio</span>
+                <span class="messages-input-wrap"><b>S/</b><input id="messages-cpl" type="number" min="0" step="0.10"></span>
+              </label>
+            </div>
+
+            <div class="messages-kpis">
+              <div class="messages-kpi"><span>Facturación restante</span><strong id="messages-remaining">S/ 0.00</strong></div>
+              <div class="messages-kpi"><span>Ventas necesarias</span><strong id="messages-sales">0</strong></div>
+              <div class="messages-kpi investment"><span>Inversión total en Mensajes</span><strong id="messages-investment">S/ 0.00</strong></div>
+            </div>
+
+            <div class="messages-table-head">
+              <div><div class="panel-title">Conjuntos de anuncios</div><div class="panel-sub">Edita el nombre, los mensajes objetivo y el CPL de cada conjunto.</div></div>
+              <button class="messages-btn secondary" id="messages-add-set" type="button">+ Agregar conjunto</button>
+            </div>
+            <div class="messages-table-wrap">
+              <table class="messages-table">
+                <thead><tr><th>Conjunto</th><th class="num">Mensajes objetivo</th><th class="num">Costo por lead</th><th class="num">Inversión</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+                <tbody id="messages-sets"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <aside class="panel messages-summary">
+            <div>
+              <div class="messages-kicker">Resumen</div>
+              <div class="panel-title">Propuesta de inversión</div>
+              <div class="panel-sub">Lista para compartir o descargar.</div>
+            </div>
+            <div class="messages-summary-total"><span>Inversión total</span><strong id="messages-summary-total">S/ 0.00</strong></div>
+            <div class="messages-formula">
+              <span>Fórmulas aplicadas</span>
+              <p>Ventas necesarias = facturación restante ÷ ticket promedio</p>
+              <p>Inversión = mensajes objetivo × costo por lead</p>
+            </div>
+            <div class="messages-actions">
+              <button class="messages-btn secondary" id="messages-copy" type="button">Copiar resumen</button>
+              <button class="messages-btn primary" id="messages-export" type="button">Exportar a Excel</button>
+            </div>
+            <div class="messages-feedback" id="messages-feedback" aria-live="polite"></div>
+          </aside>
+        </div>
+      </section>
+
+      <div class="site-footer"><span id="footer-source">Fuente: Distribucion-amador + Registro de reservas x DM</span><span id="footer-status">Sincronizado por Agencia Lima Retail</span></div>
     </div>
   </main>
 </div>
 <script src="js/objectives.js"></script>
 <script src="js/reservation-goals.js"></script>
+<script src="js/messages-calculator.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/sidebar.js"></script>
 <script src="auth-login.js"></script>
 <script>
   AuthLogin.init({ password: 'Amador2026' });
