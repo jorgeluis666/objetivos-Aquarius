@@ -184,6 +184,11 @@
     persist();
     renderRows();
     renderKpis();
+    const newRowName = document.querySelector(`#messages-sets tr[data-index="${state.sets.length - 1}"] [data-field="name"]`);
+    if (newRowName) {
+      newRowName.focus();
+      newRowName.select();
+    }
   }
 
   function removeSet(index) {
@@ -307,6 +312,7 @@
       if (button) removeSet(Number(button.dataset.removeSet));
     });
     document.getElementById('messages-add-set').addEventListener('click', addSet);
+    document.getElementById('messages-add-row').addEventListener('click', addSet);
     document.getElementById('messages-reset').addEventListener('click', reset);
     document.getElementById('messages-copy').addEventListener('click', copySummary);
     document.getElementById('messages-export').addEventListener('click', exportExcel);

@@ -261,6 +261,18 @@
   vertical-align: middle;
 }
 
+.messages-add-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: #f8fafc;
+}
+
+.messages-add-row .messages-btn {
+  min-width: 132px;
+}
+
 .messages-table .num {
   text-align: right;
 }
