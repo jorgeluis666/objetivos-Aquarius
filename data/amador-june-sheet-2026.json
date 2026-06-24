@@ -1,27 +1,30 @@
 {
   "name": "Junio",
-  "spend": 2085.41,
+  "spend": 2724.33,
   "messages": 0,
   "reservations": 3,
-  "adSpendTotal": 2083.49,
+  "adSpendTotal": 2714.77,
   "budgetTotal": 3525,
-  "balanceTotal": 1439.59,
-  "newDailyTotal": 148.6729166667,
+  "balanceTotal": 800.67,
+  "newDailyTotal": 374.18,
   "totalObservation": "Total ajustado = presupuesto actualizado considerando Padrísimo con un solo video, Jueves OFF y extra de almuerzos.",
-  "spendBreakdown": { "sales": 1758.8, "branding": 326.61 },
+  "spendBreakdown": {
+    "sales": 2397.72,
+    "branding": 326.61
+  },
   "campaigns": [
     {
       "name": "Padrísimo - Una noche mexa",
       "type": "Evento",
-      "status": "Activo",
+      "status": "OFF",
       "budget": 500,
-      "spent": 305.67,
-      "balance": 194.33,
+      "spent": 485.93,
+      "balance": 14.07,
       "realBalance": null,
       "reservas": 1,
       "ads": [
-        { "name": "Video 1", "objective": "Mensajes", "status": "Activo", "reservas": 0, "startDate": "13-Jun", "endDate": "23-Jun", "duration": 10, "daysRemaining": 5, "dailyAmount": 25, "budget": 250, "spent": 54.21, "balance": 194.33, "newDailyAmount": 38.866, "adUrl": null },
-        { "name": "Video 2", "objective": "Reservas", "status": "Finalizado", "reservas": 1, "reservationGoal": 10, "startDate": "04-Jun", "endDate": "09-Jun", "duration": 5, "daysRemaining": 0, "dailyAmount": 50, "budget": 250, "spent": 251.46, "balance": 0, "newDailyAmount": 0, "adUrl": null }
+        { "name": "Video 1", "objective": "Mensajes", "status": "OFF", "reservas": 0, "messages": 0, "startDate": "13-Jun", "endDate": "23-Jun", "duration": 10, "daysRemaining": 0, "dailyAmount": 25, "budget": 250, "spent": 234.47, "balance": 15.53, "newDailyAmount": 0, "adUrl": null },
+        { "name": "Video 2", "objective": "Reservas", "status": "Finalizado", "reservas": 1, "reservationGoal": 10, "messages": 0, "startDate": "04-Jun", "endDate": "09-Jun", "duration": 5, "daysRemaining": 0, "dailyAmount": 50, "budget": 250, "spent": 251.46, "balance": -251.46, "newDailyAmount": 0, "adUrl": null }
       ]
     },
     {
@@ -29,13 +32,13 @@
       "type": "Evento",
       "status": "Activo",
       "budget": 500,
-      "spent": 245.11,
-      "balance": 254.89,
+      "spent": 347.41,
+      "balance": 152.59,
       "realBalance": null,
       "observation": "Alerta el 30-Jun para decidir si se reactiva hasta el 07-Jul.",
       "reservas": 0,
       "ads": [
-        { "name": "Video 1", "objective": "Reservas", "status": "Activo", "reservas": 0, "reservationGoal": 10, "startDate": "20-Jun", "endDate": "30-Jun", "duration": 10, "daysRemaining": 12, "dailyAmount": 50, "budget": 500, "spent": 245.11, "balance": 254.89, "newDailyAmount": 21.2408333333, "adUrl": null }
+        { "name": "Video 1", "objective": "Reservas", "status": "Activo", "reservas": 0, "reservationGoal": 10, "messages": 0, "startDate": "20-Jun", "endDate": "30-Jun", "duration": 10, "daysRemaining": 7, "dailyAmount": 50, "budget": 500, "spent": 347.41, "balance": 152.59, "newDailyAmount": 49.63, "adUrl": null }
       ]
     },
     {
@@ -43,13 +46,13 @@
       "type": "Evento",
       "status": "Activo",
       "budget": 600,
-      "spent": 105.57,
-      "balance": 494.43,
+      "spent": 452.34,
+      "balance": 147.66,
       "realBalance": null,
       "reservas": 2,
       "ads": [
-        { "name": "Video 1", "objective": "Reservas/Mensajes", "status": "Activo", "reservas": 2, "reservationGoal": 10, "startDate": "17-Jun", "endDate": "26-Jun", "duration": 9, "daysRemaining": 8, "dailyAmount": 33.3333333333, "budget": 300, "spent": 70.47, "balance": 494.43, "newDailyAmount": 61.80375, "adUrl": null },
-        { "name": "Video 2", "objective": "Reservas/Mensajes", "status": "Activo", "reservas": 0, "reservationGoal": 10, "startDate": "17-Jun", "endDate": "26-Jun", "duration": 9, "daysRemaining": 8, "dailyAmount": 33.3333333333, "budget": 300, "spent": 33.18, "balance": 0, "newDailyAmount": 0, "adUrl": null }
+        { "name": "Video 1", "objective": "Reservas/Mensajes", "status": "Activo", "reservas": 2, "reservationGoal": 10, "messages": 0, "startDate": "17-Jun", "endDate": "26-Jun", "duration": 9, "daysRemaining": 3, "dailyAmount": 33.33, "budget": 300, "spent": 380.7, "balance": 147.66, "newDailyAmount": 150.78, "adUrl": null },
+        { "name": "Video 2", "objective": "Reservas/Mensajes", "status": "Activo", "reservas": 0, "reservationGoal": 10, "messages": 0, "startDate": "17-Jun", "endDate": "26-Jun", "duration": 9, "daysRemaining": 3, "dailyAmount": 33.33, "budget": 300, "spent": 71.67, "balance": 0, "newDailyAmount": 0, "adUrl": null }
       ]
     },
     {
@@ -57,13 +60,13 @@
       "type": "Always On",
       "status": "OFF",
       "budget": 725,
-      "spent": 793.77,
-      "balance": -68.77,
+      "spent": 803.36,
+      "balance": -78.36,
       "realBalance": null,
       "observation": "Presupuesto base casi agotado. Para sostener S/40 diarios hasta fin de mes se propone +S/560.",
       "reservas": 0,
       "ads": [
-        { "name": "Video 1", "objective": "Reservas web", "status": "OFF", "reservas": 0, "reservationGoal": 10, "startDate": "01-Jun", "endDate": "30-Jun", "duration": 29, "daysRemaining": 12, "dailyAmount": 25, "budget": 725, "spent": 793.77, "balance": -68.77, "newDailyAmount": -5.7308333333, "adUrl": null }
+        { "name": "Video 1", "objective": "Reservas web", "status": "OFF", "reservas": 0, "reservationGoal": 10, "messages": 0, "startDate": "01-Jun", "endDate": "30-Jun", "duration": 29, "daysRemaining": 7, "dailyAmount": 25, "budget": 725, "spent": 793.77, "balance": -78.36, "newDailyAmount": 114.77, "adUrl": null }
       ]
     },
     {
@@ -76,9 +79,8 @@
       "realBalance": null,
       "observation": "Campaña apagada por solicitud. Gasto conocido: S/271.85; saldo no usado: S/328.15.",
       "reservas": 0,
-      "review": "Sin par en Registro de reservas x DM - Amador 2026, Hoja 1, bloque Junio.",
       "ads": [
-        { "name": "Video 1", "objective": "Interacción/Reservas", "status": "OFF", "reservas": 0, "startDate": "07-Jul", "endDate": "18-Jul", "duration": 11, "daysRemaining": 30, "dailyAmount": 20, "budget": 220, "spent": 308.68, "balance": 291.32, "newDailyAmount": 9.7106666667, "adUrl": null }
+        { "name": "Video 1", "objective": "Interacción/Reservas", "status": "OFF", "reservas": 0, "messages": 0, "startDate": "07-Jul", "endDate": "18-Jul", "duration": 11, "daysRemaining": 25, "dailyAmount": 20, "budget": 220, "spent": 308.68, "balance": 291.32, "newDailyAmount": 12.35, "adUrl": null }
       ]
     },
     {
@@ -92,7 +94,7 @@
       "observation": "Campaña always on del mes.",
       "reservas": 0,
       "ads": [
-        { "name": "Video 1", "objective": "Reconocimiento/Interacción", "status": "OFF", "reservas": 0, "startDate": "01-Jun", "endDate": "30-Jun", "duration": 29, "daysRemaining": 12, "dailyAmount": 20, "budget": 580, "spent": 326.61, "balance": 273.39, "newDailyAmount": 22.7825, "adUrl": null }
+        { "name": "Video 1", "objective": "Reconocimiento/Interacción", "status": "OFF", "reservas": 0, "messages": 0, "startDate": "01-Jun", "endDate": "30-Jun", "duration": 29, "daysRemaining": 7, "dailyAmount": 20, "budget": 580, "spent": 326.61, "balance": 273.39, "newDailyAmount": 46.66, "adUrl": null }
       ]
     }
   ]
