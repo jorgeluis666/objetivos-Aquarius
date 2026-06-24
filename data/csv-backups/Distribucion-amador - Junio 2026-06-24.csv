@@ -1,0 +1,11 @@
+Junio - Distribución de presupuesto Amador (actualizado),,,,,,,,,,,,,,,,,,,,,
+Tipo,Campaña,Anuncio,Objetivo,Reservas,Objetivo Reservas,Mensajes ,Estado,Fecha de inicio,Fecha de fin,Duración (días),Días restantes,Importe diario,Presupuesto total x anuncio,Gasto x Anuncio,Presupuesto total x campaña,Gasto x Campaña,Saldo x anuncio,Saldo por campaña,Proyección real de gasto mesual,Nuevo ppto diario,Observaciones
+Evento,Padrísimo - Una noche mexa,Video 1,Mensajes,0,-,0,OFF,13/6/2026,23/6/2026,10,0,25.00,250.00,234.47,500,485.93,15.53,14.07,485.93,0.00,
+,,Video 2,Reservas,1,10,0,Finalizado,4/6/2026,9/6/2026,5,0,50.00,250.00,251.46,,,-251.46,,,0.00,
+Evento,Relatos - Tributo al Unplugged de Soda Stereo,Video 1,Reservas,0,10,0,Activo,20/6/2026,30/6/2026,10,7,50.00,500.00,347.41,500,347.41,152.59,152.59,347.41,49.63,Alerta el 30-Jun para decidir si se reactiva hasta el 07-Jul.
+Evento,Watch Party (partido 27-Jun),Video 1,Reservas/Mensajes,2,10,0,Activo,17/6/2026,26/6/2026,9,3,33.33,300.00,380.70,600,452.34,147.66,147.66,452.34,150.78,
+,,Video 2,Reservas/Mensajes,0,10,0,Activo,17/6/2026,26/6/2026,9,3,33.33,300.00,71.67,,,0.00,,,0.00,
+Always On,Amador de día / Reserva web almuerzos,Video 1,Reservas web,0,10,0,OFF,1/6/2026,30/6/2026,29,7,25.00,725.00,793.77,725,803.36,-78.36,-78.36,803.36,114.77,Presupuesto base casi agotado. Para sostener S/40 diarios hasta fin de mes se propone +S/560.
+Always On,Jueves x Amador,Video 1,Interacción/Reservas,0,-,0,OFF,7/7/2026,18/7/2026,11,25,20.00,220.00,308.68,600,308.68,291.32,291.32,308.68,12.35,Campaña apagada por solicitud. Gasto conocido: S/271.85; saldo no usado: S/328.15.
+Always On,Nueva carta coctelería de autor,Video 1,Reconocimiento/Interacción,0,-,0,OFF,1/6/2026,30/6/2026,29,7,20.00,580.00,326.61,600,326.61,273.39,273.39,326.61,46.66,Campaña always on del mes.
+Total actualizado junio,,,,0,0,,,,,,,,,2714.77,3525.00,2724.33,550.67,800.67,2724.33,374.18,"Total ajustado = presupuesto actualizado considerando Padrísimo con un solo video, Jueves OFF y extra de almuerzos."
