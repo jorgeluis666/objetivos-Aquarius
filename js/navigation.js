@@ -4,8 +4,8 @@
     'view-obj': {
       title: 'Gasto publicitario 2026',
       caption: 'Agencia Lima Retail',
-      status: 'Datos al 19 de junio',
-      source: 'Fuente: Distribucion-amador + Registro de reservas x DM',
+      status: 'Datos al 24 de junio',
+      source: 'Fuente: Distribucion-amador / Junio actualizado',
       footer: 'Sincronizado por Agencia Lima Retail',
     },
     'view-messages': {
