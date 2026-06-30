@@ -1,8 +1,8 @@
 {
   "account": "Amador",
   "year": 2026,
-  "cutoff": "2026-06-24",
-  "source": "Distribucion-amador / Junio (actualizado 2026-06-24)",
+  "cutoff": "2026-06-29",
+  "source": "Distribucion-amador / Junio (sincronizacion Google Sheets)",
   "months": [
     {
       "name": "Enero",
