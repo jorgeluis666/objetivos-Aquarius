@@ -72,7 +72,7 @@
         {
           "name": "Video 2",
           "objective": "Reservas",
-          "status": "Finalizado",
+          "status": "OFF",
           "reservas": 11,
           "reservationGoal": null,
           "messages": 0,
@@ -130,7 +130,7 @@
     {
       "name": "Watch Party (partido 27-Jun)",
       "type": "Evento",
-      "status": "Activo",
+      "status": "OFF",
       "budget": 600,
       "spent": 452.34,
       "balance": 147.66,
@@ -141,7 +141,7 @@
         {
           "name": "Video 1",
           "objective": "Reservas/Mensajes",
-          "status": "Activo",
+          "status": "OFF",
           "reservas": 6,
           "reservationGoal": 10,
           "messages": 91,
@@ -162,7 +162,7 @@
         {
           "name": "Video 2",
           "objective": "Reservas/Mensajes",
-          "status": "Activo",
+          "status": "OFF",
           "reservas": 0,
           "reservationGoal": null,
           "messages": 6,

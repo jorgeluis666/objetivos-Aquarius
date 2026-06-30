@@ -73,7 +73,7 @@
           "reservas": 1,
           "ads": [
             { "name": "Video 1", "objective": "Mensajes", "status": "OFF", "reservas": 0, "messages": 0, "startDate": "13-Jun", "endDate": "23-Jun", "duration": 10, "daysRemaining": 0, "dailyAmount": 25, "budget": 250, "spent": 234.47, "balance": 15.53, "newDailyAmount": 0, "adUrl": null },
-            { "name": "Video 2", "objective": "Reservas", "status": "Finalizado", "reservas": 1, "reservationGoal": 10, "messages": 0, "startDate": "04-Jun", "endDate": "09-Jun", "duration": 5, "daysRemaining": 0, "dailyAmount": 50, "budget": 250, "spent": 251.46, "balance": -251.46, "newDailyAmount": 0, "adUrl": null }
+            { "name": "Video 2", "objective": "Reservas", "status": "OFF", "reservas": 1, "reservationGoal": 10, "messages": 0, "startDate": "04-Jun", "endDate": "09-Jun", "duration": 5, "daysRemaining": 0, "dailyAmount": 50, "budget": 250, "spent": 251.46, "balance": -251.46, "newDailyAmount": 0, "adUrl": null }
           ]
         },
         {
@@ -93,15 +93,15 @@
         {
           "name": "Watch Party (partido 27-Jun)",
           "type": "Evento",
-          "status": "Activo",
+          "status": "OFF",
           "budget": 600,
           "spent": 452.34,
           "balance": 147.66,
           "realBalance": null,
           "reservas": 2,
           "ads": [
-            { "name": "Video 1", "objective": "Reservas/Mensajes", "status": "Activo", "reservas": 2, "reservationGoal": 10, "messages": 0, "startDate": "17-Jun", "endDate": "26-Jun", "duration": 9, "daysRemaining": 3, "dailyAmount": 33.33, "budget": 300, "spent": 380.7, "balance": 147.66, "newDailyAmount": 150.78, "adUrl": null },
-            { "name": "Video 2", "objective": "Reservas/Mensajes", "status": "Activo", "reservas": 0, "reservationGoal": 10, "messages": 0, "startDate": "17-Jun", "endDate": "26-Jun", "duration": 9, "daysRemaining": 3, "dailyAmount": 33.33, "budget": 300, "spent": 71.67, "balance": 0, "newDailyAmount": 0, "adUrl": null }
+            { "name": "Video 1", "objective": "Reservas/Mensajes", "status": "OFF", "reservas": 2, "reservationGoal": 10, "messages": 0, "startDate": "17-Jun", "endDate": "26-Jun", "duration": 9, "daysRemaining": 3, "dailyAmount": 33.33, "budget": 300, "spent": 380.7, "balance": 147.66, "newDailyAmount": 150.78, "adUrl": null },
+            { "name": "Video 2", "objective": "Reservas/Mensajes", "status": "OFF", "reservas": 0, "reservationGoal": 10, "messages": 0, "startDate": "17-Jun", "endDate": "26-Jun", "duration": 9, "daysRemaining": 3, "dailyAmount": 33.33, "budget": 300, "spent": 71.67, "balance": 0, "newDailyAmount": 0, "adUrl": null }
           ]
         },
         {
