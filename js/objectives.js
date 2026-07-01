@@ -5,11 +5,10 @@
   const SHEET_GID = '1847912276';
   const LIVE_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
   const SYNC_INTERVAL_MS = 60 * 60 * 1000;
-  const GOALS_KEY = 'amador-reservation-goals-v1';
+  const GOALS_KEY = 'amador-reservation-campaign-goals-v1';
   const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const SHORT_MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const REQUIRED_HEADERS = ['Tipo','Campaña','Anuncio','Objetivo','Reservas','Objetivo Reservas','Mensajes','Costo por mensaje','Costo por reserva','Ratio de reservas','Estado','Fecha de inicio','Fecha de fin','Duración (días)','Días restantes','Importe diario','Presupuesto total x anuncio','Gasto x Anuncio','Presupuesto total x campaña','Gasto x Campaña','Saldo x anuncio','Saldo por campaña','Proyección real de gasto mesual'];
-  const OPTIONAL_HEADERS = ['Nuevo ppto diario','Observaciones'];
+  const EXPECTED_HEADERS = ['Tipo','Campaña','Anuncio','Objetivo','Reservas','Objetivo Reservas','Mensajes','Costo por mensaje','Costo por reserva','Ratio de reservas','Estado','Fecha de inicio','Fecha de fin','Duración (días)','Días restantes','Importe diario','Presupuesto total x anuncio','Gasto x Anuncio','Presupuesto total x campaña','Gasto x Campaña','Saldo x anuncio','Saldo por campaña','Proyección real de gasto mesual','Nuevo ppto diario','Observaciones'];
   const SERIES = {
     investment: { label: 'Inversion', unit: 'money', color: '#2563eb', fill: 'rgba(37,99,235,.11)' },
     messages: { label: 'Mensajes', unit: 'count', color: '#16a34a', fill: 'rgba(22,163,74,.10)' },
@@ -67,10 +66,18 @@
   }
   function get(row, map, name) { return row[map[normalizeHeader(name)]] ?? ''; }
   function validateHeaders(headers) {
-    const map = headerMap(headers);
-    const missing = REQUIRED_HEADERS.filter(name => map[normalizeHeader(name)] == null);
-    if (missing.length) throw new Error(`Cabeceras faltantes: ${missing.join(', ')}`);
-    return map;
+    const visibleHeaders = headers.map(header => String(header || '').trim()).filter(Boolean);
+    const expected = EXPECTED_HEADERS.map(normalizeHeader);
+    const actual = visibleHeaders.map(normalizeHeader);
+    const missing = EXPECTED_HEADERS.filter(name => !actual.includes(normalizeHeader(name)));
+    const mismatched = EXPECTED_HEADERS
+      .map((name, index) => ({ expected: name, actual: visibleHeaders[index] || '(vacío)', ok: actual[index] === expected[index] }))
+      .filter(item => !item.ok);
+    if (missing.length || mismatched.length) {
+      const orderDetails = mismatched.slice(0, 5).map(item => `"${item.expected}" recibido como "${item.actual}"`).join('; ');
+      throw new Error(`Cabeceras del feed no coinciden. Faltantes: ${missing.join(', ') || 'ninguna'}. Orden/nombre: ${orderDetails || 'ok'}.`);
+    }
+    return headerMap(headers);
   }
   function dateLabel(value) {
     const text = String(value || '').trim();
@@ -79,10 +86,16 @@
     const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     return `${match[1].padStart(2, '0')}-${months[Number(match[2]) - 1] || 'Mes'}`;
   }
-  function goalKey(campaign, ad) { return `${campaign}::${ad}`; }
-  function effectiveGoal(campaign, ad) {
-    const saved = state.goals[goalKey(campaign.name, ad.name)];
-    return saved === '' || saved == null ? ad.reservationGoal : Number(saved);
+  function campaignGoalFromAds(campaign) {
+    const fromCampaign = Number(campaign.reservationGoal);
+    if (Number.isFinite(fromCampaign) && fromCampaign > 0) return fromCampaign;
+    const ad = (campaign.ads || []).find(item => Number(item.reservationGoal) > 0);
+    return ad ? Number(ad.reservationGoal) : null;
+  }
+  function goalKey(campaignName) { return campaignName; }
+  function effectiveGoal(campaign) {
+    const saved = state.goals[goalKey(campaign.name)];
+    return saved === '' || saved == null ? campaignGoalFromAds(campaign) : Number(saved);
   }
   function sourceMonth(name) { return state.data.months.find(month => month.name === name); }
   function cloneData(data) { return JSON.parse(JSON.stringify(data)); }
@@ -127,6 +140,7 @@
           spent: parseNumber(get(row, map, 'Gasto x Campaña')),
           balance: parseNumber(get(row, map, 'Saldo por campaña')),
           realBalance: null,
+          reservationGoal: null,
           reservas: 0,
           messages: 0,
           ads: []
@@ -160,6 +174,7 @@
       if (ad.costPerReservation == null && ad.reservas > 0 && ad.spent != null) ad.costPerReservation = ad.spent / ad.reservas;
       if (ad.reservationRatio == null && ad.messages > 0) ad.reservationRatio = ad.reservas / ad.messages * 100;
       current.ads.push(ad);
+      if (current.reservationGoal == null && ad.reservationGoal != null) current.reservationGoal = ad.reservationGoal;
       current.reservas += ad.reservas;
       current.messages += ad.messages;
       if (ad.observation && !current.observation) current.observation = ad.observation;
@@ -263,9 +278,9 @@
     const label = days === 0 ? 'Plazo finalizado' : `${days} ${days === 1 ? 'día restante' : 'días restantes'}`;
     return `${endDate}<span class="days-counter ${counterClass}">${label}</span>`;
   }
-  function renderGoalInput(campaign, ad) {
-    const value = effectiveGoal(campaign, ad);
-    return `<input class="reservation-goal-input" type="number" min="0" step="1" value="${value ?? ''}" data-campaign="${campaign.name}" data-ad="${ad.name}" aria-label="Objetivo Reservas ${campaign.name} ${ad.name}">`;
+  function renderGoalInput(campaign) {
+    const value = effectiveGoal(campaign);
+    return `<input class="reservation-goal-input" type="number" min="0" step="1" value="${value ?? ''}" data-campaign="${campaign.name}" aria-label="Objetivo Reservas ${campaign.name}">`;
   }
   function renderCampaigns() {
     const month = sourceMonth(state.month);
@@ -297,7 +312,7 @@
         const adName = currentAd.name ?? '—';
         const reservas = Number(currentAd.reservas ?? (span === 1 ? c.reservas : 0) ?? 0);
         const messages = Number(currentAd.messages ?? (span === 1 ? c.messages : 0) ?? 0);
-        const goal = effectiveGoal(c, currentAd);
+        const goal = effectiveGoal(c);
         const costPerMessage = currentAd.costPerMessage ?? (messages > 0 && spent != null ? spent / messages : null);
         const costPerReservation = currentAd.costPerReservation ?? (reservas > 0 && spent != null ? spent / reservas : null);
         const ratio = currentAd.reservationRatio ?? (messages > 0 ? reservas / messages * 100 : null);
@@ -312,7 +327,7 @@
         tr += `<td class="ad-name-col">${adName}</td>`;
         tr += `<td><span class="objective-pill">${obj || '—'}</span></td>`;
         tr += `<td class="resultados-col">${renderReservationProgress(reservas, goal)}</td>`;
-        tr += `<td class="goal-col">${currentAd.name ? renderGoalInput(c, currentAd) : '-'}</td>`;
+        if (i === 0) tr += `<td class="goal-col"${rs}>${currentAd.name ? renderGoalInput(c) : '-'}</td>`;
         tr += `<td class="num">${fmtCount(messages)}</td>`;
         tr += `<td class="num">${fmtMoney(costPerMessage)}</td>`;
         tr += `<td class="num">${fmtMoney(costPerReservation)}</td>`;
@@ -363,7 +378,7 @@
     document.getElementById('campaigns-body').addEventListener('change', event => {
       const input = event.target.closest('.reservation-goal-input');
       if (!input) return;
-      state.goals[goalKey(input.dataset.campaign, input.dataset.ad)] = input.value;
+      state.goals[goalKey(input.dataset.campaign)] = input.value;
       saveGoals();
       renderCampaigns();
     });
