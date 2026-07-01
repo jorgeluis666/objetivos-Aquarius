@@ -363,6 +363,13 @@
     document.getElementById('messages-reset').addEventListener('click', reset);
     document.getElementById('messages-copy').addEventListener('click', copySummary);
     document.getElementById('messages-export').addEventListener('click', exportExcel);
+
+    window.addEventListener('aquarius:data-ready', () => {
+      if (!initialized) return;
+      syncCampaignRows();
+      persist();
+      renderAll();
+    });
   }
 
   function escapeXml(value) {

@@ -253,6 +253,7 @@
       state.rows = state.data.records;
       wireEvents();
       renderAll();
+      window.dispatchEvent(new CustomEvent('aquarius:data-ready', { detail: state.data }));
     } catch (error) {
       renderError(error.message);
       console.error(error);
