@@ -85,8 +85,11 @@
   }
 
   function syncCampaignRows() {
+    const records = global.AQUARIUS_RETAIL_DATA && Array.isArray(global.AQUARIUS_RETAIL_DATA.records)
+      ? global.AQUARIUS_RETAIL_DATA.records
+      : [];
+    if (!records.length) return;
     const defaults = campaignDefaults();
-    if (!defaults.length) return;
     const currentByName = new Map(state.sets.map(set => [set.name, set]));
     state.sets = defaults.map(item => {
       const saved = currentByName.get(item.name);
