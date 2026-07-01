@@ -9,9 +9,11 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="css/dashboard.css">
 <style>
-  .reservations-total-row td { border-top: 2px solid #cbd5e1 !important; color: #0f172a !important; background: #f8fafc; font-weight: 800; }
-  .reservations-total-row td:first-child { text-align: right; }
+  .reservations-total-row td { height: auto !important; padding: 10px 12px !important; border-top: 2px solid #cbd5e1 !important; color: #0f172a !important; background: #f8fafc; font-size: 13px; font-weight: 800; vertical-align: middle; }
+  .reservations-total-row .total-label { text-align: right; }
   .reservations-total-row .resultados-col { font-size: 12px; }
+  .campaigns-note { display: none; margin: -5px 0 12px; color: #64748b; font-size: 10px; font-weight: 600; line-height: 1.45; }
+  .campaigns-note.visible { display: block; }
   .deadline-cell { min-width: 92px; }
   .days-counter { display: block; margin-top: 5px; color: #64748b; font-size: 9px; font-weight: 700; white-space: nowrap; }
   .days-counter.urgent { color: #b91c1c; }
@@ -72,7 +74,7 @@
           <div class="chart-wrap h-360"><canvas id="chart-monthly"></canvas></div>
         </div>
         <div class="month-tabs" id="month-tabs"></div>
-        <div class="panel campaigns-panel"><div class="panel-head"><div><div class="panel-title" id="campaigns-title">Campanas de Junio 2026</div><div class="panel-sub" id="campaigns-sub"></div></div></div><div class="table-scroll"><table class="data-table campaigns-table"><thead><tr><th>Tipo</th><th>Campana</th><th>Anuncio</th><th>Objetivo</th><th>Reservas</th><th>Objetivo Reservas</th><th>Mensajes</th><th class="num">Costo por mensaje</th><th class="num">Costo por reserva</th><th class="num">Ratio de reservas</th><th>Estado</th><th>Fecha inicio</th><th>Fecha fin / dias restantes</th><th class="num">Duracion</th><th class="num">Importe diario</th><th class="num">Presupuesto x anuncio</th><th class="num">Gasto x anuncio</th><th class="num">Presupuesto x campana</th><th class="num">Gasto x campana</th><th class="num">Saldo x anuncio</th><th class="num">Saldo por campana</th><th class="num">Nuevo ppto diario</th><th>Observaciones</th></tr></thead><tbody id="campaigns-body"></tbody></table></div></div>
+        <div class="panel campaigns-panel"><div class="panel-head"><div><div class="panel-title" id="campaigns-title">Campanas de Junio 2026</div><div class="panel-sub" id="campaigns-sub"></div></div></div><div class="campaigns-note" id="campaigns-note"></div><div class="table-scroll"><table class="data-table campaigns-table"><thead><tr><th>Tipo</th><th>Campana</th><th>Anuncio</th><th>Objetivo</th><th>Reservas</th><th>Objetivo Reservas</th><th>Mensajes</th><th class="num">Costo por mensaje</th><th class="num">Costo por reserva</th><th class="num">Ratio de reservas</th><th>Estado</th><th>Fecha inicio</th><th>Fecha fin / dias restantes</th><th class="num">Duracion</th><th class="num">Importe diario</th><th class="num">Presupuesto x anuncio</th><th class="num">Gasto x anuncio</th><th class="num">Presupuesto x campana</th><th class="num">Gasto x campana</th><th class="num">Saldo x anuncio</th><th class="num">Saldo por campana</th><th class="num">Nuevo ppto diario</th><th>Observaciones</th></tr></thead><tbody id="campaigns-body"></tbody></table></div></div>
       </section>
 
       <section class="view" id="view-messages">

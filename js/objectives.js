@@ -273,8 +273,14 @@
     const active = campaigns.filter(c => ['activa', 'activo'].includes(String(c.status || '').toLowerCase())).length;
     document.getElementById('campaigns-title').textContent = `Campanas de ${month.name} 2026`;
     document.getElementById('campaigns-sub').textContent = campaigns.length ? `${active} activas de ${campaigns.length} campanas registradas.` : 'Sin detalle de campanas en el archivo fuente.';
+    const note = document.getElementById('campaigns-note');
+    if (note) {
+      const observation = String(month.totalObservation || '').trim();
+      note.textContent = observation ? `* ${observation}` : '';
+      note.classList.toggle('visible', Boolean(observation));
+    }
     const body = document.getElementById('campaigns-body');
-    if (!campaigns.length) { body.innerHTML = '<tr><td colspan="24" class="table-empty">Sin campanas registradas para este mes.</td></tr>'; return; }
+    if (!campaigns.length) { body.innerHTML = '<tr><td colspan="23" class="table-empty">Sin campanas registradas para este mes.</td></tr>'; return; }
     const rows = [];
     let totalReservas = 0;
     let totalMessages = 0;
@@ -328,7 +334,7 @@
         rows.push(tr);
       });
     }
-    rows.push(`<tr class="reservations-total-row"><td colspan="4">Total actualizado ${month.name.toLowerCase()}</td><td class="resultados-col">${totalReservas}</td><td></td><td class="num">${totalMessages}</td><td colspan="6"></td><td></td><td></td><td></td><td class="num">${fmtMoney(month.adSpendTotal)}</td><td class="num">${fmtMoney(month.budgetTotal)}</td><td class="num">${fmtMoney(month.spend)}</td><td class="num">${fmtMoney(month.balanceTotal)}</td><td></td><td>${month.totalObservation || ''}</td></tr>`);
+    rows.push(`<tr class="reservations-total-row"><td></td><td></td><td></td><td class="total-label">Total actualizado ${month.name.toLowerCase()}</td><td class="resultados-col">${totalReservas}</td><td></td><td class="num">${totalMessages}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="num">${fmtMoney(month.adSpendTotal)}</td><td class="num">${fmtMoney(month.budgetTotal)}</td><td class="num">${fmtMoney(month.spend)}</td><td class="num">${fmtMoney(month.balanceTotal)}</td><td></td><td></td><td></td></tr>`);
     body.innerHTML = rows.join('');
   }
   function chartOptions(series) {
