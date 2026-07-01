@@ -11,16 +11,26 @@ function readFile(relativePath) {
   return fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 }
 
+function copyDirectory(source, target) {
+  if (!fs.existsSync(source)) return;
+  fs.mkdirSync(target, { recursive: true });
+  for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
+    const sourcePath = path.join(source, entry.name);
+    const targetPath = path.join(target, entry.name);
+    if (entry.isDirectory()) copyDirectory(sourcePath, targetPath);
+    else fs.copyFileSync(sourcePath, targetPath);
+  }
+}
+
 function main() {
   let html = readFile('index.html');
-  const css = readFile('css/dashboard.css');
+  const css = readFile('css/dashboard.css').replaceAll('../assets/', 'assets/');
   const app = readFile('js/objectives.js');
   const reservationGoals = readFile('js/reservation-goals.js');
   const messagesCalculator = readFile('js/messages-calculator.js');
   const navigation = readFile('js/navigation.js');
   const sidebar = readFile('js/sidebar.js');
-  const data = readFile('data/amador-ads-2026.json').replace(/</g, '\\u003c');
-  const juneData = readFile('data/amador-june-sheet-2026.json').replace(/</g, '\\u003c');
+  const data = readFile('data/aquarius-lima-retail-2026.json').replace(/</g, '\\u003c');
 
   html = html.replace(
     '<link rel="stylesheet" href="css/dashboard.css">',
@@ -48,16 +58,25 @@ function main() {
   );
   html = html.replace(
     '</head>',
-    `<script>window.AMADOR_ADS_DATA = ${data};window.AMADOR_JUNE_DATA = ${juneData};</script></head>`
+    `<script>window.AQUARIUS_RETAIL_DATA = ${data};</script></head>`
   );
 
-  fs.rmSync(DIST_DIR, { recursive: true, force: true });
+  try {
+    fs.rmSync(DIST_DIR, { recursive: true, force: true });
+  } catch (error) {
+    console.warn(`[build] no se pudo limpiar dist completo: ${error.message}`);
+  }
   fs.mkdirSync(path.join(DIST_DIR, 'data'), { recursive: true });
   fs.writeFileSync(DIST_HTML, html, 'utf8');
-  fs.copyFileSync(
-    path.join(ROOT, 'data', 'amador-ads-2026.json'),
-    path.join(DIST_DIR, 'data', 'amador-ads-2026.json')
-  );
+  try {
+    fs.copyFileSync(
+      path.join(ROOT, 'data', 'aquarius-lima-retail-2026.json'),
+      path.join(DIST_DIR, 'data', 'aquarius-lima-retail-2026.json')
+    );
+    copyDirectory(path.join(ROOT, 'assets'), path.join(DIST_DIR, 'assets'));
+  } catch (error) {
+    console.warn(`[build] index actualizado; no se pudo copiar dist/data o assets: ${error.message}`);
+  }
 
   console.log(`[build] escrito dist/index.html (${(fs.statSync(DIST_HTML).size / 1024).toFixed(1)} KB)`);
 }

@@ -1,8 +1,8 @@
 {
-  "name": "objetivos-amador",
+  "name": "objetivos-aquarius",
   "version": "1.1.0",
   "private": true,
-  "description": "Dashboard de objetivos e inversion publicitaria de Amador",
+  "description": "Dashboard BI retail Lima 2026 de Aquarius",
   "scripts": {
     "dev": "live-server --port=3000 --open=index.html --no-browser",
     "build": "node scripts/build.js"

@@ -1,5 +1,5 @@
 (function (global) {
-  const STORAGE_KEY = 'amador_messages_calculator_v1';
+  const STORAGE_KEY = 'aquarius_messages_calculator_v1';
   const DEFAULTS = {
     target: 10000,
     actual: 0,
@@ -15,6 +15,17 @@
   let state = clone(DEFAULTS);
   let initialized = false;
   let feedbackTimer;
+  const CAMPAIGN_NAMES = {
+    DIGITALIZACIONDEDCOUMENTOS: 'Digitalizacion de documentos',
+    GESTIONLOGISTICA: 'Gestion logistica',
+    VALUACIONESCOMERCIALES: 'Valuaciones comerciales',
+    FOTOGRAMETRIACONDRONES: 'Fotogrametria con drones',
+    FOTOGRAMETRÍACONDRONES: 'Fotogrametria con drones',
+    ALMACENAMIENTO: 'Almacenamiento',
+    ACTIVOSFIJOS: 'Activos fijos',
+    PRODUCTOSTI: 'Productos TI',
+    OUTSOURCINGDEALMACENES: 'Outsourcing de almacenes',
+  };
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -23,6 +34,27 @@
   function number(value, fallback = 0) {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  function campaignLabel(name) {
+    const raw = String(name || '').replace(/^IDG_AQUARIUSCONSULTING_PE_SKAG-/i, '');
+    const key = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    return CAMPAIGN_NAMES[raw] || CAMPAIGN_NAMES[key] || raw.replace(/([a-z])([A-Z])/g, '$1 $2').trim();
+  }
+
+  function campaignDefaults() {
+    const records = global.AQUARIUS_RETAIL_DATA && Array.isArray(global.AQUARIUS_RETAIL_DATA.records)
+      ? global.AQUARIUS_RETAIL_DATA.records
+      : [];
+    if (!records.length) return clone(DEFAULTS.sets);
+    return records
+      .slice()
+      .sort((a, b) => Number(b.cost || 0) - Number(a.cost || 0))
+      .map(record => ({
+        name: campaignLabel(record.campaign),
+        messages: Math.max(0, number(record.conversions)),
+        cpl: Math.max(0, number(record.costPerConversion)),
+      }));
   }
 
   function normalize(source) {
@@ -38,7 +70,7 @@
             messages: Math.max(0, number(set.messages)),
             cpl: Math.max(0, number(set.cpl, next.averageCpl ?? DEFAULTS.averageCpl)),
           }))
-        : clone(DEFAULTS.sets),
+        : campaignDefaults(),
     };
   }
 
@@ -49,6 +81,17 @@
     } catch {
       state = clone(DEFAULTS);
     }
+    syncCampaignRows();
+  }
+
+  function syncCampaignRows() {
+    const defaults = campaignDefaults();
+    if (!defaults.length) return;
+    const currentByName = new Map(state.sets.map(set => [set.name, set]));
+    state.sets = defaults.map(item => {
+      const saved = currentByName.get(item.name);
+      return saved ? { ...item, ...saved } : item;
+    });
   }
 
   function persist() {
@@ -85,6 +128,10 @@
     return number(value).toLocaleString('es-PE', { maximumFractionDigits: 2 });
   }
 
+  function decimal(value) {
+    return number(value).toFixed(2);
+  }
+
   function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, character => ({
       '&': '&amp;',
@@ -113,7 +160,7 @@
       <tr data-index="${index}">
         <td><input class="messages-table-input name" type="text" data-field="name" value="${escapeHtml(row.name)}" aria-label="Nombre del conjunto ${index + 1}"></td>
         <td class="num"><input class="messages-table-input" type="number" min="0" step="1" data-field="messages" value="${row.messages}" aria-label="Mensajes objetivo del conjunto ${index + 1}"></td>
-        <td class="num"><span class="messages-cell-money"><b>S/</b><input class="messages-table-input" type="number" min="0" step="0.10" data-field="cpl" value="${row.cpl}" aria-label="Costo por lead del conjunto ${index + 1}"></span></td>
+        <td class="num"><span class="messages-cell-money"><b>S/</b><input class="messages-table-input" type="number" min="0" step="0.01" data-field="cpl" value="${decimal(row.cpl)}" aria-label="Costo por lead del conjunto ${index + 1}"></span></td>
         <td class="num"><strong>${money(row.investment)}</strong></td>
         <td class="messages-row-action"><button type="button" class="messages-remove" data-remove-set="${index}" aria-label="Eliminar ${escapeHtml(row.name)}" title="Eliminar conjunto">×</button></td>
       </tr>
@@ -203,7 +250,7 @@
   }
 
   function reset() {
-    state = clone(DEFAULTS);
+    state = { ...clone(DEFAULTS), sets: campaignDefaults() };
     persist();
     renderAll();
     feedback('Valores restablecidos.');
@@ -212,7 +259,7 @@
   function summaryText() {
     const result = calculate();
     return [
-      'CALCULADORA DE MENSAJES · AMADOR',
+      'CALCULADORA DE MENSAJES - AQUARIUS',
       '',
       `Facturación objetivo: ${money(state.target)}`,
       `Facturación realizada: ${money(state.actual)}`,
@@ -250,7 +297,7 @@
   function exportExcel() {
     const result = calculate();
     const rows = [
-      ['CALCULADORA DE MENSAJES · AMADOR'],
+      ['CALCULADORA DE MENSAJES - AQUARIUS'],
       [],
       ['Facturación objetivo (S/)', state.target],
       ['Facturación realizada (S/)', state.actual],
@@ -284,7 +331,7 @@
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'Calculadora_Mensajes_Amador.xls';
+    link.download = 'Calculadora_Mensajes_Aquarius.xls';
     document.body.appendChild(link);
     link.click();
     link.remove();

@@ -1,41 +1,51 @@
-# Amador | Gasto publicitario 2026
+# Aquarius | Dashboard Lima Retail 2026
 
-Dashboard de Agencia Lima Retail para controlar la inversion publicitaria de Amador.
+Dashboard de gasto publicitario para Aquarius, adaptado desde la arquitectura original del panel de Amador.
 
-Version actual: `v1.1.0`.
+## Acceso
 
-## Versionado
+- Password del login: `Aquarius2026`
+- Entrada local: `index.html`
+- Build publicado: `dist/index.html`
 
-El proyecto usa la nomenclatura `vMAJOR.MINOR.PATCH`:
+## Modulo principal
 
-- `MAJOR`: cambios incompatibles o una nueva etapa del tablero.
-- `MINOR`: nuevos modulos, indicadores o funciones compatibles.
-- `PATCH`: correcciones visuales, de datos o funcionamiento.
+- Titulo: `Gasto Publicitario`
+- Subtitulo: `Branding y ventas`
+- KPIs: coste total, CTR, clics, conversiones y costo por conversion.
 
-## Modulo activo
+## Fuente de datos
 
-- Gasto mensual total.
-- Distribucion entre Branding y Ventas.
-- Campanas por mes.
-- Estado, objetivo, presupuesto, gasto, importe diario y URL de anuncios.
+La fuente normalizada del dashboard esta en:
 
-Los modulos Comparativo YoY, Distribucion, Productos Web y Usuarios y Claves se muestran deshabilitados hasta su futura implementacion.
+`data/aquarius-lima-retail-2026.json`
 
-## Datos
+El Excel recibido, `Aquarius - Dashboard Lima Retail_Visión General_Tabla.csv.xlsx`, contiene la tabla de resultados de pauta digital:
 
-La fuente normalizada del dashboard esta en `data/amador-ads-2026.json`. Junio se sincronizo el 24 de junio de 2026 desde `Distribucion-amador / Junio`; el CSV de respaldo esta en `data/csv-backups/`.
+- `Campaña`
+- `Coste`
+- `% Δ`
+- `CTR`
+- `Clics`
+- `Conv`
+- `Cos/con`
 
-## Desarrollo
+El dashboard refleja esas filas en la tabla de resultados y en el grafico por campana.
+
+## Importar nueva data
+
+Cuando llegue una fuente retail valida:
 
 ```bash
-npm install
-npm run dev
+python scripts/import-aquarius-data.py "ruta/al/archivo.xlsx"
 ```
+
+El importador actualiza `data/aquarius-lima-retail-2026.json`.
 
 ## Build
 
 ```bash
-npm run build
+npm.cmd run build
 ```
 
-El resultado para GitHub Pages se genera en `dist/`.
+El build incrusta los assets en `dist/index.html`. Si Windows bloquea `dist/data`, el script mantiene actualizado el HTML y muestra una advertencia.

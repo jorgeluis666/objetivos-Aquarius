@@ -1,12 +1,12 @@
 (function () {
-  const VIEW_KEY = 'amador-active-view';
+  const VIEW_KEY = 'aquarius-active-view';
   const VIEW_META = {
     'view-obj': {
-      title: 'Gasto publicitario 2026',
-      caption: 'Agencia Lima Retail',
-      status: 'Datos al 24 de junio',
-      source: 'Fuente: Distribucion-amador / Junio actualizado',
-      footer: 'Sincronizado por Agencia Lima Retail',
+      title: 'Gasto Publicitario',
+      caption: 'Branding y ventas',
+      status: 'Fuente pendiente de validar',
+      source: 'Fuente: data/aquarius-lima-retail-2026.json',
+      footer: 'Resultados de pauta digital',
     },
     'view-messages': {
       title: 'Calculadora de Mensajes',

@@ -1,400 +1,263 @@
-﻿(function () {
-  const DATA_URL = 'data/amador-ads-2026.json';
-  const JUNE_DATA_URL = 'data/amador-june-sheet-2026.json';
-  const SHEET_ID = '1Lj5rEepYZhHlf-VyGJwRYVMqnpWLu9lg3oL6wes3o-s';
-  const SHEET_GID = '1847912276';
-  const LIVE_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
-  const SYNC_INTERVAL_MS = 60 * 60 * 1000;
-  const GOALS_KEY = 'amador-reservation-campaign-goals-v1';
-  const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const SHORT_MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const EXPECTED_HEADERS = ['Tipo','Campaña','Anuncio','Objetivo','Reservas','Objetivo Reservas','Mensajes','Costo por mensaje','Costo por reserva','Ratio de reservas','Estado','Fecha de inicio','Fecha de fin','Duración (días)','Días restantes','Importe diario','Presupuesto total x anuncio','Gasto x Anuncio','Presupuesto total x campaña','Gasto x Campaña','Saldo x anuncio','Saldo por campaña','Proyección real de gasto mesual','Nuevo ppto diario','Observaciones'];
+(function () {
+  const DATA_URL = 'data/aquarius-lima-retail-2026.json';
   const SERIES = {
-    investment: { label: 'Inversion', unit: 'money', color: '#2563eb', fill: 'rgba(37,99,235,.11)' },
-    messages: { label: 'Mensajes', unit: 'count', color: '#16a34a', fill: 'rgba(22,163,74,.10)' },
-    reservations: { label: 'Reservas', unit: 'count', color: '#ea580c', fill: 'rgba(234,88,12,.10)' },
+    cost: { label: 'Inversion', unit: 'money', color: '#0284c7', fill: 'rgba(2,132,199,.18)', axis: 'y' },
+    conversions: { label: 'Conversaciones', unit: 'count', color: '#7c3aed', fill: 'rgba(124,58,237,.16)', axis: 'y1' },
+    costPerConversion: { label: 'Costo x Conversacion', unit: 'money', color: '#0f766e', fill: 'rgba(15,118,110,.16)', axis: 'y2' }
   };
-  const state = { data: null, type: 'investment', month: 'Junio', chart: null, syncTimer: null, goals: readGoals(), lastSync: null };
-
-  const fmtMoney = value => Number.isFinite(Number(value)) ? `S/. ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
-  const fmtCount = value => Number(value || 0).toLocaleString('es-PE', { maximumFractionDigits: 0 });
-  const fmtRatio = value => Number.isFinite(Number(value)) ? `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : '-';
-  const fmtShort = value => {
-    if (value == null) return '';
-    if (value >= 1000) return `S/. ${(value / 1000).toFixed(2).replace(/0$/, '').replace(/\.0$/, '')}k`;
-    return `S/. ${Math.round(value)}`;
+  const CAMPAIGN_NAMES = {
+    DIGITALIZACIONDEDCOUMENTOS: 'Digitalizacion de documentos',
+    GESTIONLOGISTICA: 'Gestion logistica',
+    VALUACIONESCOMERCIALES: 'Valuaciones comerciales',
+    FOTOGRAMETRIACONDRONES: 'Fotogrametria con drones',
+    FOTOGRAMETRÍACONDRONES: 'Fotogrametria con drones',
+    ALMACENAMIENTO: 'Almacenamiento',
+    ACTIVOSFIJOS: 'Activos fijos',
+    PRODUCTOSTI: 'Productos TI',
+    OUTSOURCINGDEALMACENES: 'Outsourcing de almacenes'
   };
+  const state = { data: null, rows: [], chart: null };
 
-  function readGoals() {
-    try { return JSON.parse(localStorage.getItem(GOALS_KEY) || '{}'); } catch { return {}; }
+  const fmtMoney = value => Number.isFinite(Number(value)) ? `S/ ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
+  const fmtCount = value => Number.isFinite(Number(value)) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 }) : '-';
+  const fmtPercent = value => Number.isFinite(Number(value)) ? `${(Number(value) * 100).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : '-';
+  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+
+  function sum(rows, field) {
+    return rows.reduce((total, row) => total + Number(row[field] || 0), 0);
   }
-  function saveGoals() {
-    try { localStorage.setItem(GOALS_KEY, JSON.stringify(state.goals)); } catch {}
+
+  function average(rows, field) {
+    const values = rows.map(row => Number(row[field])).filter(Number.isFinite);
+    if (!values.length) return null;
+    return values.reduce((total, value) => total + value, 0) / values.length;
   }
-  function normalizeHeader(value) {
-    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLowerCase();
+
+  function weightedCtr(rows) {
+    const clicks = sum(rows, 'clicks');
+    const impressions = rows.reduce((total, row) => total + (Number(row.ctr) > 0 ? Number(row.clicks || 0) / Number(row.ctr) : 0), 0);
+    return impressions > 0 ? clicks / impressions : average(rows, 'ctr');
   }
-  function parseNumber(value) {
-    const text = String(value ?? '').trim();
-    if (!text || text === '-') return null;
-    const normalized = text.replace(/S\/?\.?/gi, '').replace(/%/g, '').replace(/,/g, '').trim();
-    const number = Number(normalized);
-    return Number.isFinite(number) ? number : null;
-  }
-  function parseCsv(text) {
-    const rows = [];
-    let row = [], cell = '', quoted = false;
-    for (let i = 0; i < text.length; i += 1) {
-      const char = text[i];
-      const next = text[i + 1];
-      if (quoted && char === '"' && next === '"') { cell += '"'; i += 1; continue; }
-      if (char === '"') { quoted = !quoted; continue; }
-      if (!quoted && char === ',') { row.push(cell); cell = ''; continue; }
-      if (!quoted && (char === '\n' || char === '\r')) {
-        if (char === '\r' && next === '\n') i += 1;
-        row.push(cell); rows.push(row); row = []; cell = ''; continue;
-      }
-      cell += char;
+
+  function formatValue(value, unit, short = false) {
+    if (unit === 'money') {
+      if (short && Number.isFinite(Number(value)) && Math.abs(Number(value)) >= 1000) return `S/ ${(Number(value) / 1000).toFixed(1)}k`;
+      return fmtMoney(value);
     }
-    if (cell || row.length) { row.push(cell); rows.push(row); }
-    return rows.filter(items => items.some(item => String(item).trim() !== ''));
-  }
-  function headerMap(headers) {
-    const map = {};
-    headers.forEach((header, index) => { map[normalizeHeader(header)] = index; });
-    return map;
-  }
-  function get(row, map, name) { return row[map[normalizeHeader(name)]] ?? ''; }
-  function validateHeaders(headers) {
-    const visibleHeaders = headers.map(header => String(header || '').trim()).filter(Boolean);
-    const expected = EXPECTED_HEADERS.map(normalizeHeader);
-    const actual = visibleHeaders.map(normalizeHeader);
-    const missing = EXPECTED_HEADERS.filter(name => !actual.includes(normalizeHeader(name)));
-    const mismatched = EXPECTED_HEADERS
-      .map((name, index) => ({ expected: name, actual: visibleHeaders[index] || '(vacío)', ok: actual[index] === expected[index] }))
-      .filter(item => !item.ok);
-    if (missing.length || mismatched.length) {
-      const orderDetails = mismatched.slice(0, 5).map(item => `"${item.expected}" recibido como "${item.actual}"`).join('; ');
-      throw new Error(`Cabeceras del feed no coinciden. Faltantes: ${missing.join(', ') || 'ninguna'}. Orden/nombre: ${orderDetails || 'ok'}.`);
-    }
-    return headerMap(headers);
-  }
-  function dateLabel(value) {
-    const text = String(value || '').trim();
-    const match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (!match) return text || null;
-    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    return `${match[1].padStart(2, '0')}-${months[Number(match[2]) - 1] || 'Mes'}`;
-  }
-  function campaignGoalFromAds(campaign) {
-    const fromCampaign = Number(campaign.reservationGoal);
-    if (Number.isFinite(fromCampaign) && fromCampaign > 0) return fromCampaign;
-    const ad = (campaign.ads || []).find(item => Number(item.reservationGoal) > 0);
-    return ad ? Number(ad.reservationGoal) : null;
-  }
-  function goalKey(campaignName) { return campaignName; }
-  function effectiveGoal(campaign) {
-    const saved = state.goals[goalKey(campaign.name)];
-    return saved === '' || saved == null ? campaignGoalFromAds(campaign) : Number(saved);
-  }
-  function sourceMonth(name) { return state.data.months.find(month => month.name === name); }
-  function cloneData(data) { return JSON.parse(JSON.stringify(data)); }
-  function valueFor(name, type) {
-    const month = sourceMonth(name);
-    if (!month) return null;
-    if (type === 'investment') return month.spend;
-    if (Number.isFinite(Number(month[type]))) return Number(month[type]);
-    const field = type === 'reservations' ? 'reservas' : 'messages';
-    const ads = (month.campaigns || []).flatMap(campaign => campaign.ads || []);
-    if (!ads.some(ad => ad[field] != null)) return null;
-    return ads.reduce((total, ad) => total + Number(ad[field] || 0), 0);
-  }
-  function formatSeriesValue(value, series, short = false) {
-    if (value == null) return '';
-    if (series.unit === 'money') return short ? fmtShort(value) : fmtMoney(value);
+    if (unit === 'percent') return fmtPercent(value);
     return fmtCount(value);
   }
-  function sheetToJuneData(rows) {
-    const headerIndex = rows.findIndex(row => row.some(cell => normalizeHeader(cell) === 'tipo') && row.some(cell => normalizeHeader(cell) === 'estado'));
-    if (headerIndex < 0) throw new Error('No se encontro la fila de cabeceras del sheet.' );
-    const headers = rows[headerIndex];
-    const map = validateHeaders(headers);
-    const campaigns = [];
-    let current = null;
-    let totals = null;
-    rows.slice(headerIndex + 1).forEach(row => {
-      const first = String(get(row, map, 'Tipo')).trim();
-      const campaignName = String(get(row, map, 'Campaña')).trim();
-      const adName = String(get(row, map, 'Anuncio')).trim();
-      if (!first && !campaignName && !adName) return;
-      if (first.toLowerCase().startsWith('total')) {
-        totals = row;
-        return;
-      }
-      if (campaignName) {
-        current = {
-          name: campaignName,
-          type: first,
-          status: String(get(row, map, 'Estado')).trim(),
-          budget: parseNumber(get(row, map, 'Presupuesto total x campaña')),
-          spent: parseNumber(get(row, map, 'Gasto x Campaña')),
-          balance: parseNumber(get(row, map, 'Saldo por campaña')),
-          realBalance: null,
-          reservationGoal: null,
-          reservas: 0,
-          messages: 0,
-          ads: []
-        };
-        campaigns.push(current);
-      }
-      if (!current || !adName) return;
-      const ad = {
-        name: adName,
-        objective: String(get(row, map, 'Objetivo')).trim(),
-        status: String(get(row, map, 'Estado')).trim(),
-        reservas: parseNumber(get(row, map, 'Reservas')) || 0,
-        reservationGoal: parseNumber(get(row, map, 'Objetivo Reservas')),
-        messages: parseNumber(get(row, map, 'Mensajes')) || 0,
-        costPerMessage: parseNumber(get(row, map, 'Costo por mensaje')),
-        costPerReservation: parseNumber(get(row, map, 'Costo por reserva')),
-        reservationRatio: parseNumber(get(row, map, 'Ratio de reservas')),
-        startDate: dateLabel(get(row, map, 'Fecha de inicio')),
-        endDate: dateLabel(get(row, map, 'Fecha de fin')),
-        duration: parseNumber(get(row, map, 'Duración (días)')),
-        daysRemaining: parseNumber(get(row, map, 'Días restantes')),
-        dailyAmount: parseNumber(get(row, map, 'Importe diario')),
-        budget: parseNumber(get(row, map, 'Presupuesto total x anuncio')),
-        spent: parseNumber(get(row, map, 'Gasto x Anuncio')),
-        balance: parseNumber(get(row, map, 'Saldo x anuncio')),
-        newDailyAmount: parseNumber(get(row, map, 'Nuevo ppto diario')),
-        observation: String(get(row, map, 'Observaciones')).trim() || null,
-        adUrl: null
-      };
-      if (ad.costPerMessage == null && ad.messages > 0 && ad.spent != null) ad.costPerMessage = ad.spent / ad.messages;
-      if (ad.costPerReservation == null && ad.reservas > 0 && ad.spent != null) ad.costPerReservation = ad.spent / ad.reservas;
-      if (ad.reservationRatio == null && ad.messages > 0) ad.reservationRatio = ad.reservas / ad.messages * 100;
-      current.ads.push(ad);
-      if (current.reservationGoal == null && ad.reservationGoal != null) current.reservationGoal = ad.reservationGoal;
-      current.reservas += ad.reservas;
-      current.messages += ad.messages;
-      if (ad.observation && !current.observation) current.observation = ad.observation;
-    });
-    const allAds = campaigns.flatMap(campaign => campaign.ads);
-    const adSpendTotal = parseNumber(totals && get(totals, map, 'Gasto x Anuncio')) ?? allAds.reduce((sum, ad) => sum + Number(ad.spent || 0), 0);
-    const spend = parseNumber(totals && get(totals, map, 'Gasto x Campaña')) ?? campaigns.reduce((sum, campaign) => sum + Number(campaign.spent || 0), 0);
-    const budgetTotal = parseNumber(totals && get(totals, map, 'Presupuesto total x campaña')) ?? campaigns.reduce((sum, campaign) => sum + Number(campaign.budget || 0), 0);
-    const balanceTotal = parseNumber(totals && get(totals, map, 'Saldo por campaña')) ?? campaigns.reduce((sum, campaign) => sum + Number(campaign.balance || 0), 0);
-    return {
-      name: 'Junio',
-      spend,
-      messages: allAds.reduce((sum, ad) => sum + Number(ad.messages || 0), 0),
-      reservations: allAds.reduce((sum, ad) => sum + Number(ad.reservas || 0), 0),
-      adSpendTotal,
-      budgetTotal,
-      balanceTotal,
-      newDailyTotal: parseNumber(totals && get(totals, map, 'Nuevo ppto diario')),
-      totalObservation: String(totals && get(totals, map, 'Observaciones')).trim(),
-      spendBreakdown: { sales: Math.max(0, spend - 326.61), branding: 326.61 },
-      campaigns,
-      headers: headers.map(header => String(header || '').trim()).filter(Boolean),
-      source: 'Google Sheets / Distribucion-amador / Junio'
-    };
+
+  function campaignLabel(name) {
+    const raw = String(name || '').replace(/^IDG_AQUARIUSCONSULTING_PE_SKAG-/i, '');
+    const key = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    if (CAMPAIGN_NAMES[raw] || CAMPAIGN_NAMES[key]) return CAMPAIGN_NAMES[raw] || CAMPAIGN_NAMES[key];
+    return raw
+      .replace(/([A-Z]{2,})([A-Z][a-z])/g, '$1 $2')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
-  function mergeJuneData(juneData, source = 'Google Sheets') {
-    const data = cloneData(state.data);
-    const index = data.months.findIndex(month => month.name === 'Junio');
-    if (index >= 0) data.months[index] = juneData;
-    else data.months.push(juneData);
-    data.cutoff = new Date().toISOString().slice(0, 10);
-    data.source = source;
-    state.data = data;
+
+  function sortedRows(metric = 'cost') {
+    return [...state.rows].sort((a, b) => Number(b[metric] || 0) - Number(a[metric] || 0));
   }
-  async function fetchLiveSheet() {
-    const response = await fetch(`${LIVE_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return sheetToJuneData(parseCsv(await response.text()));
+
+  function renderFilters() {
+    const host = document.getElementById('retail-filters');
+    if (host) host.innerHTML = '';
   }
-  async function syncLiveSheet({ silent = false } = {}) {
-    try {
-      const juneData = await fetchLiveSheet();
-      mergeJuneData(juneData);
-      state.lastSync = new Date();
-      renderAll();
-      updateSyncLabel('Datos sincronizados desde Google Sheets');
-    } catch (error) {
-      if (!silent) console.warn('[amador] No se pudo sincronizar Google Sheets:', error);
-      updateSyncLabel('Datos locales, esperando sincronizacion');
-    }
-  }
-  function updateSyncLabel(text) {
-    const label = document.getElementById('topbar-status');
-    if (label && state.month === 'Junio') label.textContent = text;
-  }
+
   function renderKpis() {
-    const month = sourceMonth(state.month);
     const host = document.getElementById('kpi-strip');
-    if (!host || !month) return;
-    const investment = Number(month.spend || 0);
-    const messages = Number(month.messages ?? valueFor(state.month, 'messages') ?? 0);
-    const reservations = Number(month.reservations ?? valueFor(state.month, 'reservations') ?? 0);
-    const costMessage = messages > 0 ? investment / messages : null;
-    const costReservation = reservations > 0 ? investment / reservations : null;
+    const rows = state.rows;
+    const cost = sum(rows, 'cost');
+    const conversions = sum(rows, 'conversions');
     const cards = [
-      ['Inversión', fmtMoney(investment), 'Gasto total'],
-      ['Mensajes', fmtCount(messages), 'Conversaciones iniciadas'],
-      ['Costo por mensaje', fmtMoney(costMessage), 'Inversión / mensajes'],
-      ['Reservas', fmtCount(reservations), 'Conversiones de reserva'],
-      ['Costo por reserva', fmtMoney(costReservation), 'Inversión / reservas']
+      ['Coste total', fmtMoney(cost), 'Inversion registrada'],
+      ['CTR promedio', fmtPercent(weightedCtr(rows)), 'Ponderado por clics'],
+      ['Clics', fmtCount(sum(rows, 'clicks')), 'Trafico generado'],
+      ['Conversaciones', fmtCount(conversions), 'Resultados registrados'],
+      ['Costo x conversacion', fmtMoney(conversions > 0 ? cost / conversions : null), 'Inversion / conversaciones']
     ];
     host.innerHTML = cards.map(([label, value, meta]) => `<div class="kpi-pill"><span>${label}</span><strong>${value}</strong><small>${meta}</small></div>`).join('');
   }
+
   function renderTabs() {
     const host = document.getElementById('month-tabs');
-    host.innerHTML = MONTHS.map(name => {
-      const available = !!sourceMonth(name);
-      const selected = name === state.month;
-      return `<button type="button" class="month-tab ${selected ? 'active' : ''}" data-month="${name}" ${available ? '' : 'disabled'}>${name}${name === 'Junio' ? '<span class="current-dot"></span>' : ''}</button>`;
-    }).join('');
-    host.querySelectorAll('.month-tab:not(:disabled)').forEach(button => {
-      button.addEventListener('click', () => { state.month = button.dataset.month; renderAll(false); });
+    if (host) host.innerHTML = '';
+  }
+
+  function chartOptions() {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: context => {
+              const series = SERIES[context.dataset.metricKey];
+              return ` ${series.label}: ${formatValue(context.raw, series.unit)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, border: { color: '#bfdbfe' }, ticks: { color: '#7890b5', font: { size: 10 }, maxRotation: 35, minRotation: 0 } },
+        y: {
+          beginAtZero: true,
+          border: { display: false },
+          grid: { color: 'rgba(14,165,233,.16)' },
+          ticks: { color: '#7890b5', font: { size: 10 }, callback: value => formatValue(value, 'money', true) }
+        },
+        y1: {
+          beginAtZero: true,
+          position: 'right',
+          border: { display: false },
+          grid: { drawOnChartArea: false },
+          ticks: { color: '#7c3aed', font: { size: 10 }, precision: 0 }
+        },
+        y2: {
+          beginAtZero: true,
+          display: false,
+          grid: { drawOnChartArea: false }
+        }
+      }
+    };
+  }
+
+  function renderChart() {
+    const rows = sortedRows();
+    const labels = rows.map(row => campaignLabel(row.campaign));
+    const metrics = ['cost', 'conversions', 'costPerConversion'];
+    document.getElementById('chart-title').textContent = 'Resultados por campana | Inversion, Conversaciones y Costo x Conversacion';
+    const legend = document.querySelector('.chart-legend span');
+    if (legend) {
+      legend.innerHTML = metrics.map(metric => `<i class="legend-line" style="background:${SERIES[metric].color}"></i><b>${SERIES[metric].label}</b>`).join('');
+    }
+    const canvas = document.getElementById('chart-monthly');
+    if (typeof Chart === 'undefined') {
+      canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Grafico no disponible sin conexion.</strong><span>La tabla de resultados sigue visible.</span></div>';
+      return;
+    }
+    if (state.chart) state.chart.destroy();
+    state.chart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: metrics.map(metric => ({
+          metricKey: metric,
+          label: SERIES[metric].label,
+          data: rows.map(row => Number(row[metric] || 0)),
+          yAxisID: SERIES[metric].axis,
+          borderColor: SERIES[metric].color,
+          backgroundColor: SERIES[metric].fill,
+          borderWidth: 1.4,
+          borderRadius: 4,
+          barPercentage: 0.58,
+          categoryPercentage: 0.64,
+          maxBarThickness: 22
+        }))
+      },
+      options: chartOptions(),
+      plugins: [{
+        id: 'insideBarValues',
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart;
+          ctx.save();
+          chart.data.datasets.forEach((dataset, datasetIndex) => {
+            const series = SERIES[dataset.metricKey];
+            const meta = chart.getDatasetMeta(datasetIndex);
+            meta.data.forEach((bar, index) => {
+              const value = dataset.data[index];
+              if (!Number.isFinite(Number(value)) || Number(value) <= 0) return;
+              const label = formatValue(value, series.unit, true);
+              const top = Math.min(bar.y, bar.base);
+              const bottom = Math.max(bar.y, bar.base);
+              const height = bottom - top;
+              ctx.fillStyle = series.color;
+              ctx.font = '700 9px Inter, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              const y = height > 28 ? top + 14 : top - 8;
+              ctx.fillText(label, bar.x, y);
+            });
+          });
+          ctx.restore();
+        }
+      }]
     });
   }
-  function statusClass(status) {
-    const normalized = String(status || '').toLowerCase();
-    if (normalized === 'activa' || normalized === 'activo') return 'green';
-    if (normalized === 'finalizada' || normalized === 'finalizado' || normalized === 'off') return 'red';
-    return 'muted';
-  }
-  function renderReservationProgress(value, goal) {
-    if (goal == null || Number(goal) <= 0) return `${value}`;
-    const reached = Number(value) >= Number(goal);
-    const label = reached ? 'Sobre el objetivo' : 'Debajo del objetivo';
-    return `<span class="reservation-value">${value}</span><span class="reservation-trend ${reached ? 'up' : 'down'}" title="${label}: ${value}/${goal}" aria-label="${label}: ${value} de ${goal}">${reached ? '▲' : '▼'} Objetivo: ${goal}</span>`;
-  }
-  function renderDeadline(endDate, days) {
-    if (!endDate) return '-';
-    if (days == null) return endDate;
-    const counterClass = days === 0 ? 'closed' : days <= 3 ? 'urgent' : '';
-    const label = days === 0 ? 'Plazo finalizado' : `${days} ${days === 1 ? 'día restante' : 'días restantes'}`;
-    return `${endDate}<span class="days-counter ${counterClass}">${label}</span>`;
-  }
-  function renderGoalInput(campaign) {
-    const value = effectiveGoal(campaign);
-    return `<input class="reservation-goal-input" type="number" min="0" step="1" value="${value ?? ''}" data-campaign="${campaign.name}" aria-label="Objetivo Reservas ${campaign.name}">`;
-  }
-  function renderCampaigns() {
-    const month = sourceMonth(state.month);
-    const campaigns = month.campaigns || [];
-    const active = campaigns.filter(c => ['activa', 'activo'].includes(String(c.status || '').toLowerCase())).length;
-    document.getElementById('campaigns-title').textContent = `Campanas de ${month.name} 2026`;
-    document.getElementById('campaigns-sub').textContent = campaigns.length ? `${active} activas de ${campaigns.length} campanas registradas.` : 'Sin detalle de campanas en el archivo fuente.';
-    const note = document.getElementById('campaigns-note');
-    if (note) {
-      const observation = String(month.totalObservation || '').trim();
-      note.textContent = observation ? `* ${observation}` : '';
-      note.classList.toggle('visible', Boolean(observation));
-    }
+
+  function renderTable() {
     const body = document.getElementById('campaigns-body');
-    if (!campaigns.length) { body.innerHTML = '<tr><td colspan="23" class="table-empty">Sin campanas registradas para este mes.</td></tr>'; return; }
-    const rows = [];
-    let totalReservas = 0;
-    let totalMessages = 0;
-    for (const c of campaigns) {
-      const ads = c.ads?.length ? c.ads : [null];
-      const span = ads.length;
-      ads.forEach((ad, i) => {
-        const currentAd = ad || {};
-        const budget = currentAd.budget ?? c.budget;
-        const spent = currentAd.spent ?? (span === 1 ? c.spent : null);
-        const daily = currentAd.dailyAmount ?? c.dailyAmount;
-        const obj = currentAd.objective ?? c.objective;
-        const st = currentAd.status ?? c.status;
-        const adName = currentAd.name ?? '—';
-        const reservas = Number(currentAd.reservas ?? (span === 1 ? c.reservas : 0) ?? 0);
-        const messages = Number(currentAd.messages ?? (span === 1 ? c.messages : 0) ?? 0);
-        const goal = effectiveGoal(c);
-        const costPerMessage = currentAd.costPerMessage ?? (messages > 0 && spent != null ? spent / messages : null);
-        const costPerReservation = currentAd.costPerReservation ?? (reservas > 0 && spent != null ? spent / reservas : null);
-        const ratio = currentAd.reservationRatio ?? (messages > 0 ? reservas / messages * 100 : null);
-        const adBalance = currentAd.balance ?? (budget != null && spent != null ? budget - spent : null);
-        const observation = currentAd.observation ?? (i === 0 ? c.observation : null);
-        totalReservas += reservas;
-        totalMessages += messages;
-        const rs = span > 1 ? ` rowspan="${span}"` : '';
-        let tr = '<tr>';
-        if (i === 0) tr += `<td class="type-col"${rs}>${c.type || '—'}</td>`;
-        if (i === 0) tr += `<td class="campaign-name"${rs}>${c.name}</td>`;
-        tr += `<td class="ad-name-col">${adName}</td>`;
-        tr += `<td><span class="objective-pill">${obj || '—'}</span></td>`;
-        tr += `<td class="resultados-col">${renderReservationProgress(reservas, goal)}</td>`;
-        if (i === 0) tr += `<td class="goal-col"${rs}>${currentAd.name ? renderGoalInput(c) : '-'}</td>`;
-        tr += `<td class="num">${fmtCount(messages)}</td>`;
-        tr += `<td class="num">${fmtMoney(costPerMessage)}</td>`;
-        tr += `<td class="num">${fmtMoney(costPerReservation)}</td>`;
-        tr += `<td class="num">${fmtRatio(ratio)}</td>`;
-        tr += `<td><span class="status-pill ${statusClass(st)}">${st || '—'}</span></td>`;
-        tr += `<td class="date-col">${currentAd.startDate || '—'}</td>`;
-        tr += `<td class="date-col deadline-cell">${renderDeadline(currentAd.endDate, currentAd.daysRemaining)}</td>`;
-        tr += `<td class="num">${currentAd.duration != null ? currentAd.duration + ' d' : '—'}</td>`;
-        tr += `<td class="num">${fmtMoney(daily)}</td>`;
-        tr += `<td class="num">${fmtMoney(budget)}</td>`;
-        tr += `<td class="num">${fmtMoney(spent)}</td>`;
-        if (i === 0) tr += `<td class="num campaign-total"${rs}>${fmtMoney(c.budget)}</td>`;
-        if (i === 0) tr += `<td class="num campaign-total"${rs}>${fmtMoney(c.spent)}</td>`;
-        tr += `<td class="num">${fmtMoney(adBalance)}</td>`;
-        if (i === 0) tr += `<td class="num campaign-total"${rs}>${fmtMoney(c.balance)}</td>`;
-        tr += `<td class="num">${fmtMoney(currentAd.newDailyAmount)}</td>`;
-        tr += `<td class="observation-col">${observation || '—'}</td>`;
-        tr += '</tr>';
-        rows.push(tr);
-      });
+    document.getElementById('campaigns-title').textContent = 'Tabla de resultados';
+    document.getElementById('campaigns-sub').textContent = `${state.rows.length} campanas importadas desde el Excel de Aquarius.`;
+    if (!state.rows.length) {
+      body.innerHTML = '<tr><td colspan="11" class="table-empty">Sin resultados para mostrar.</td></tr>';
+      return;
     }
-    rows.push(`<tr class="reservations-total-row"><td></td><td></td><td></td><td class="total-label">Total actualizado ${month.name.toLowerCase()}</td><td class="resultados-col">${totalReservas}</td><td></td><td class="num">${totalMessages}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="num">${fmtMoney(month.adSpendTotal)}</td><td class="num">${fmtMoney(month.budgetTotal)}</td><td class="num">${fmtMoney(month.spend)}</td><td class="num">${fmtMoney(month.balanceTotal)}</td><td></td><td></td><td></td></tr>`);
-    body.innerHTML = rows.join('');
+    body.innerHTML = sortedRows('cost').map(row => `
+      <tr>
+        <td class="campaign-name"><span>${escapeHtml(campaignLabel(row.campaign))}</span><small>${escapeHtml(row.campaign)}</small></td>
+        <td class="num">${fmtMoney(row.cost)}</td>
+        <td class="num">${formatValue(row.costDelta, 'percent')}</td>
+        <td class="num">${fmtPercent(row.ctr)}</td>
+        <td class="num">${formatValue(row.ctrDelta, 'percent')}</td>
+        <td class="num">${fmtCount(row.clicks)}</td>
+        <td class="num">${formatValue(row.clicksDelta, 'percent')}</td>
+        <td class="num">${fmtCount(row.conversions)}</td>
+        <td class="num">${formatValue(row.conversionsDelta, 'percent')}</td>
+        <td class="num">${fmtMoney(row.costPerConversion)}</td>
+        <td class="num">${formatValue(row.costPerConversionDelta, 'percent')}</td>
+      </tr>
+    `).join('');
   }
-  function chartOptions(series) {
-    const isMoney = series.unit === 'money';
-    return { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 24, right: 12, left: 4 } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => ` ${series.label}: ${formatSeriesValue(context.raw, series)}` } } }, scales: { x: { grid: { display: false }, border: { color: '#cbd5e1' }, ticks: { color: '#7890b5', font: { size: 10 } } }, y: { beginAtZero: true, suggestedMax: isMoney ? 3500 : undefined, border: { display: false }, grid: { color: 'rgba(148,163,184,.20)' }, ticks: { precision: 0, color: '#7890b5', font: { size: 10 }, callback: value => isMoney ? (value === 0 ? 'S/. 0' : `S/. ${(value / 1000).toFixed(1)}k`) : Number(value).toLocaleString('es-PE') } } } };
+
+  function updateSourceLabels() {
+    const status = document.getElementById('topbar-status');
+    const source = document.getElementById('footer-source');
+    if (status) status.textContent = `${state.rows.length} campanas reflejadas`;
+    if (source) source.textContent = `Fuente: ${state.data.sourceFile || DATA_URL}`;
   }
-  function renderChart() {
-    const series = SERIES[state.type];
-    const values = MONTHS.map(name => valueFor(name, state.type));
-    document.getElementById('chart-title').textContent = `Evolucion mensual | ${series.label} | 2026`;
-    document.getElementById('legend-label').textContent = series.label;
-    document.querySelector('.legend-line').className = `legend-line ${state.type}`;
-    const canvas = document.getElementById('chart-monthly');
-    if (typeof Chart === 'undefined') { canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Grafico no disponible sin conexion.</strong><span>Los totales mensuales siguen visibles debajo.</span></div>'; return; }
-    if (state.chart) state.chart.destroy();
-    state.chart = new Chart(canvas, { type: 'line', data: { labels: SHORT_MONTHS, datasets: [{ label: series.label, data: values, borderColor: series.color, backgroundColor: series.fill, borderWidth: 2.5, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: series.color, pointBorderColor: series.color, tension: .25, fill: true, spanGaps: false }] }, options: chartOptions(series), plugins: [{ id: 'valueLabels', afterDatasetsDraw(chart) { const ctx = chart.ctx; const meta = chart.getDatasetMeta(0); ctx.save(); ctx.fillStyle = series.color; ctx.font = '600 10px Inter, sans-serif'; ctx.textAlign = 'center'; meta.data.forEach((point,index) => { const value = values[index]; if (value == null) return; ctx.fillText(formatSeriesValue(value, series, true), point.x, point.y - 13); }); ctx.restore(); } }] });
-  }
-  function renderAll(withTabs = true) {
+
+  function renderAll() {
+    renderFilters();
     renderKpis();
     renderChart();
-    if (withTabs) renderTabs();
-    renderCampaigns();
+    renderTabs();
+    renderTable();
+    updateSourceLabels();
   }
+
+  function renderError(message) {
+    document.getElementById('view-obj').innerHTML = `<div class="data-notice error"><strong>No se pudo cargar la tabla de resultados.</strong>${escapeHtml(message)}</div>`;
+  }
+
   function wireEvents() {
-    document.getElementById('spend-type-select').addEventListener('change', event => { state.type = event.target.value; renderChart(); });
-    document.getElementById('campaigns-body').addEventListener('change', event => {
-      const input = event.target.closest('.reservation-goal-input');
-      if (!input) return;
-      state.goals[goalKey(input.dataset.campaign)] = input.value;
-      saveGoals();
-      renderCampaigns();
-    });
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) syncLiveSheet({ silent: true }); });
+    // Sin controles: el grafico muestra las tres barras clave siempre.
   }
+
   async function init() {
     try {
-      if (window.AMADOR_ADS_DATA) state.data = window.AMADOR_ADS_DATA;
-      else { const response = await fetch(DATA_URL, { cache: 'no-store' }); if (!response.ok) throw new Error(`HTTP ${response.status}`); state.data = await response.json(); }
-      const juneData = window.AMADOR_JUNE_DATA || await fetch(JUNE_DATA_URL, { cache: 'no-store' }).then(response => response.json());
-      mergeJuneData(juneData, state.data.source || 'Datos locales');
+      state.data = window.AQUARIUS_RETAIL_DATA;
+      if (!state.data) {
+        const response = await fetch(DATA_URL, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        state.data = await response.json();
+      }
+      if (!Array.isArray(state.data.records)) throw new Error('La fuente no contiene records.');
+      window.AQUARIUS_RETAIL_DATA = state.data;
+      state.rows = state.data.records;
       wireEvents();
       renderAll();
-      syncLiveSheet({ silent: true });
-      state.syncTimer = setInterval(() => syncLiveSheet({ silent: true }), SYNC_INTERVAL_MS);
-    } catch (error) { document.getElementById('view-obj').innerHTML = '<div class="data-notice error"><strong>No se pudo cargar la informacion de Amador.</strong></div>'; console.error(error); }
+    } catch (error) {
+      renderError(error.message);
+      console.error(error);
+    }
   }
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

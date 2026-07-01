@@ -1,5 +1,5 @@
 (function () {
-  const STORAGE_KEY = 'amador-sidebar-collapsed';
+  const STORAGE_KEY = 'aquarius-sidebar-collapsed';
   const DESKTOP_QUERY = '(min-width: 761px)';
 
   function getStoredState() {
