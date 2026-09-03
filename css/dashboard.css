@@ -98,6 +98,25 @@
   height: 260px;
 }
 
+.h-300 {
+  height: 300px;
+}
+
+.consolidated-panel {
+  margin-top: 18px;
+}
+
+.panel-note {
+  margin-top: 12px;
+  padding: 9px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  background: #f8fafc;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
 [hidden] {
   display: none !important;
 }

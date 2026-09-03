@@ -41,6 +41,17 @@ El filtro `Mes` del dashboard lista cada entrada de `months` y recuerda la ultim
 seleccion del usuario. Los meses sin tabla de campanas muestran un aviso y solo
 grafican impresiones.
 
+## Paneles del modulo
+
+1. `Resultados por campana`: detalle del mes seleccionado.
+2. `Indicadores consolidados por mes`: inversion, resultados y costo por
+   resultado de cada cierre, sumando todas las campanas. No depende del filtro:
+   muestra todos los meses cargados para comparar la evolucion.
+3. `Impresiones por dia`: serie diaria del mes seleccionado.
+
+El costo por resultado del panel consolidado se calcula como inversion total
+entre resultados totales del mes, no como promedio de campanas.
+
 ### Formatos aceptados
 
 1. Tabla de resultados por campana (`.csv`, `.xlsx`, `.xlsm`):

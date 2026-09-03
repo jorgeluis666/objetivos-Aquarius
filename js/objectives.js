@@ -6,6 +6,12 @@
     conversions: { label: 'Conversaciones', unit: 'count', color: '#7c3aed', fill: 'rgba(124,58,237,.16)', axis: 'y1' },
     costPerConversion: { label: 'Costo x Conversacion', unit: 'money', color: '#0f766e', fill: 'rgba(15,118,110,.16)', axis: 'y2' }
   };
+  // Indicadores consolidados: un punto por cierre mensual, no por campana.
+  const CONSOLIDATED = {
+    cost: { label: 'Inversion', unit: 'money', color: '#0284c7', fill: 'rgba(2,132,199,.22)', axis: 'y', type: 'bar' },
+    conversions: { label: 'Resultados', unit: 'count', color: '#7c3aed', fill: 'rgba(124,58,237,.2)', axis: 'y1', type: 'bar' },
+    costPerConversion: { label: 'Costo x resultado', unit: 'money', color: '#0f766e', fill: 'rgba(15,118,110,.16)', axis: 'y2', type: 'line' }
+  };
   const IMPRESSIONS_COLOR = '#f59e0b';
   const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const CAMPAIGN_NAMES = {
@@ -19,7 +25,7 @@
     PRODUCTOSTI: 'Productos TI',
     OUTSOURCINGDEALMACENES: 'Outsourcing de almacenes'
   };
-  const state = { data: null, months: [], monthId: null, rows: [], impressions: null, chart: null, impressionsChart: null };
+  const state = { data: null, months: [], monthId: null, rows: [], impressions: null, chart: null, consolidatedChart: null, impressionsChart: null };
 
   const fmtMoney = value => Number.isFinite(Number(value)) ? `S/ ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
   const fmtCount = value => Number.isFinite(Number(value)) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 }) : '-';
@@ -310,6 +316,157 @@
     });
   }
 
+  // Totales de cada cierre mensual: inversion, resultados y costo por resultado.
+  function consolidatedMonths() {
+    return state.months
+      .filter(month => (month.records || []).length)
+      .map(month => {
+        const cost = sum(month.records, 'cost');
+        const conversions = sum(month.records, 'conversions');
+        return {
+          id: month.id,
+          label: month.label,
+          cost,
+          conversions,
+          costPerConversion: conversions > 0 ? cost / conversions : null
+        };
+      });
+  }
+
+  function renderConsolidated() {
+    const panel = document.getElementById('consolidated-panel');
+    if (!panel) return;
+    const months = consolidatedMonths();
+    if (!months.length) {
+      panel.hidden = true;
+      if (state.consolidatedChart) { state.consolidatedChart.destroy(); state.consolidatedChart = null; }
+      return;
+    }
+    panel.hidden = false;
+    const metrics = ['cost', 'conversions', 'costPerConversion'];
+    const legend = document.querySelector('.consolidated-legend span');
+    if (legend) {
+      legend.innerHTML = metrics.map(metric => `<i class="legend-line" style="background:${CONSOLIDATED[metric].color}"></i><b>${CONSOLIDATED[metric].label}</b>`).join('');
+    }
+    const totalCost = months.reduce((acc, month) => acc + month.cost, 0);
+    const totalConversions = months.reduce((acc, month) => acc + month.conversions, 0);
+    document.getElementById('consolidated-sub').textContent = `Acumulado de ${months.length} ${months.length === 1 ? 'cierre' : 'cierres'}: ${fmtMoney(totalCost)} de inversion, ${fmtCount(totalConversions)} resultados y ${fmtMoney(totalConversions > 0 ? totalCost / totalConversions : null)} por resultado.`;
+    const note = document.getElementById('consolidated-note');
+    if (note) {
+      note.hidden = months.length > 1;
+      note.textContent = 'Con un solo cierre cargado el grafico aun no muestra tendencia. Cada mes que importes agrega una columna comparable.';
+    }
+    const canvas = document.getElementById('chart-consolidated');
+    if (typeof Chart === 'undefined') {
+      canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Grafico no disponible sin conexion.</strong><span>Los totales siguen visibles en los KPIs y en la tabla.</span></div>';
+      return;
+    }
+    if (state.consolidatedChart) state.consolidatedChart.destroy();
+    state.consolidatedChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: months.map(month => month.label),
+        datasets: metrics.map(metric => {
+          const series = CONSOLIDATED[metric];
+          const base = {
+            metricKey: metric,
+            label: series.label,
+            data: months.map(month => (Number.isFinite(Number(month[metric])) ? Number(month[metric]) : null)),
+            yAxisID: series.axis,
+            borderColor: series.color,
+            backgroundColor: series.fill
+          };
+          if (series.type === 'line') {
+            return Object.assign(base, {
+              type: 'line',
+              backgroundColor: 'rgba(15,118,110,.1)',
+              borderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: series.color,
+              tension: 0.3,
+              fill: false
+            });
+          }
+          return Object.assign(base, {
+            borderWidth: months.map(month => (month.id === state.monthId ? 2.4 : 1.2)),
+            borderRadius: 5,
+            barPercentage: 0.62,
+            categoryPercentage: 0.62,
+            maxBarThickness: 54
+          });
+        })
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: context => {
+                const series = CONSOLIDATED[context.dataset.metricKey];
+                return ` ${series.label}: ${formatValue(context.raw, series.unit)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, border: { color: '#bfdbfe' }, ticks: { color: '#7890b5', font: { size: 11, weight: '600' } } },
+          y: {
+            beginAtZero: true,
+            border: { display: false },
+            grid: { color: 'rgba(14,165,233,.16)' },
+            ticks: { color: '#7890b5', font: { size: 10 }, callback: value => formatValue(value, 'money', true) }
+          },
+          y1: {
+            beginAtZero: true,
+            position: 'right',
+            border: { display: false },
+            grid: { drawOnChartArea: false },
+            ticks: { color: '#7c3aed', font: { size: 10 }, precision: 0 }
+          },
+          // La linea de costo por resultado vive en un eje oculto con holgura
+          // extra arriba para no chocar con las etiquetas de las barras.
+          y2: {
+            beginAtZero: true,
+            display: false,
+            grid: { drawOnChartArea: false },
+            suggestedMax: Math.max(...months.map(month => Number(month.costPerConversion) || 0), 1) * 2.2
+          }
+        }
+      },
+      plugins: [{
+        id: 'consolidatedValues',
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart;
+          ctx.save();
+          ctx.font = '700 10px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          chart.data.datasets.forEach((dataset, datasetIndex) => {
+            const series = CONSOLIDATED[dataset.metricKey];
+            chart.getDatasetMeta(datasetIndex).data.forEach((element, index) => {
+              const value = dataset.data[index];
+              if (!Number.isFinite(Number(value))) return;
+              ctx.fillStyle = series.color;
+              if (series.type === 'line') {
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(formatValue(value, series.unit), element.x, element.y - 8);
+                return;
+              }
+              const top = Math.min(element.y, element.base);
+              const height = Math.abs(element.base - element.y);
+              ctx.textBaseline = 'middle';
+              ctx.fillText(formatValue(value, series.unit), element.x, height > 30 ? top + 15 : top - 9);
+            });
+          });
+          ctx.restore();
+        }
+      }]
+    });
+  }
+
   function renderImpressions() {
     const panel = document.getElementById('impressions-panel');
     if (!panel) return;
@@ -419,6 +576,7 @@
     renderFilters();
     renderKpis();
     renderChart();
+    renderConsolidated();
     renderImpressions();
     renderTabs();
     renderTable();
