@@ -71,6 +71,18 @@ tabla de campanas.
 Cada archivo diario se fusiona por fecha dentro del mes, asi que puedes enviar
 las impresiones en un export y la inversion diaria en otro.
 
+## Origen de la data cargada
+
+Los archivos fuente se guardan en `data/csv-backups/`:
+
+- `Gráfico_de_serie_temporal(2026.MM...).csv`: impresiones diarias de enero a
+  agosto de 2026, exportadas del panel de campanas.
+- `Reporte_Aquarius_Agosto2026_tabla.csv`: tabla de resultados de agosto 2026,
+  transcrita del reporte `Aquarius_-_Dashboard_Lima_Retail (4).pdf`
+  (1 ago 2026 - 31 ago 2026). Sus totales cuadran con el reporte:
+  S/ 1,854.85 de coste, 2,325 clics, 129 conversiones, S/ 14.38 por conversion
+  y CTR 6.87%. Reemplaza a la tabla anterior, que era de otro periodo.
+
 ## Importar la data de cada mes
 
 ```bash
