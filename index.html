@@ -33,7 +33,7 @@
 <body>
 <div class="shell">
   <aside class="sidebar" id="aquarius-sidebar">
-    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.1.0</span></div></div>
+    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.2.0</span></div></div>
     <div class="s-group-lbl">Modulos activos</div>
     <button class="s-item active" type="button" data-view-target="view-obj">
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
@@ -70,9 +70,14 @@
         <p class="section-desc">Branding y ventas: resultados por campana, inversion, CTR, clics, conversiones y costo por conversion.</p>
         <div class="retail-filters" id="retail-filters"></div>
         <div class="kpi-strip" id="kpi-strip" aria-label="KPIs generales"></div>
-        <div class="panel chart-panel">
+        <div class="panel chart-panel" id="chart-panel">
           <div class="panel-head chart-panel-head"><div><div class="panel-title" id="chart-title">Resultados por campana | Inversion, Conversaciones y Costo x Conversacion</div><div class="panel-sub">Indicadores reales del archivo de pauta digital</div></div><div class="chart-controls"><div class="chart-legend"><span><i class="legend-line investment"></i><b>Inversion</b><i class="legend-line"></i><b>Conversaciones</b><i class="legend-line"></i><b>Costo x Conversacion</b></span></div></div></div>
           <div class="chart-wrap h-360"><canvas id="chart-monthly"></canvas></div>
+        </div>
+        <div class="data-notice" id="records-empty" hidden></div>
+        <div class="panel chart-panel impressions-panel" id="impressions-panel" hidden>
+          <div class="panel-head chart-panel-head"><div><div class="panel-title" id="impressions-title">Impresiones por dia</div><div class="panel-sub" id="impressions-sub"></div></div><div class="chart-controls"><div class="chart-legend impressions-legend"><span><i class="legend-line impressions"></i><b>Impresiones diarias</b></span></div></div></div>
+          <div class="chart-wrap h-260"><canvas id="chart-impressions"></canvas></div>
         </div>
         <div class="month-tabs" id="month-tabs"></div>
         <div class="panel campaigns-panel"><div class="panel-head"><div><div class="panel-title" id="campaigns-title">Tabla de resultados</div><div class="panel-sub" id="campaigns-sub"></div></div></div><div class="campaigns-note" id="campaigns-note"></div><div class="table-scroll"><table class="data-table campaigns-table"><thead><tr><th>Campaña</th><th class="num">Inversion</th><th class="num">% Δ</th><th class="num">CTR</th><th class="num">% Δ</th><th class="num">Clics</th><th class="num">% Δ</th><th class="num">Conversaciones</th><th class="num">% Δ</th><th class="num">Costo x conversacion</th><th class="num">% Δ</th></tr></thead><tbody id="campaigns-body"></tbody></table></div></div>
