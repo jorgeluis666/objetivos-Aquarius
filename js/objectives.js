@@ -10,8 +10,8 @@
   const DAILY = {
     cost: { label: 'Inversion', unit: 'money', color: '#0284c7', axis: 'y' },
     conversions: { label: 'Resultados', unit: 'count', color: '#7c3aed', axis: 'y1' },
-    costPerConversion: { label: 'Costo x resultado', unit: 'money', color: '#0f766e', axis: 'y', dashed: true },
-    impressions: { label: 'Impresiones', unit: 'count', color: '#f59e0b', axis: 'y1' }
+    costPerConversion: { label: 'Costo x resultado', unit: 'money', color: '#0f766e', axis: 'y2', dashed: true },
+    impressions: { label: 'Impresiones', unit: 'count', color: '#f59e0b', axis: 'y3' }
   };
   const DAILY_ORDER = ['cost', 'conversions', 'costPerConversion', 'impressions'];
   const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -339,35 +339,63 @@
   }
 
   // Evolucion diaria dentro del mes: una linea por indicador disponible.
+  //
+  // Cuando el mes trae los totales de campanas pero no el export diario de
+  // inversion y resultados, esas dos series se reparten entre los dias segun las
+  // impresiones de cada dia. Quedan marcadas como estimadas y desaparecen en
+  // cuanto se importe la serie diaria real.
   function dailySeries() {
-    const rows = state.daily.map(row => {
+    const rows = state.daily.map(row => Object.assign({}, row));
+    const estimated = new Set();
+    const monthlyCost = sum(state.rows, 'cost');
+    const monthlyConversions = sum(state.rows, 'conversions');
+    const hasDailyCost = rows.some(row => isNum(row.cost));
+    const hasDailyConversions = rows.some(row => isNum(row.conversions));
+
+    if (rows.length && (!hasDailyCost || !hasDailyConversions) && (monthlyCost > 0 || monthlyConversions > 0)) {
+      const totalImpressions = rows.reduce((total, row) => total + (isNum(row.impressions) ? Number(row.impressions) : 0), 0);
+      const weightOf = row => (totalImpressions > 0 && isNum(row.impressions) ? Number(row.impressions) / totalImpressions : 1 / rows.length);
+      if (!hasDailyCost && monthlyCost > 0) {
+        rows.forEach(row => { row.cost = monthlyCost * weightOf(row); });
+        estimated.add('cost');
+      }
+      if (!hasDailyConversions && monthlyConversions > 0) {
+        rows.forEach(row => { row.conversions = monthlyConversions * weightOf(row); });
+        estimated.add('conversions');
+      }
+    }
+
+    rows.forEach(row => {
       const cost = isNum(row.cost) ? Number(row.cost) : null;
       const conversions = isNum(row.conversions) ? Number(row.conversions) : null;
-      return Object.assign({}, row, {
-        costPerConversion: Number.isFinite(cost) && Number.isFinite(conversions) && conversions > 0 ? cost / conversions : null
-      });
+      row.costPerConversion = cost !== null && conversions !== null && conversions > 0 ? cost / conversions : null;
     });
+    if (estimated.has('cost') || estimated.has('conversions')) estimated.add('costPerConversion');
+
     const active = DAILY_ORDER.filter(metric => rows.some(row => isNum(row[metric])));
-    return { rows, active };
+    return { rows, active, estimated };
   }
 
-  function dailySummary(rows, active) {
+  function dailySummary(rows, active, estimated) {
     const month = currentMonth();
     const parts = [`${rows.length} dias de ${month ? month.label : 'el periodo'}`];
-    if (active.includes('cost')) parts.push(`${fmtMoney(dailyTotal('cost'))} de inversion`);
-    if (active.includes('conversions')) parts.push(`${fmtCount(dailyTotal('conversions'))} resultados`);
+    const totalOf = metric => rows.reduce((total, row) => total + (isNum(row[metric]) ? Number(row[metric]) : 0), 0);
+    if (active.includes('cost')) parts.push(`${fmtMoney(totalOf('cost'))} de inversion`);
+    if (active.includes('conversions')) parts.push(`${fmtCount(totalOf('conversions'))} resultados`);
     if (active.includes('cost') && active.includes('conversions')) {
-      const conversions = dailyTotal('conversions');
-      parts.push(`${fmtMoney(conversions > 0 ? dailyTotal('cost') / conversions : null)} por resultado`);
+      const conversions = totalOf('conversions');
+      parts.push(`${fmtMoney(conversions > 0 ? totalOf('cost') / conversions : null)} por resultado`);
     }
     if (active.includes('impressions')) parts.push(`${fmtCount(dailyTotal('impressions'))} impresiones`);
-    return `${parts.join(' | ')}.`;
+    const estimatedLabels = active.filter(metric => estimated.has(metric)).map(metric => DAILY[metric].label.toLowerCase());
+    const tail = estimatedLabels.length ? ` ${estimatedLabels.join(', ')} estimados a partir del total del mes.` : '';
+    return `${parts.join(' | ')}.${tail}`;
   }
 
   function renderDaily() {
     const panel = document.getElementById('daily-panel');
     if (!panel) return;
-    const { rows, active } = dailySeries();
+    const { rows, active, estimated } = dailySeries();
     if (!rows.length || !active.length) {
       panel.hidden = true;
       if (state.dailyChart) { state.dailyChart.destroy(); state.dailyChart = null; }
@@ -376,18 +404,23 @@
     panel.hidden = false;
     const month = currentMonth();
     document.getElementById('daily-title').textContent = `Evolucion diaria | ${month ? month.label : ''}`.trim();
-    document.getElementById('daily-sub').textContent = dailySummary(rows, active);
+    document.getElementById('daily-sub').textContent = dailySummary(rows, active, estimated);
     const legend = document.querySelector('.daily-legend span');
     if (legend) {
-      legend.innerHTML = active.map(metric => `<i class="legend-line" style="background:${DAILY[metric].color}"></i><b>${DAILY[metric].label}</b>`).join('');
+      legend.innerHTML = active.map(metric => `<i class="legend-line" style="background:${DAILY[metric].color}"></i><b>${DAILY[metric].label}${estimated.has(metric) ? ' (est.)' : ''}</b>`).join('');
     }
     const note = document.getElementById('daily-note');
     if (note) {
       const missing = ['cost', 'conversions'].filter(metric => !active.includes(metric)).map(metric => DAILY[metric].label.toLowerCase());
-      note.hidden = !missing.length;
-      note.textContent = missing.length
-        ? `Falta el detalle diario de ${missing.join(' y ')}. Envia el export diario con las columnas Fecha, Coste y Resultados y este grafico las dibujara junto a las impresiones.`
-        : '';
+      const guessed = ['cost', 'conversions'].filter(metric => estimated.has(metric)).map(metric => DAILY[metric].label.toLowerCase());
+      note.hidden = !missing.length && !guessed.length;
+      if (guessed.length) {
+        note.textContent = `Lineas punteadas: ${guessed.join(' y ')} del mes repartidos entre los dias segun las impresiones de cada dia, no son cifras diarias reales. Al importar el export diario con las columnas Fecha, Coste y Resultados se reemplazan por los valores reales.`;
+      } else if (missing.length) {
+        note.textContent = `Falta el detalle diario de ${missing.join(' y ')}. Envia el export diario con las columnas Fecha, Coste y Resultados y este grafico las dibujara junto a las impresiones.`;
+      } else {
+        note.textContent = '';
+      }
     }
     const canvas = document.getElementById('chart-daily');
     if (typeof Chart === 'undefined') {
@@ -395,8 +428,12 @@
       return;
     }
     if (state.dailyChart) state.dailyChart.destroy();
-    const usesMoney = active.some(metric => DAILY[metric].axis === 'y');
-    const usesCount = active.some(metric => DAILY[metric].axis === 'y1');
+    // Sin resultados diarios, las impresiones pasan al eje visible de conteo.
+    const impressionsAlone = active.includes('impressions') && !active.includes('conversions');
+    const axisFor = metric => (metric === 'impressions' && impressionsAlone ? 'y1' : DAILY[metric].axis);
+    const usesMoney = active.some(metric => axisFor(metric) === 'y');
+    const usesCount = active.some(metric => axisFor(metric) === 'y1');
+    const costPerResultValues = rows.map(row => Number(row.costPerConversion)).filter(value => Number.isFinite(value) && value > 0);
     state.dailyChart = new Chart(canvas, {
       type: 'line',
       data: {
@@ -407,11 +444,11 @@
             metricKey: metric,
             label: series.label,
             data: rows.map(row => (isNum(row[metric]) ? Number(row[metric]) : null)),
-            yAxisID: series.axis,
+            yAxisID: axisFor(metric),
             borderColor: series.color,
             backgroundColor: active.length === 1 ? 'rgba(245,158,11,.14)' : 'transparent',
             borderWidth: 2,
-            borderDash: series.dashed ? [5, 4] : [],
+            borderDash: estimated.has(metric) || series.dashed ? [5, 4] : [],
             pointRadius: rows.length > 20 ? 2 : 3,
             pointHoverRadius: 5,
             pointBackgroundColor: series.color,
@@ -431,8 +468,9 @@
             callbacks: {
               title: items => formatLongDate(rows[items[0].dataIndex].date),
               label: context => {
-                const series = DAILY[context.dataset.metricKey];
-                return ` ${series.label}: ${formatValue(context.raw, series.unit)}`;
+                const metric = context.dataset.metricKey;
+                const series = DAILY[metric];
+                return ` ${series.label}: ${formatValue(context.raw, series.unit)}${estimated.has(metric) ? ' (estimado)' : ''}`;
               }
             }
           }
@@ -453,7 +491,15 @@
             border: { display: false },
             grid: { color: usesMoney ? 'rgba(0,0,0,0)' : 'rgba(14,165,233,.16)', drawOnChartArea: !usesMoney },
             ticks: { color: '#7890b5', font: { size: 10 }, callback: value => fmtCount(value) }
-          }
+          },
+          // Ejes ocultos: cada serie conserva su escala y su forma se lee igual.
+          y2: {
+            display: false,
+            beginAtZero: true,
+            grid: { drawOnChartArea: false },
+            suggestedMax: (costPerResultValues.length ? Math.max(...costPerResultValues) : 1) * 1.8
+          },
+          y3: { display: false, beginAtZero: true, grid: { drawOnChartArea: false } }
         }
       }
     });

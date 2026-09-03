@@ -49,8 +49,11 @@ grafican impresiones.
    resultados, costo por resultado e impresiones. El costo por resultado se
    calcula dia a dia como inversion entre resultados.
 
-Si el mes solo tiene impresiones diarias, el panel grafica esa serie y avisa que
-falta el export diario de inversion y resultados.
+Si el mes tiene los totales de campanas pero no el export diario de inversion y
+resultados, el panel reparte esos totales entre los dias segun las impresiones de
+cada dia. Esas lineas salen punteadas, con `(est.)` en la leyenda y un aviso
+debajo del grafico: son un prorrateo, no cifras diarias reales. Al importar el
+export diario se reemplazan por los valores reales.
 
 El CTR de la cabecera usa las impresiones reales de la serie diaria cuando
 existen (clics / impresiones). Sin serie diaria cae al CTR ponderado que trae la
