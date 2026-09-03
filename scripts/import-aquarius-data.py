@@ -228,6 +228,23 @@ def upsert_month(document: dict[str, object], month_id: str) -> dict[str, object
     return month
 
 
+def mirror_legacy_month(document: dict[str, object]) -> None:
+    """Copia el mes por defecto a la raiz del JSON.
+
+    Sirve de compatibilidad: un dashboard con el JS anterior en cache sigue
+    leyendo `records` y no se rompe mientras GitHub Pages refresca sus assets.
+    """
+    months = document.get("months") or []
+    default = next((month for month in months if month.get("id") == document.get("defaultMonth")), None)
+    if not default:
+        document.pop("records", None)
+        return
+    document["month"] = default.get("id")
+    document["sourceFile"] = default.get("sourceFile")
+    document["receivedHeaders"] = default.get("receivedHeaders", [])
+    document["records"] = default.get("records", [])
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Importa data publicitaria mensual de Aquarius.")
     parser.add_argument("source", type=Path, help="Archivo fuente .csv, .xlsx o .xlsm")
@@ -278,6 +295,7 @@ def main() -> int:
     document["months"].sort(key=lambda item: str(item.get("id") or ""))
     document["defaultMonth"] = document["months"][-1]["id"] if document["months"] else None
     document["status"] = "ok"
+    mirror_legacy_month(document)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")

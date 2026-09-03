@@ -22,6 +22,10 @@ function copyDirectory(source, target) {
   }
 }
 
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function main() {
   let html = readFile('index.html');
   const css = readFile('css/dashboard.css').replaceAll('../assets/', 'assets/');
@@ -32,30 +36,17 @@ function main() {
   const sidebar = readFile('js/sidebar.js');
   const data = readFile('data/aquarius-lima-retail-2026.json').replace(/</g, '\\u003c');
 
-  html = html.replace(
-    '<link rel="stylesheet" href="css/dashboard.css">',
-    `<style>${css}</style>`
-  );
-  html = html.replace(
-    '<script src="js/objectives.js"></script>',
-    `<script>${app}</script>`
-  );
-  html = html.replace(
-    '<script src="js/reservation-goals.js"></script>',
-    `<script>${reservationGoals}</script>`
-  );
-  html = html.replace(
-    '<script src="js/messages-calculator.js"></script>',
-    `<script>${messagesCalculator}</script>`
-  );
-  html = html.replace(
-    '<script src="js/navigation.js"></script>',
-    `<script>${navigation}</script>`
-  );
-  html = html.replace(
-    '<script src="js/sidebar.js"></script>',
-    `<script>${sidebar}</script>`
-  );
+  // Los assets llevan ?v=<version> para evitar caches viejos en GitHub Pages,
+  // asi que el build ubica cada etiqueta ignorando ese sufijo.
+  const styleTag = file => new RegExp('<link rel="stylesheet" href="' + escapeRegExp(file) + '(?:\\?[^"]*)?">');
+  const scriptTag = file => new RegExp('<script src="' + escapeRegExp(file) + '(?:\\?[^"]*)?"></script>');
+
+  html = html.replace(styleTag('css/dashboard.css'), `<style>${css}</style>`);
+  html = html.replace(scriptTag('js/objectives.js'), `<script>${app}</script>`);
+  html = html.replace(scriptTag('js/reservation-goals.js'), `<script>${reservationGoals}</script>`);
+  html = html.replace(scriptTag('js/messages-calculator.js'), `<script>${messagesCalculator}</script>`);
+  html = html.replace(scriptTag('js/navigation.js'), `<script>${navigation}</script>`);
+  html = html.replace(scriptTag('js/sidebar.js'), `<script>${sidebar}</script>`);
   html = html.replace(
     '</head>',
     `<script>window.AQUARIUS_RETAIL_DATA = ${data};</script></head>`

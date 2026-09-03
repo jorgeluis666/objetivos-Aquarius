@@ -20,7 +20,7 @@
     #rb-auth-bg{flex:1;height:100%;background-size:cover;background-position:center;background-repeat:no-repeat;filter:grayscale(20%)}
   `;
   function loadReservationGoals() {
-    if (document.querySelector('script[src="js/reservation-goals.js"]')) return;
+    if (document.querySelector('script[src^="js/reservation-goals.js"]')) return;
     const script = document.createElement('script');
     script.src = 'js/reservation-goals.js';
     script.defer = true;
