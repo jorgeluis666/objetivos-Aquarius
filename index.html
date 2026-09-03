@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/dashboard.css?v=1.3.0">
+<link rel="stylesheet" href="css/dashboard.css?v=1.4.0">
 <style>
   .reservations-total-row td { height: auto !important; padding: 10px 12px !important; border-top: 2px solid #cbd5e1 !important; color: #0f172a !important; background: #f8fafc; font-size: 13px; font-weight: 800; vertical-align: middle; }
   .reservations-total-row .total-label { text-align: right; }
@@ -33,7 +33,7 @@
 <body>
 <div class="shell">
   <aside class="sidebar" id="aquarius-sidebar">
-    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.3.0</span></div></div>
+    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.4.0</span></div></div>
     <div class="s-group-lbl">Modulos activos</div>
     <button class="s-item active" type="button" data-view-target="view-obj">
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
@@ -75,14 +75,10 @@
           <div class="chart-wrap h-360"><canvas id="chart-monthly"></canvas></div>
         </div>
         <div class="data-notice" id="records-empty" hidden></div>
-        <div class="panel chart-panel consolidated-panel" id="consolidated-panel" hidden>
-          <div class="panel-head chart-panel-head"><div><div class="panel-title" id="consolidated-title">Indicadores consolidados por mes</div><div class="panel-sub" id="consolidated-sub"></div></div><div class="chart-controls"><div class="chart-legend consolidated-legend"><span></span></div></div></div>
-          <div class="chart-wrap h-300"><canvas id="chart-consolidated"></canvas></div>
-          <div class="panel-note" id="consolidated-note" hidden></div>
-        </div>
-        <div class="panel chart-panel impressions-panel" id="impressions-panel" hidden>
-          <div class="panel-head chart-panel-head"><div><div class="panel-title" id="impressions-title">Impresiones por dia</div><div class="panel-sub" id="impressions-sub"></div></div><div class="chart-controls"><div class="chart-legend impressions-legend"><span><i class="legend-line impressions"></i><b>Impresiones diarias</b></span></div></div></div>
-          <div class="chart-wrap h-260"><canvas id="chart-impressions"></canvas></div>
+        <div class="panel chart-panel daily-panel" id="daily-panel" hidden>
+          <div class="panel-head chart-panel-head"><div><div class="panel-title" id="daily-title">Evolucion diaria</div><div class="panel-sub" id="daily-sub"></div></div><div class="chart-controls"><div class="chart-legend daily-legend"><span></span></div></div></div>
+          <div class="chart-wrap h-300"><canvas id="chart-daily"></canvas></div>
+          <div class="panel-note" id="daily-note" hidden></div>
         </div>
         <div class="month-tabs" id="month-tabs"></div>
         <div class="panel campaigns-panel"><div class="panel-head"><div><div class="panel-title" id="campaigns-title">Tabla de resultados</div><div class="panel-sub" id="campaigns-sub"></div></div></div><div class="campaigns-note" id="campaigns-note"></div><div class="table-scroll"><table class="data-table campaigns-table"><thead><tr><th>Campaña</th><th class="num">Inversion</th><th class="num">% Δ</th><th class="num">CTR</th><th class="num">% Δ</th><th class="num">Clics</th><th class="num">% Δ</th><th class="num">Conversaciones</th><th class="num">% Δ</th><th class="num">Costo x conversacion</th><th class="num">% Δ</th></tr></thead><tbody id="campaigns-body"></tbody></table></div></div>
@@ -169,12 +165,12 @@
     </div>
   </main>
 </div>
-<script src="js/objectives.js?v=1.3.0"></script>
-<script src="js/reservation-goals.js?v=1.3.0"></script>
-<script src="js/messages-calculator.js?v=1.3.0"></script>
-<script src="js/navigation.js?v=1.3.0"></script>
-<script src="js/sidebar.js?v=1.3.0"></script>
-<script src="auth-login.js?v=1.3.0"></script>
+<script src="js/objectives.js?v=1.4.0"></script>
+<script src="js/reservation-goals.js?v=1.4.0"></script>
+<script src="js/messages-calculator.js?v=1.4.0"></script>
+<script src="js/navigation.js?v=1.4.0"></script>
+<script src="js/sidebar.js?v=1.4.0"></script>
+<script src="auth-login.js?v=1.4.0"></script>
 <script>
   AuthLogin.init({ password: 'Aquarius2026', brand: 'Aquarius', title: 'Dashboard\nRetail 2026', sessionKey: 'aquarius_auth' });
 </script>

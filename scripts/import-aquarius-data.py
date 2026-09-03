@@ -27,7 +27,24 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data" / "aquarius-lima-retail-2026.json"
 
 EXPECTED_HEADERS = ["Campaña", "Coste", "% Δ", "CTR", "% Δ", "Clics", "% Δ", "Conv", "% Δ", "Cos/con", "% Δ"]
-SERIES_HEADERS = ["Fecha", "Impresiones"]
+DATE_HEADERS = {"fecha", "dia", "date", "day"}
+# Cada columna diaria reconocida se guarda con su nombre interno y su parser.
+DAILY_METRICS = {
+    "impresiones": ("impressions", "int"),
+    "impressions": ("impressions", "int"),
+    "coste": ("cost", "float"),
+    "costo": ("cost", "float"),
+    "inversion": ("cost", "float"),
+    "importe gastado": ("cost", "float"),
+    "gasto": ("cost", "float"),
+    "resultados": ("conversions", "int"),
+    "conversaciones": ("conversions", "int"),
+    "conversiones": ("conversions", "int"),
+    "conv": ("conversions", "int"),
+    "mensajes": ("conversions", "int"),
+    "clics": ("clicks", "int"),
+    "clicks": ("clicks", "int"),
+}
 FIELDS = [
     "campaign",
     "cost",
@@ -151,10 +168,16 @@ def compatible(headers: list[str]) -> bool:
     return all(normalize(headers[index]) == normalize(expected) for index, expected in enumerate(EXPECTED_HEADERS))
 
 
-def is_time_series(headers: list[str]) -> bool:
-    if len(headers) < len(SERIES_HEADERS):
-        return False
-    return all(normalize(headers[index]) == normalize(expected) for index, expected in enumerate(SERIES_HEADERS))
+def daily_columns(headers: list[str]) -> dict[int, tuple[str, str]]:
+    """Mapea las columnas diarias reconocidas: indice -> (campo, tipo)."""
+    if len(headers) < 2 or normalize(headers[0]) not in DATE_HEADERS:
+        return {}
+    columns = {}
+    for index, header in enumerate(headers[1:], start=1):
+        metric = DAILY_METRICS.get(normalize(header))
+        if metric:
+            columns[index] = metric
+    return columns
 
 
 def build_records(rows: list[list[object]]) -> list[dict[str, object]]:
@@ -169,17 +192,39 @@ def build_records(rows: list[list[object]]) -> list[dict[str, object]]:
     return records
 
 
-def build_daily_impressions(rows: list[list[object]]) -> list[dict[str, object]]:
+def build_daily_rows(rows: list[list[object]], columns: dict[int, tuple[str, str]]) -> list[dict[str, object]]:
     daily = []
     for source in rows:
         if not source:
             continue
         date = parse_date_es(source[0])
-        impressions = parse_int_es(source[1] if len(source) > 1 else None)
-        if date and impressions is not None:
-            daily.append({"date": date, "impressions": impressions})
+        if not date:
+            continue
+        entry = {"date": date}
+        for index, (field, kind) in columns.items():
+            value = source[index] if index < len(source) else None
+            parsed = parse_int_es(value) if kind == "int" else parse_number(value)
+            if parsed is not None:
+                entry[field] = parsed
+        if len(entry) > 1:
+            daily.append(entry)
     daily.sort(key=lambda item: item["date"])
     return daily
+
+
+def merge_daily(month: dict[str, object], rows: list[dict[str, object]], source_name: str) -> None:
+    """Agrega o actualiza los dias del mes sin borrar metricas ya cargadas."""
+    daily = month.get("daily")
+    if not isinstance(daily, dict):
+        daily = {"sourceFiles": [], "rows": []}
+    existing = {item["date"]: item for item in daily.get("rows", [])}
+    for row in rows:
+        existing.setdefault(row["date"], {"date": row["date"]}).update(row)
+    daily["rows"] = sorted(existing.values(), key=lambda item: item["date"])
+    sources = [name for name in daily.get("sourceFiles", []) if name != source_name]
+    daily["sourceFiles"] = sources + [source_name]
+    month["daily"] = daily
+    month.pop("impressions", None)
 
 
 def load_document(output: Path) -> dict[str, object]:
@@ -203,7 +248,7 @@ def load_document(output: Path) -> dict[str, object]:
         if current.get(key):
             base[key] = current[key]
     if isinstance(current.get("months"), list):
-        base["months"] = current["months"]
+        base["months"] = [migrate_month(month) for month in current["months"]]
         base["defaultMonth"] = current.get("defaultMonth")
         return base
     if isinstance(current.get("records"), list) and current["records"]:
@@ -217,6 +262,19 @@ def load_document(output: Path) -> dict[str, object]:
         }]
         base["defaultMonth"] = legacy_id
     return base
+
+
+def migrate_month(month: dict[str, object]) -> dict[str, object]:
+    """Convierte el bloque `impressions` antiguo en la serie diaria unificada."""
+    legacy = month.get("impressions")
+    if isinstance(legacy, dict) and isinstance(legacy.get("daily"), list):
+        rows = [
+            {"date": item["date"], "impressions": item["impressions"]}
+            for item in legacy["daily"]
+            if item.get("date") is not None and item.get("impressions") is not None
+        ]
+        merge_daily(month, rows, legacy.get("sourceFile") or "serie-impresiones")
+    return month
 
 
 def upsert_month(document: dict[str, object], month_id: str) -> dict[str, object]:
@@ -256,27 +314,25 @@ def main() -> int:
     headers, rows = read_source(args.source)
     document = load_document(args.output)
 
-    if not compatible(headers) and not is_time_series(headers):
+    columns = daily_columns(headers)
+    if not compatible(headers) and not columns:
         print("[aquarius-import] el archivo no coincide con los formatos esperados.")
         print(f"  encabezados recibidos: {headers}")
         print(f"  tabla de campanas: {EXPECTED_HEADERS}")
-        print(f"  serie de impresiones: {SERIES_HEADERS}")
+        print("  serie diaria: primera columna Fecha y alguna de " + ", ".join(sorted({name for name, _ in DAILY_METRICS.values()})))
         return 1
 
     month_id = args.month or month_from_filename(args.source)
-    if is_time_series(headers):
-        daily = build_daily_impressions(rows)
+    if columns and not compatible(headers):
+        daily = build_daily_rows(rows, columns)
         if not daily:
-            print("[aquarius-import] la serie temporal no tiene filas legibles.")
+            print("[aquarius-import] la serie diaria no tiene filas legibles.")
             return 1
         month_id = month_id or daily[0]["date"][:7]
         month = upsert_month(document, month_id)
-        month["impressions"] = {
-            "sourceFile": args.source.name,
-            "total": sum(item["impressions"] for item in daily),
-            "daily": daily,
-        }
-        detail = f"{len(daily)} dias de impresiones"
+        merge_daily(month, daily, args.source.name)
+        metrics = sorted({field for field, _ in columns.values()})
+        detail = f"{len(daily)} dias con {', '.join(metrics)}"
     else:
         if not month_id:
             print("[aquarius-import] indica el mes destino con --month AAAA-MM.")

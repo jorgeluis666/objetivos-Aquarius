@@ -44,19 +44,29 @@ grafican impresiones.
 ## Paneles del modulo
 
 1. `Resultados por campana`: detalle del mes seleccionado.
-2. `Indicadores consolidados por mes`: inversion, resultados y costo por
-   resultado de cada cierre, sumando todas las campanas. No depende del filtro:
-   muestra todos los meses cargados para comparar la evolucion.
-3. `Impresiones por dia`: serie diaria del mes seleccionado.
+2. `Evolucion diaria`: lineas en el tiempo con los indicadores del mes
+   seleccionado. Dibuja las series que traiga la data diaria: inversion,
+   resultados, costo por resultado e impresiones. El costo por resultado se
+   calcula dia a dia como inversion entre resultados.
 
-El costo por resultado del panel consolidado se calcula como inversion total
-entre resultados totales del mes, no como promedio de campanas.
+Si el mes solo tiene impresiones diarias, el panel grafica esa serie y avisa que
+falta el export diario de inversion y resultados.
+
+El CTR de la cabecera usa las impresiones reales de la serie diaria cuando
+existen (clics / impresiones). Sin serie diaria cae al CTR ponderado que trae la
+tabla de campanas.
 
 ### Formatos aceptados
 
 1. Tabla de resultados por campana (`.csv`, `.xlsx`, `.xlsm`):
    `Campaña | Coste | % Δ | CTR | % Δ | Clics | % Δ | Conv | % Δ | Cos/con | % Δ`
-2. Serie temporal de impresiones (`.csv`): `Fecha | Impresiones`
+2. Serie diaria (`.csv`): primera columna `Fecha` y una o mas de estas columnas,
+   en cualquier combinacion: `Impresiones`, `Coste` (o `Costo`, `Inversion`,
+   `Importe gastado`, `Gasto`), `Resultados` (o `Conversaciones`, `Conv`,
+   `Mensajes`) y `Clics`.
+
+Cada archivo diario se fusiona por fecha dentro del mes, asi que puedes enviar
+las impresiones en un export y la inversion diaria en otro.
 
 ## Importar la data de cada mes
 

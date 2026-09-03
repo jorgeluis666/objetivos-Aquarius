@@ -6,13 +6,14 @@
     conversions: { label: 'Conversaciones', unit: 'count', color: '#7c3aed', fill: 'rgba(124,58,237,.16)', axis: 'y1' },
     costPerConversion: { label: 'Costo x Conversacion', unit: 'money', color: '#0f766e', fill: 'rgba(15,118,110,.16)', axis: 'y2' }
   };
-  // Indicadores consolidados: un punto por cierre mensual, no por campana.
-  const CONSOLIDATED = {
-    cost: { label: 'Inversion', unit: 'money', color: '#0284c7', fill: 'rgba(2,132,199,.22)', axis: 'y', type: 'bar' },
-    conversions: { label: 'Resultados', unit: 'count', color: '#7c3aed', fill: 'rgba(124,58,237,.2)', axis: 'y1', type: 'bar' },
-    costPerConversion: { label: 'Costo x resultado', unit: 'money', color: '#0f766e', fill: 'rgba(15,118,110,.16)', axis: 'y2', type: 'line' }
+  // Series de la evolucion diaria dentro del mes.
+  const DAILY = {
+    cost: { label: 'Inversion', unit: 'money', color: '#0284c7', axis: 'y' },
+    conversions: { label: 'Resultados', unit: 'count', color: '#7c3aed', axis: 'y1' },
+    costPerConversion: { label: 'Costo x resultado', unit: 'money', color: '#0f766e', axis: 'y', dashed: true },
+    impressions: { label: 'Impresiones', unit: 'count', color: '#f59e0b', axis: 'y1' }
   };
-  const IMPRESSIONS_COLOR = '#f59e0b';
+  const DAILY_ORDER = ['cost', 'conversions', 'costPerConversion', 'impressions'];
   const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const CAMPAIGN_NAMES = {
     DIGITALIZACIONDEDCOUMENTOS: 'Digitalizacion de documentos',
@@ -25,7 +26,7 @@
     PRODUCTOSTI: 'Productos TI',
     OUTSOURCINGDEALMACENES: 'Outsourcing de almacenes'
   };
-  const state = { data: null, months: [], monthId: null, rows: [], impressions: null, chart: null, consolidatedChart: null, impressionsChart: null };
+  const state = { data: null, months: [], monthId: null, rows: [], daily: [], chart: null, dailyChart: null };
 
   const fmtMoney = value => Number.isFinite(Number(value)) ? `S/ ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
   const fmtCount = value => Number.isFinite(Number(value)) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 }) : '-';
@@ -89,6 +90,25 @@
     return [...state.rows].sort((a, b) => Number(b[metric] || 0) - Number(a[metric] || 0));
   }
 
+  // Number(null) es 0, asi que los vacios necesitan un chequeo estricto.
+  const isNum = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+
+  // Lee la serie diaria del mes: formato nuevo (daily.rows) y el anterior
+  // (impressions.daily), que solo traia impresiones.
+  function dailyRows(month) {
+    if (month.daily && Array.isArray(month.daily.rows)) return month.daily.rows;
+    if (month.impressions && Array.isArray(month.impressions.daily)) return month.impressions.daily;
+    return [];
+  }
+
+  function dailyTotal(field) {
+    return state.daily.reduce((total, row) => total + (isNum(row[field]) ? Number(row[field]) : 0), 0);
+  }
+
+  function dailyHas(field) {
+    return state.daily.some(row => isNum(row[field]));
+  }
+
   // Acepta el esquema por meses y tambien el formato antiguo de un solo bloque de records.
   function normalizeMonths(data) {
     if (Array.isArray(data.months) && data.months.length) {
@@ -98,7 +118,7 @@
           label: month.label || monthLabel(month.id),
           sourceFile: month.sourceFile || null,
           records: Array.isArray(month.records) ? month.records : [],
-          impressions: month.impressions && Array.isArray(month.impressions.daily) ? month.impressions : null
+          daily: dailyRows(month)
         }))
         .sort((a, b) => a.id.localeCompare(b.id));
     }
@@ -109,7 +129,7 @@
         label: /^\d{4}-\d{2}$/.test(id) ? monthLabel(id) : 'Historico',
         sourceFile: data.sourceFile || null,
         records: data.records,
-        impressions: null
+        daily: []
       }];
     }
     return [];
@@ -136,7 +156,7 @@
     if (!month) return;
     state.monthId = month.id;
     state.rows = month.records || [];
-    state.impressions = month.impressions;
+    state.daily = month.daily || [];
     if (persist) storeMonth(month.id);
   }
 
@@ -186,12 +206,14 @@
       ['Conversaciones', hasRows ? fmtCount(conversions) : '-', 'Resultados registrados'],
       ['Costo x conversacion', hasRows && conversions > 0 ? fmtMoney(cost / conversions) : '-', 'Inversion / conversaciones']
     ];
-    if (state.impressions) {
-      const daily = state.impressions.daily;
-      const total = Number.isFinite(Number(state.impressions.total))
-        ? Number(state.impressions.total)
-        : daily.reduce((acc, item) => acc + Number(item.impressions || 0), 0);
-      cards.push(['Impresiones', fmtCount(total), `Promedio ${fmtCount(daily.length ? total / daily.length : null)} x dia`]);
+    if (dailyHas('impressions')) {
+      const total = dailyTotal('impressions');
+      const days = state.daily.filter(row => isNum(row.impressions)).length;
+      cards.push(['Impresiones', fmtCount(total), `Promedio ${fmtCount(days ? total / days : null)} x dia`]);
+      // Con impresiones reales el CTR sale de la serie diaria, no del CTR por campana.
+      if (hasRows && total > 0) {
+        cards[1] = ['CTR promedio', fmtPercent(sum(rows, 'clicks') / total), 'Clics / impresiones del mes'];
+      }
     }
     host.innerHTML = cards.map(([label, value, meta]) => `<div class="kpi-pill"><span>${label}</span><strong>${value}</strong><small>${meta}</small></div>`).join('');
   }
@@ -316,85 +338,87 @@
     });
   }
 
-  // Totales de cada cierre mensual: inversion, resultados y costo por resultado.
-  function consolidatedMonths() {
-    return state.months
-      .filter(month => (month.records || []).length)
-      .map(month => {
-        const cost = sum(month.records, 'cost');
-        const conversions = sum(month.records, 'conversions');
-        return {
-          id: month.id,
-          label: month.label,
-          cost,
-          conversions,
-          costPerConversion: conversions > 0 ? cost / conversions : null
-        };
+  // Evolucion diaria dentro del mes: una linea por indicador disponible.
+  function dailySeries() {
+    const rows = state.daily.map(row => {
+      const cost = isNum(row.cost) ? Number(row.cost) : null;
+      const conversions = isNum(row.conversions) ? Number(row.conversions) : null;
+      return Object.assign({}, row, {
+        costPerConversion: Number.isFinite(cost) && Number.isFinite(conversions) && conversions > 0 ? cost / conversions : null
       });
+    });
+    const active = DAILY_ORDER.filter(metric => rows.some(row => isNum(row[metric])));
+    return { rows, active };
   }
 
-  function renderConsolidated() {
-    const panel = document.getElementById('consolidated-panel');
+  function dailySummary(rows, active) {
+    const month = currentMonth();
+    const parts = [`${rows.length} dias de ${month ? month.label : 'el periodo'}`];
+    if (active.includes('cost')) parts.push(`${fmtMoney(dailyTotal('cost'))} de inversion`);
+    if (active.includes('conversions')) parts.push(`${fmtCount(dailyTotal('conversions'))} resultados`);
+    if (active.includes('cost') && active.includes('conversions')) {
+      const conversions = dailyTotal('conversions');
+      parts.push(`${fmtMoney(conversions > 0 ? dailyTotal('cost') / conversions : null)} por resultado`);
+    }
+    if (active.includes('impressions')) parts.push(`${fmtCount(dailyTotal('impressions'))} impresiones`);
+    return `${parts.join(' | ')}.`;
+  }
+
+  function renderDaily() {
+    const panel = document.getElementById('daily-panel');
     if (!panel) return;
-    const months = consolidatedMonths();
-    if (!months.length) {
+    const { rows, active } = dailySeries();
+    if (!rows.length || !active.length) {
       panel.hidden = true;
-      if (state.consolidatedChart) { state.consolidatedChart.destroy(); state.consolidatedChart = null; }
+      if (state.dailyChart) { state.dailyChart.destroy(); state.dailyChart = null; }
       return;
     }
     panel.hidden = false;
-    const metrics = ['cost', 'conversions', 'costPerConversion'];
-    const legend = document.querySelector('.consolidated-legend span');
+    const month = currentMonth();
+    document.getElementById('daily-title').textContent = `Evolucion diaria | ${month ? month.label : ''}`.trim();
+    document.getElementById('daily-sub').textContent = dailySummary(rows, active);
+    const legend = document.querySelector('.daily-legend span');
     if (legend) {
-      legend.innerHTML = metrics.map(metric => `<i class="legend-line" style="background:${CONSOLIDATED[metric].color}"></i><b>${CONSOLIDATED[metric].label}</b>`).join('');
+      legend.innerHTML = active.map(metric => `<i class="legend-line" style="background:${DAILY[metric].color}"></i><b>${DAILY[metric].label}</b>`).join('');
     }
-    const totalCost = months.reduce((acc, month) => acc + month.cost, 0);
-    const totalConversions = months.reduce((acc, month) => acc + month.conversions, 0);
-    document.getElementById('consolidated-sub').textContent = `Acumulado de ${months.length} ${months.length === 1 ? 'cierre' : 'cierres'}: ${fmtMoney(totalCost)} de inversion, ${fmtCount(totalConversions)} resultados y ${fmtMoney(totalConversions > 0 ? totalCost / totalConversions : null)} por resultado.`;
-    const note = document.getElementById('consolidated-note');
+    const note = document.getElementById('daily-note');
     if (note) {
-      note.hidden = months.length > 1;
-      note.textContent = 'Con un solo cierre cargado el grafico aun no muestra tendencia. Cada mes que importes agrega una columna comparable.';
+      const missing = ['cost', 'conversions'].filter(metric => !active.includes(metric)).map(metric => DAILY[metric].label.toLowerCase());
+      note.hidden = !missing.length;
+      note.textContent = missing.length
+        ? `Falta el detalle diario de ${missing.join(' y ')}. Envia el export diario con las columnas Fecha, Coste y Resultados y este grafico las dibujara junto a las impresiones.`
+        : '';
     }
-    const canvas = document.getElementById('chart-consolidated');
+    const canvas = document.getElementById('chart-daily');
     if (typeof Chart === 'undefined') {
-      canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Grafico no disponible sin conexion.</strong><span>Los totales siguen visibles en los KPIs y en la tabla.</span></div>';
+      canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Grafico no disponible sin conexion.</strong><span>Los totales siguen visibles en los KPIs.</span></div>';
       return;
     }
-    if (state.consolidatedChart) state.consolidatedChart.destroy();
-    state.consolidatedChart = new Chart(canvas, {
-      type: 'bar',
+    if (state.dailyChart) state.dailyChart.destroy();
+    const usesMoney = active.some(metric => DAILY[metric].axis === 'y');
+    const usesCount = active.some(metric => DAILY[metric].axis === 'y1');
+    state.dailyChart = new Chart(canvas, {
+      type: 'line',
       data: {
-        labels: months.map(month => month.label),
-        datasets: metrics.map(metric => {
-          const series = CONSOLIDATED[metric];
-          const base = {
+        labels: rows.map(row => formatDay(row.date)),
+        datasets: active.map(metric => {
+          const series = DAILY[metric];
+          return {
             metricKey: metric,
             label: series.label,
-            data: months.map(month => (Number.isFinite(Number(month[metric])) ? Number(month[metric]) : null)),
+            data: rows.map(row => (isNum(row[metric]) ? Number(row[metric]) : null)),
             yAxisID: series.axis,
             borderColor: series.color,
-            backgroundColor: series.fill
+            backgroundColor: active.length === 1 ? 'rgba(245,158,11,.14)' : 'transparent',
+            borderWidth: 2,
+            borderDash: series.dashed ? [5, 4] : [],
+            pointRadius: rows.length > 20 ? 2 : 3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: series.color,
+            tension: 0.32,
+            spanGaps: true,
+            fill: active.length === 1
           };
-          if (series.type === 'line') {
-            return Object.assign(base, {
-              type: 'line',
-              backgroundColor: 'rgba(15,118,110,.1)',
-              borderWidth: 2,
-              pointRadius: 4,
-              pointHoverRadius: 6,
-              pointBackgroundColor: series.color,
-              tension: 0.3,
-              fill: false
-            });
-          }
-          return Object.assign(base, {
-            borderWidth: months.map(month => (month.id === state.monthId ? 2.4 : 1.2)),
-            borderRadius: 5,
-            barPercentage: 0.62,
-            categoryPercentage: 0.62,
-            maxBarThickness: 54
-          });
         })
       },
       options: {
@@ -405,126 +429,29 @@
           legend: { display: false },
           tooltip: {
             callbacks: {
+              title: items => formatLongDate(rows[items[0].dataIndex].date),
               label: context => {
-                const series = CONSOLIDATED[context.dataset.metricKey];
+                const series = DAILY[context.dataset.metricKey];
                 return ` ${series.label}: ${formatValue(context.raw, series.unit)}`;
               }
             }
           }
         },
         scales: {
-          x: { grid: { display: false }, border: { color: '#bfdbfe' }, ticks: { color: '#7890b5', font: { size: 11, weight: '600' } } },
+          x: { grid: { display: false }, border: { color: '#bfdbfe' }, ticks: { color: '#7890b5', font: { size: 10 } } },
           y: {
+            display: usesMoney,
             beginAtZero: true,
             border: { display: false },
             grid: { color: 'rgba(14,165,233,.16)' },
             ticks: { color: '#7890b5', font: { size: 10 }, callback: value => formatValue(value, 'money', true) }
           },
           y1: {
-            beginAtZero: true,
-            position: 'right',
-            border: { display: false },
-            grid: { drawOnChartArea: false },
-            ticks: { color: '#7c3aed', font: { size: 10 }, precision: 0 }
-          },
-          // La linea de costo por resultado vive en un eje oculto con holgura
-          // extra arriba para no chocar con las etiquetas de las barras.
-          y2: {
-            beginAtZero: true,
-            display: false,
-            grid: { drawOnChartArea: false },
-            suggestedMax: Math.max(...months.map(month => Number(month.costPerConversion) || 0), 1) * 2.2
-          }
-        }
-      },
-      plugins: [{
-        id: 'consolidatedValues',
-        afterDatasetsDraw(chart) {
-          const { ctx } = chart;
-          ctx.save();
-          ctx.font = '700 10px Inter, sans-serif';
-          ctx.textAlign = 'center';
-          chart.data.datasets.forEach((dataset, datasetIndex) => {
-            const series = CONSOLIDATED[dataset.metricKey];
-            chart.getDatasetMeta(datasetIndex).data.forEach((element, index) => {
-              const value = dataset.data[index];
-              if (!Number.isFinite(Number(value))) return;
-              ctx.fillStyle = series.color;
-              if (series.type === 'line') {
-                ctx.textBaseline = 'bottom';
-                ctx.fillText(formatValue(value, series.unit), element.x, element.y - 8);
-                return;
-              }
-              const top = Math.min(element.y, element.base);
-              const height = Math.abs(element.base - element.y);
-              ctx.textBaseline = 'middle';
-              ctx.fillText(formatValue(value, series.unit), element.x, height > 30 ? top + 15 : top - 9);
-            });
-          });
-          ctx.restore();
-        }
-      }]
-    });
-  }
-
-  function renderImpressions() {
-    const panel = document.getElementById('impressions-panel');
-    if (!panel) return;
-    const data = state.impressions;
-    if (!data || !data.daily.length) {
-      panel.hidden = true;
-      if (state.impressionsChart) { state.impressionsChart.destroy(); state.impressionsChart = null; }
-      return;
-    }
-    panel.hidden = false;
-    const daily = data.daily;
-    const total = Number.isFinite(Number(data.total)) ? Number(data.total) : daily.reduce((acc, item) => acc + Number(item.impressions || 0), 0);
-    const best = daily.reduce((top, item) => (Number(item.impressions || 0) > Number(top.impressions || 0) ? item : top), daily[0]);
-    const month = currentMonth();
-    document.getElementById('impressions-title').textContent = `Impresiones por dia | ${month ? month.label : ''}`.trim();
-    document.getElementById('impressions-sub').textContent = `${fmtCount(total)} impresiones en ${daily.length} dias. Pico el ${formatLongDate(best.date)} con ${fmtCount(best.impressions)}.`;
-    const canvas = document.getElementById('chart-impressions');
-    if (typeof Chart === 'undefined') {
-      canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Grafico no disponible sin conexion.</strong><span>Los totales de impresiones siguen visibles en los KPIs.</span></div>';
-      return;
-    }
-    if (state.impressionsChart) state.impressionsChart.destroy();
-    state.impressionsChart = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: daily.map(item => formatDay(item.date)),
-        datasets: [{
-          label: 'Impresiones',
-          data: daily.map(item => Number(item.impressions || 0)),
-          borderColor: IMPRESSIONS_COLOR,
-          backgroundColor: 'rgba(245,158,11,.14)',
-          borderWidth: 2,
-          pointRadius: 2.5,
-          pointHoverRadius: 4,
-          pointBackgroundColor: IMPRESSIONS_COLOR,
-          tension: 0.32,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              title: items => formatLongDate(daily[items[0].dataIndex].date),
-              label: context => ` Impresiones: ${fmtCount(context.raw)}`
-            }
-          }
-        },
-        scales: {
-          x: { grid: { display: false }, border: { color: '#bfdbfe' }, ticks: { color: '#7890b5', font: { size: 10 } } },
-          y: {
+            display: usesCount,
+            position: usesMoney ? 'right' : 'left',
             beginAtZero: true,
             border: { display: false },
-            grid: { color: 'rgba(14,165,233,.16)' },
+            grid: { color: usesMoney ? 'rgba(0,0,0,0)' : 'rgba(14,165,233,.16)', drawOnChartArea: !usesMoney },
             ticks: { color: '#7890b5', font: { size: 10 }, callback: value => fmtCount(value) }
           }
         }
@@ -576,8 +503,7 @@
     renderFilters();
     renderKpis();
     renderChart();
-    renderConsolidated();
-    renderImpressions();
+    renderDaily();
     renderTabs();
     renderTable();
     updateSourceLabels();

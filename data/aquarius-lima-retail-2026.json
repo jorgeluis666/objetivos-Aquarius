@@ -129,10 +129,11 @@
           "costPerConversionDelta": 1.35515786235977
         }
       ],
-      "impressions": {
-        "sourceFile": "Gráfico_de_serie_temporal(2026.08.01-2026.08.31).csv",
-        "total": 33828,
-        "daily": [
+      "daily": {
+        "sourceFiles": [
+          "Gráfico_de_serie_temporal(2026.08.01-2026.08.31).csv"
+        ],
+        "rows": [
           {
             "date": "2026-08-01",
             "impressions": 1234
