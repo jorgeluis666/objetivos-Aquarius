@@ -7,7 +7,7 @@ Adaptar el dashboard original de Amador a Aquarius con lectura de gasto publicit
 ## Identidad
 
 - Marca principal: Aquarius
-- Password: `Aquarius2026`
+- Acceso: HTTP Basic Auth en el hosting de Lima Retail (sin contraseña en el codigo)
 - Titulo: `Aquarius | Dashboard Lima Retail 2026`
 - Paleta: azules, celestes y tonos agua
 - Enfoque: gasto publicitario, branding y ventas

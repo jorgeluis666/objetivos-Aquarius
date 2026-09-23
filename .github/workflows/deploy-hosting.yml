@@ -1,0 +1,43 @@
+name: Deploy al hosting de Lima Retail
+
+# Publica solo dist/ (HTML con datos incrustados + .htaccess con Basic Auth) en la carpeta del
+# cliente. Nunca sube data/csv-backups, scripts ni el resto del repo.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-hosting
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      - name: Build
+        env:
+          HTPASSWD_PATH: ${{ secrets.HTPASSWD_PATH }}
+        run: |
+          if [ -z "$HTPASSWD_PATH" ]; then echo "::error::Falta el secret HTPASSWD_PATH"; exit 1; fi
+          node scripts/build.js
+
+      - name: Subir dist/ por FTPS
+        uses: SamKirkland/FTP-Deploy-Action@a51268f67f6605236975928ae28b0f7e9971d50a # v4.3.6
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./dist/
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          dangerous-clean-slate: false
