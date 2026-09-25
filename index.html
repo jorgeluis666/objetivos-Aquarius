@@ -47,22 +47,19 @@
     <button class="s-item disabled" type="button" disabled aria-disabled="true"><div class="s-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><div class="s-text"><div class="s-title-nav">Comparativo YoY</div><div class="s-desc-nav">Evolucion interanual</div></div><span class="module-status">Proximamente</span></button>
     <button class="s-item disabled" type="button" disabled aria-disabled="true"><div class="s-icon"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><div class="s-text"><div class="s-title-nav">Distribucion</div><div class="s-desc-nav">Cobertura por cadena</div></div><span class="module-status">Proximamente</span></button>
     <button class="s-item disabled" type="button" disabled aria-disabled="true"><div class="s-icon"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div><div class="s-text"><div class="s-title-nav">Portafolio</div><div class="s-desc-nav">Ranking y ventas</div></div><span class="module-status">Proximamente</span></button>
-    <button class="s-item disabled" type="button" disabled aria-disabled="true"><div class="s-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div class="s-text"><div class="s-title-nav">Usuarios y Claves</div><div class="s-desc-nav">Accesos y alertas</div></div><span class="module-status">Proximamente</span></button>
+    <button class="s-item s-item-bottom disabled" type="button" disabled aria-disabled="true"><div class="s-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div class="s-text"><div class="s-title-nav">Usuarios y Claves</div><div class="s-desc-nav">Accesos y alertas</div></div><span class="module-status">Proximamente</span></button>
     <div class="s-modulo-activo"><div class="s-ma-label">CUENTA</div><div class="s-ma-name">Aquarius</div><div class="s-ma-desc">Branding y ventas</div></div>
   </aside>
-  <button
-    class="sidebar-toggle"
-    type="button"
-    data-sidebar-toggle
-    aria-controls="aquarius-sidebar"
-    aria-expanded="true"
-    aria-label="Ocultar panel lateral"
-    title="Ocultar panel lateral"
-  >
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-  </button>
   <main class="main">
-    <div class="topbar"><div><div class="topbar-title" id="topbar-title">Gasto Publicitario</div><div class="topbar-caption" id="topbar-caption">Branding y ventas</div></div><div class="topbar-meta"><span class="topbar-pill sync ok"><span class="sync-dot"></span><span id="topbar-status">Fuente pendiente de validar</span></span></div></div>
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-controls="aquarius-sidebar" aria-expanded="true" aria-label="Minimizar panel" title="Minimizar panel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/><path class="sidebar-toggle-arrow" d="m16 9-3 3 3 3"/></svg>
+        </button>
+        <div><div class="topbar-title" id="topbar-title">Gasto Publicitario</div><div class="topbar-caption" id="topbar-caption">Branding y ventas</div></div>
+      </div>
+      <div class="topbar-meta"><span class="topbar-pill sync ok"><span class="sync-dot"></span><span id="topbar-status">Fuente pendiente de validar</span></span></div>
+    </div>
     <div class="content">
       <section class="view visible" id="view-obj">
         <div class="sec-lbl">01 - Gasto publicitario</div>
