@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<!-- Plantilla: scripts/build.js la usa cuando hay AQ_PAGE_PASSWORD (GitHub Pages) y rellena el marcador de
+     gate-payload con el tablero cifrado (AES-GCM, llave PBKDF2-SHA256 de la clave). Sin la clave el HTML no revela nada. -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Aquarius | Acceso</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+<!-- Mismo diseno que la pantalla de acceso de los tableros de la agencia (auth-login.js), con los textos y el
+     color que ya tenia Aquarius; aqui la clave no esta en el codigo: descifra el tablero. -->
+<style>
+  :root { --accent: #0284c7; --accent-dark: #075985; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  body { display: flex; overflow: hidden; background: #0f172a; color: #0f172a; }
+  .panel { width: 400px; max-width: 100%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    padding: 48px 44px; overflow-y: auto; background: #fff; }
+  .inner { width: 100%; max-width: 312px; }
+  .brand { margin-bottom: 16px; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+  .title { margin: 0 0 28px; font-size: 38px; font-weight: 700; line-height: 1.1; letter-spacing: -.02em; color: #0f172a; }
+  .divider { width: 40px; height: 3px; margin-bottom: 36px; border-radius: 2px; background: var(--accent); }
+  form { display: flex; flex-direction: column; gap: 12px; }
+  input { width: 100%; padding: 12px 16px; border: 1.5px solid #e5e7eb; border-radius: 8px; outline: none; background: #f8fafc;
+    color: #0f172a; font: inherit; font-size: 14px; transition: border-color .15s, background .15s; }
+  input::placeholder { color: #94a3b8; }
+  input:focus { border-color: var(--accent); background: #fff; }
+  button { width: 100%; padding: 12px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font: inherit;
+    font-size: 14px; font-weight: 600; letter-spacing: .02em; cursor: pointer; transition: background .15s; }
+  button:hover { background: var(--accent-dark); }
+  button:disabled { opacity: .6; cursor: wait; }
+  .error { min-height: 18px; margin-top: 12px; font-size: 12px; color: #dc2626; }
+  /* El degradado es la capa de respaldo si la imagen falta o todavia no carga. */
+  .bg { flex: 1; min-width: 0; background-color: #0f172a; background-image: linear-gradient(140deg, #38bdf8 0%, var(--accent-dark) 38%, #0f172a 100%);
+    background-size: cover; background-position: center; filter: grayscale(20%); }
+  @media (max-width: 768px) {
+    .panel { width: 100%; padding: 32px 24px; }
+    .inner { max-width: 360px; }
+    .title { font-size: 30px; margin-bottom: 22px; }
+    .divider { margin-bottom: 26px; }
+    .bg { display: none; }
+  }
+  @media (max-height: 520px) {
+    .panel { align-items: flex-start; padding: 24px; }
+    .title { font-size: 26px; margin-bottom: 18px; }
+    .divider { margin-bottom: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="inner">
+    <div class="brand">Aquarius</div>
+    <h1 class="title">Dashboard<br>Retail 2026</h1>
+    <div class="divider"></div>
+    <form id="gate" autocomplete="off">
+      <input type="password" id="gate-password" aria-label="Contraseña" placeholder="Contraseña" autocomplete="current-password" required autofocus>
+      <button type="submit" id="gate-submit">Ingresar</button>
+    </form>
+    <div class="error" id="gate-error" role="alert"></div>
+  </div>
+</div>
+<div class="bg" id="gate-bg"></div>
+<script type="application/json" id="gate-payload">__PAYLOAD__</script>
+<script>
+// IIFE: document.open() conserva el mismo window, y un const global chocaria con los scripts del tablero.
+(function () {
+  var payload = JSON.parse(document.getElementById('gate-payload').textContent);
+  var storageKey = 'aq-gate-key-' + payload.salt;
+  var bytes = function (b64) { return Uint8Array.from(atob(b64), function (c) { return c.charCodeAt(0); }); };
+  var toB64 = function (arr) { return btoa(String.fromCharCode.apply(null, arr)); };
+
+  function derive(password) {
+    return crypto.subtle.importKey('raw', new TextEncoder().encode(password.normalize('NFC')), 'PBKDF2', false, ['deriveBits'])
+      .then(function (base) {
+        return crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: bytes(payload.salt), iterations: payload.iterations }, base, 256);
+      })
+      .then(function (bits) { return new Uint8Array(bits); });
+  }
+
+  function show(rawKey) {
+    return crypto.subtle.importKey('raw', rawKey, 'AES-GCM', false, ['decrypt'])
+      .then(function (key) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes(payload.iv) }, key, bytes(payload.data)); })
+      .then(function (plain) {
+        // La llave (no la clave) queda en sessionStorage para no pedirla en cada recarga de esta pestana.
+        try { sessionStorage.setItem(storageKey, toB64(rawKey)); } catch (e) {}
+        var html = new TextDecoder().decode(plain);
+        document.open();
+        document.write(html);
+        document.close();
+      });
+  }
+
+  // El fondo se aplica solo cuando termino de cargar; si falla queda el degradado.
+  var background = new Image();
+  background.onload = function () {
+    var bg = document.getElementById('gate-bg');
+    if (bg) bg.style.backgroundImage = "url('assets/login-bg.jpg')";
+  };
+  background.src = 'assets/login-bg.jpg';
+
+  var form = document.getElementById('gate');
+  var input = document.getElementById('gate-password');
+  var submit = document.getElementById('gate-submit');
+  var error = document.getElementById('gate-error');
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (!window.crypto || !crypto.subtle) { error.textContent = 'Este navegador no puede abrir el tablero.'; return; }
+    submit.disabled = true;
+    error.textContent = '';
+    derive(input.value).then(show).catch(function () {
+      submit.disabled = false;
+      error.textContent = 'Contraseña incorrecta';
+      input.select();
+    });
+  });
+
+  // Con la llave de esta sesion se abre solo, pero despues de 'load': si document.open() corre mientras
+  // el parser sigue activo no reemplaza la pagina y el tablero se mezcla con este formulario.
+  var saved = null;
+  try { saved = sessionStorage.getItem(storageKey); } catch (e) {}
+  if (saved) {
+    document.body.style.visibility = 'hidden';
+    window.addEventListener('load', function () {
+      show(bytes(saved)).catch(function () {
+        try { sessionStorage.removeItem(storageKey); } catch (e) {}
+        document.body.style.visibility = '';
+      });
+    }, { once: true });
+  }
+})();
+</script>
+</body>
+</html>

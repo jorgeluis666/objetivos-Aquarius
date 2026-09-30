@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -11,63 +12,64 @@ function readFile(relativePath) {
   return fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 }
 
-function copyDirectory(source, target) {
-  if (!fs.existsSync(source)) return;
-  fs.mkdirSync(target, { recursive: true });
-  for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
-    const sourcePath = path.join(source, entry.name);
-    const targetPath = path.join(target, entry.name);
-    if (entry.isDirectory()) copyDirectory(sourcePath, targetPath);
-    else fs.copyFileSync(sourcePath, targetPath);
-  }
-}
+// GitHub Pages no tiene Basic Auth: con AQ_PAGE_PASSWORD el tablero se cifra (AES-256-GCM, llave
+// PBKDF2-SHA256) dentro de deploy/pages-gate.html, que lo descifra en el navegador con la clave.
+// La salida es compatible con WebCrypto: el tag de GCM va pegado al final del texto cifrado.
+const PBKDF2_ITERATIONS = 600000;
 
-function escapeRegExp(text) {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function encryptPage(html, password) {
+  const salt = crypto.randomBytes(16);
+  const iv = crypto.randomBytes(12);
+  const key = crypto.pbkdf2Sync(password.normalize('NFC'), salt, PBKDF2_ITERATIONS, 32, 'sha256');
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const data = Buffer.concat([cipher.update(html, 'utf8'), cipher.final(), cipher.getAuthTag()]);
+  const payload = JSON.stringify({
+    iterations: PBKDF2_ITERATIONS,
+    salt: salt.toString('base64'),
+    iv: iv.toString('base64'),
+    data: data.toString('base64'),
+  });
+  const template = readFile('deploy/pages-gate.html');
+  if (template.split('__PAYLOAD__').length !== 2) throw new Error('deploy/pages-gate.html debe contener __PAYLOAD__ exactamente una vez');
+  return template.replace('__PAYLOAD__', () => payload).replace(/\r\n?/g, '\n');
 }
 
 function main() {
   let html = readFile('index.html');
+  // Al incrustar el CSS la ruta pasa a resolverse desde dist/index.html,
+  // asi que '../assets/' tiene que quedar como 'assets/'.
   const css = readFile('css/dashboard.css').replaceAll('../assets/', 'assets/');
-  const app = readFile('js/objectives.js');
-  const reservationGoals = readFile('js/reservation-goals.js');
-  const messagesCalculator = readFile('js/messages-calculator.js');
-  const navigation = readFile('js/navigation.js');
-  const sidebar = readFile('js/sidebar.js');
+  // '\\u003c' es el texto < (no el caracter <): un "</script>" en los datos cerraria el <script>.
   const data = readFile('data/aquarius-lima-retail-2026.json').replace(/</g, '\\u003c');
 
-  // Los assets llevan ?v=<version> para evitar caches viejos en GitHub Pages,
-  // asi que el build ubica cada etiqueta ignorando ese sufijo.
-  const styleTag = file => new RegExp('<link rel="stylesheet" href="' + escapeRegExp(file) + '(?:\\?[^"]*)?">');
-  const scriptTag = file => new RegExp('<script src="' + escapeRegExp(file) + '(?:\\?[^"]*)?"></script>');
-
-  html = html.replace(styleTag('css/dashboard.css'), `<style>${css}</style>`);
-  html = html.replace(scriptTag('js/objectives.js'), `<script>${app}</script>`);
-  html = html.replace(scriptTag('js/reservation-goals.js'), `<script>${reservationGoals}</script>`);
-  html = html.replace(scriptTag('js/messages-calculator.js'), `<script>${messagesCalculator}</script>`);
-  html = html.replace(scriptTag('js/navigation.js'), `<script>${navigation}</script>`);
-  html = html.replace(scriptTag('js/sidebar.js'), `<script>${sidebar}</script>`);
-  html = html.replace(
-    '</head>',
-    `<script>window.AQUARIUS_RETAIL_DATA = ${data};</script></head>`
-  );
+  // Los assets llevan ?v=<version> para evitar caches viejos, asi que el build ubica cada etiqueta
+  // ignorando ese sufijo. Reemplazos con funcion: una cadena de reemplazo interpretaria "$'" o "$&"
+  // dentro del codigo o de los datos.
+  html = html.replace(/<link rel="stylesheet" href="css\/dashboard\.css(?:\?[^"]*)?">/, () => `<style>${css}</style>`);
+  // Se incrustan, en el orden de index.html, todos los js/ que carga: no hay otra lista que mantener.
+  html = html.replace(/<script src="js\/([\w-]+\.js)(?:\?[^"]*)?"><\/script>/g, (_, file) => `<script>${readFile(`js/${file}`)}</script>`);
+  // dist/ solo lleva index.html, assets/ y CNAME: un css o js local que no se incruste quedaria roto.
+  if (/<link rel="stylesheet" href="(?!https:)|<script src="(?!https:)/.test(html)) {
+    throw new Error('index.html carga un css o js local que el build no incrusta');
+  }
+  html = html.replace('</head>', () => `<script>window.AQUARIUS_RETAIL_DATA = ${data};</script></head>`);
 
   try {
     fs.rmSync(DIST_DIR, { recursive: true, force: true });
   } catch (error) {
     console.warn(`[build] no se pudo limpiar dist completo: ${error.message}`);
   }
-  fs.mkdirSync(path.join(DIST_DIR, 'data'), { recursive: true });
-  fs.writeFileSync(DIST_HTML, html, 'utf8');
-  try {
-    fs.copyFileSync(
-      path.join(ROOT, 'data', 'aquarius-lima-retail-2026.json'),
-      path.join(DIST_DIR, 'data', 'aquarius-lima-retail-2026.json')
-    );
-    copyDirectory(path.join(ROOT, 'assets'), path.join(DIST_DIR, 'assets'));
-  } catch (error) {
-    console.warn(`[build] index actualizado; no se pudo copiar dist/data o assets: ${error.message}`);
-  }
+  fs.mkdirSync(DIST_DIR, { recursive: true });
+  // Los datos van dentro del HTML (cifrado con clave): dist/ no lleva la carpeta data/.
+  const pagePassword = process.env.AQ_PAGE_PASSWORD || '';
+  fs.writeFileSync(DIST_HTML, pagePassword ? encryptPage(html, pagePassword) : html, 'utf8');
+  if (pagePassword) console.log('[build] dist/index.html cifrado con AQ_PAGE_PASSWORD');
+  else console.warn('[build] sin AQ_PAGE_PASSWORD: dist/index.html queda sin clave (solo para uso local)');
+
+  // El logo y el fondo del acceso se referencian por URL, no se incrustan.
+  fs.cpSync(path.join(ROOT, 'assets'), path.join(DIST_DIR, 'assets'), { recursive: true });
+  // Dominio propio en GitHub Pages; va junto al sitio igual que en los tableros de Casiopia y Terminal Pesquero.
+  fs.copyFileSync(path.join(ROOT, 'CNAME'), path.join(DIST_DIR, 'CNAME'));
 
   console.log(`[build] escrito dist/index.html (${(fs.statSync(DIST_HTML).size / 1024).toFixed(1)} KB)`);
 }

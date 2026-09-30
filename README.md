@@ -4,8 +4,9 @@ Dashboard de gasto publicitario para Aquarius, adaptado desde la arquitectura or
 
 ## Acceso
 
-- Password del login: `Aquarius2026`
-- Entrada local: `index.html`
+- URL publica: **https://aquarius.limaretail.com** (con clave, ver "Publicacion en aquarius.limaretail.com").
+- La clave no esta en el codigo: es el secret `AQ_PAGE_PASSWORD` de GitHub.
+- Entrada local: `index.html` (sin clave)
 - Build publicado: `dist/index.html`
 
 ## Modulo principal
@@ -105,4 +106,33 @@ Despues de importar, regenera el build:
 npm.cmd run build
 ```
 
-El build incrusta los assets en `dist/index.html`. Si Windows bloquea `dist/data`, el script mantiene actualizado el HTML y muestra una advertencia.
+El resultado se genera en `dist/`: `index.html` (CSS, JS y datos incrustados), `assets/` y `CNAME`.
+Nada mas: `data/` (incluido `data/csv-backups`), `scripts/` y `docs/` no se publican.
+
+Con `AQ_PAGE_PASSWORD=<clave> npm run build` el `index.html` sale cifrado, como en GitHub Pages.
+
+## Publicacion en aquarius.limaretail.com (GitHub Pages)
+
+URL publica: **https://aquarius.limaretail.com**. Cada push a `main` la actualiza sola
+(`.github/workflows/deploy-pages.yml`); no hay que volver a tocar el DNS ni la configuracion de Pages.
+
+- Pages publica con Actions (sube `dist/`), asi que el dominio propio se configura en **Settings > Pages >
+  Custom domain** y queda guardado en el repo. Ademas `CNAME` (raiz) lleva el dominio y `build.js` lo copia a
+  `dist/`, igual que en los tableros de Casiopia y Terminal Pesquero.
+- DNS en Banahosting (cPanel > Zone Editor > `limaretail.com`): registro **CNAME** `aquarius` ->
+  `jorgeluis666.github.io`. La URL vieja `https://jorgeluis666.github.io/objetivos-Aquarius/` redirige (301) al dominio.
+- **Clave:** Pages no tiene Basic Auth, asi que `scripts/build.js` cifra el tablero completo (datos y JS) con
+  AES-256-GCM y una llave PBKDF2-SHA256 (600 000 iteraciones) derivada del secret **`AQ_PAGE_PASSWORD`**.
+  `deploy/pages-gate.html` pide la clave y lo descifra en el navegador; sin ella el HTML publicado no revela
+  nada. Si falta el secret, o si `dist/index.html` sale sin cifrar, el workflow falla en vez de publicar.
+  La pantalla usa el mismo diseno que el acceso de los demas tableros de la agencia (`auth-login.js`, fondo
+  `assets/login-bg.jpg`), pero la clave no esta escrita en el codigo.
+- Es una sola clave compartida. Como el HTML cifrado es publico, se puede atacar sin limite de intentos: usar
+  una clave larga y aleatoria (16+ caracteres). Para cambiarla: editar el secret `AQ_PAGE_PASSWORD` y volver a
+  ejecutar el workflow (Actions > Publicar en GitHub Pages > Run workflow).
+- Tras entrar, la llave queda en `sessionStorage` de esa pestana para no pedir la clave al recargar; cada deploy
+  genera una sal nueva, asi que despues de publicar se vuelve a pedir. Una pestana nueva tambien la pide.
+- Las preferencias (mes elegido, vista, panel minimizado y ediciones de la calculadora) viven en `localStorage`
+  de cada dominio: las de `github.io` no pasan a `aquarius.limaretail.com`.
+- El repo es publico: lo que esta en `data/` (y el historial de git, que incluye la clave anterior) sigue
+  siendo visible en GitHub aunque el sitio vaya con clave.
