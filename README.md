@@ -1,6 +1,6 @@
 # Aquarius | Dashboard Lima Retail 2026
 
-Dashboard de gasto publicitario para Aquarius, adaptado desde la arquitectura original del panel de Amador.
+Dashboard de gasto publicitario para Aquarius.
 
 ## Acceso
 
@@ -118,7 +118,7 @@ URL publica: **https://aquarius.limaretail.com**. Cada push a `main` la actualiz
 
 - Pages publica con Actions (sube `dist/`), asi que el dominio propio se configura en **Settings > Pages >
   Custom domain** y queda guardado en el repo. Ademas `CNAME` (raiz) lleva el dominio y `build.js` lo copia a
-  `dist/`, igual que en los tableros de Casiopia y Terminal Pesquero.
+  `dist/`, igual que en los demas tableros de la agencia.
 - DNS en Banahosting (cPanel > Zone Editor > `limaretail.com`): registro **CNAME** `aquarius` ->
   `jorgeluis666.github.io`. La URL vieja `https://jorgeluis666.github.io/objetivos-Aquarius/` redirige (301) al dominio.
 - **Clave:** Pages no tiene Basic Auth, asi que `scripts/build.js` cifra el tablero completo (datos y JS) con

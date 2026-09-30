@@ -1,5 +1,5 @@
 (function () {
-  const STORAGE_KEY = 'rb-sidebar-collapsed';
+  const STORAGE_KEY = 'aquarius-sidebar-state';
   const LEGACY_STORAGE_KEY = 'aquarius-sidebar-collapsed';
 
   function getStoredState() {

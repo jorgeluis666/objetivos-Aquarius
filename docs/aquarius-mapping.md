@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Adaptar el dashboard original de Amador a Aquarius con lectura de gasto publicitario. El panel conserva la arquitectura estatica del proyecto, pero cambia marca, clave, visual y modelo de datos.
+Dashboard estatico de Aquarius con lectura de gasto publicitario: marca, visual y modelo de datos propios.
 
 ## Identidad
 

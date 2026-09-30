@@ -68,7 +68,7 @@ function main() {
 
   // El logo y el fondo del acceso se referencian por URL, no se incrustan.
   fs.cpSync(path.join(ROOT, 'assets'), path.join(DIST_DIR, 'assets'), { recursive: true });
-  // Dominio propio en GitHub Pages; va junto al sitio igual que en los tableros de Casiopia y Terminal Pesquero.
+  // Dominio propio en GitHub Pages; va junto al sitio igual que en los demas tableros de la agencia.
   fs.copyFileSync(path.join(ROOT, 'CNAME'), path.join(DIST_DIR, 'CNAME'));
 
   console.log(`[build] escrito dist/index.html (${(fs.statSync(DIST_HTML).size / 1024).toFixed(1)} KB)`);
