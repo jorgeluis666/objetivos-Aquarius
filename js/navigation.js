@@ -15,6 +15,13 @@
       source: 'Fuente: Gasto Publicitario / carpeta Aquarius Campanas',
       footer: 'Proyección lineal según el ritmo del mes',
     },
+    'view-users': {
+      title: 'Usuarios y Claves',
+      caption: 'Quién tiene la clave del tablero',
+      status: 'Directorio sin contraseñas',
+      source: 'Fuente: data/aquarius-usuarios-2026.json (cifrado)',
+      footer: 'La clave no se guarda aquí: vive en el secret AQ_PAGE_PASSWORD de GitHub',
+    },
   };
 
   function storedView() {
@@ -53,6 +60,7 @@
     saveView(viewId);
 
     if (viewId === 'view-projections') window.AquariusProjections?.init();
+    if (viewId === 'view-users') window.AquariusUsuarios?.init();
     // Vuelve a poner el mes en la barra superior, que la vista anterior reemplazo.
     if (viewId === 'view-obj' && window.AquariusDashboard?.getData()) window.AquariusDashboard.render();
     window.setTimeout(() => window.dispatchEvent(new Event('resize')), 0);

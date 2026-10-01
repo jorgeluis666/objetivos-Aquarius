@@ -55,6 +55,60 @@ El ultimo punto de la linea proyectada es un nodo arrastrable: al moverlo se def
 - Con los datos de hoy el simulador queda desactivado hasta que llegue a Drive el informe de un mes en curso
   (por ejemplo, del 1 al 17 de octubre).
 
+## Usuarios y Claves
+
+Directorio de quien tiene la clave del tablero. El acceso es **una sola clave compartida** (el secret
+`AQ_PAGE_PASSWORD`, ver "Publicacion en aquarius.limaretail.com"): no hay usuarios de acceso y la clave **nunca**
+se guarda en el repo ni en el HTML. La vista lleva nombre, rol, fecha de alta, estado y fecha de baja, mas la
+fecha del ultimo cambio de clave.
+
+### Cifrado del directorio
+
+El repo es publico, asi que `data/aquarius-usuarios-2026.json` vive **cifrado**: en claro solo queda `updatedAt`.
+
+- **Exportar** cifra en el navegador con la llave publica `data/aquarius-usuarios-publica.pem` (RSA-OAEP-SHA256
+  envuelve una llave AES-256-GCM al azar). Con la publica se puede cifrar, no leer: el tablero no tiene como
+  abrir el archivo.
+- El build lo descifra con la llave privada (secret **`AQ_USERS_PRIVATE_KEY`**; en local,
+  `credentials/aquarius-usuarios-privada.pem`, que esta en `.gitignore`) y lo incrusta en claro como
+  `window.AQUARIUS_USUARIOS` dentro del HTML, que a su vez va cifrado con `AQ_PAGE_PASSWORD`.
+- Sin la llave privada, o si no corresponde, el build **no falla** (la sincronizacion diaria se sigue publicando):
+  solo este modulo sale bloqueado y sin edicion, para no reemplazar el archivo por uno vacio. En Actions queda un
+  warning. Un archivo en claro si corta el build.
+- `node scripts/usuarios-cifrado.js ver` muestra el directorio descifrado (con la llave privada local).
+- `node scripts/usuarios-cifrado.js llaves` genera un par nuevo y vuelve a cifrar el archivo con el (necesita la
+  privada actual; la anterior queda en `credentials/aquarius-usuarios-privada.anterior.pem`). Despues: actualizar
+  el secret `AQ_USERS_PRIVATE_KEY` y hacer commit de `data/`.
+- Guardar un respaldo de la llave privada (por ejemplo, en el gestor de contrasenas): el secret de GitHub no se
+  puede volver a leer, y sin la privada el directorio no se puede abrir.
+- El borrador del navegador (`localStorage`) esta en claro, igual que lo que muestra el tablero.
+
+Contenido descifrado:
+
+```json
+{
+  "updatedAt": "2026-10-01T15:04:05.000Z",
+  "keyChangedAt": "2026-10-01",
+  "users": [
+    { "id": "u01", "name": "Nombre Apellido", "role": "cliente", "status": "activo",
+      "since": "2026-10-01", "until": "" }
+  ]
+}
+```
+
+- `role`: `cliente`, `equipo` o `admin` (otro valor se lee como `cliente`). `status`: `activo` o `suspendido`.
+- `until` (fecha de baja) solo la lleva quien esta suspendido: se pone sola al suspender y se borra al reactivar.
+- **Alerta**: si alguien fue suspendido despues de `keyChangedAt` (o sin fecha de baja, o sin cambio de clave
+  registrado) todavia conoce la clave, y la vista pide cambiarla. Mismo dia = la clave ya se cambio.
+- Se edita como borrador en `localStorage` (`aquarius-usuarios-draft`); **Exportar** descarga
+  `aquarius-usuarios-2026.json` ya cifrado, se reemplaza el archivo en `data/`, commit y push a `main`. Un
+  borrador hecho sobre otra version del archivo (otro `updatedAt`) se ignora.
+- Quitar un acceso = suspender a la persona, cambiar `AQ_PAGE_PASSWORD`, registrar la fecha en "Ultimo cambio
+  de clave" y publicar el archivo: ese push vuelve a publicar el tablero con la clave nueva. La vista muestra
+  los pasos.
+- La fecha del ultimo cambio de `AQ_PAGE_PASSWORD` aparece en GitHub > Settings > Secrets and variables >
+  Actions ("Updated ...").
+
 ## Fuente de datos
 
 El tablero se arma desde la carpeta de Google Drive **Aquarius Campanas**:
@@ -181,4 +235,5 @@ URL publica: **https://aquarius.limaretail.com**. Cada push a `main` la actualiz
 - Las preferencias (mes elegido, vista y panel minimizado) viven en `localStorage`
   de cada dominio: las de `github.io` no pasan a `aquarius.limaretail.com`.
 - El repo es publico: lo que esta en `data/` (y el historial de git, que incluye la clave anterior) sigue
-  siendo visible en GitHub aunque el sitio vaya con clave.
+  siendo visible en GitHub aunque el sitio vaya con clave. La excepcion es el directorio de Usuarios y Claves,
+  que va cifrado (ver "Cifrado del directorio").

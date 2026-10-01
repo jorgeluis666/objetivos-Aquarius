@@ -30,6 +30,8 @@ jobs:
       - name: Build
         env:
           AQ_PAGE_PASSWORD: ${{ secrets.AQ_PAGE_PASSWORD }}
+          # Abre el directorio cifrado de Usuarios y Claves; sin ella ese modulo sale bloqueado (no falla el build).
+          AQ_USERS_PRIVATE_KEY: ${{ secrets.AQ_USERS_PRIVATE_KEY }}
         run: |
           # Sin clave no se publica: el tablero quedaria abierto a cualquiera con el enlace.
           if [ -z "$AQ_PAGE_PASSWORD" ]; then echo "::error::Falta el secret AQ_PAGE_PASSWORD"; exit 1; fi
