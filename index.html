@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/dashboard.css?v=1.5.0">
+<link rel="stylesheet" href="css/dashboard.css?v=1.6.0">
 <style>
   .reservations-total-row td { height: auto !important; padding: 10px 12px !important; border-top: 2px solid #cbd5e1 !important; color: #0f172a !important; background: #f8fafc; font-size: 13px; font-weight: 800; vertical-align: middle; }
   .reservations-total-row .total-label { text-align: right; }
@@ -33,7 +33,7 @@
 <body>
 <div class="shell">
   <aside class="sidebar" id="aquarius-sidebar">
-    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.5.0</span></div></div>
+    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.6.0</span></div></div>
     <div class="s-group-lbl">Modulos activos</div>
     <button class="s-item active" type="button" data-view-target="view-obj">
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
@@ -68,7 +68,7 @@
         <div class="retail-filters" id="retail-filters"></div>
         <div class="kpi-strip" id="kpi-strip" aria-label="KPIs generales"></div>
         <div class="panel chart-panel" id="chart-panel">
-          <div class="panel-head chart-panel-head"><div><div class="panel-title" id="chart-title">Resultados por campana | Inversion, Conversaciones y Costo x Conversacion</div><div class="panel-sub">Indicadores reales del archivo de pauta digital</div></div><div class="chart-controls"><div class="chart-legend"><span><i class="legend-line investment"></i><b>Inversion</b><i class="legend-line"></i><b>Conversaciones</b><i class="legend-line"></i><b>Costo x Conversacion</b></span></div></div></div>
+          <div class="panel-head chart-panel-head"><div><div class="panel-title" id="chart-title">Evolucion mensual | Inversion, resultados y costo por resultado</div><div class="panel-sub" id="chart-sub"></div></div><div class="chart-controls"><div class="chart-legend"><span></span></div></div></div>
           <div class="chart-wrap h-360"><canvas id="chart-monthly"></canvas></div>
         </div>
         <div class="data-notice" id="records-empty" hidden></div>
@@ -162,11 +162,12 @@
     </div>
   </main>
 </div>
-<script src="js/objectives.js?v=1.5.0"></script>
-<script src="js/reservation-goals.js?v=1.5.0"></script>
-<script src="js/messages-calculator.js?v=1.5.0"></script>
-<script src="js/navigation.js?v=1.5.0"></script>
-<script src="js/sidebar.js?v=1.5.0"></script>
+<script src="js/objectives.js?v=1.6.0"></script>
+<script src="js/drive-sync.js?v=1.6.0"></script>
+<script src="js/reservation-goals.js?v=1.6.0"></script>
+<script src="js/messages-calculator.js?v=1.6.0"></script>
+<script src="js/navigation.js?v=1.6.0"></script>
+<script src="js/sidebar.js?v=1.6.0"></script>
 <!-- El acceso lo pone el build: con AQ_PAGE_PASSWORD cifra el tablero dentro de deploy/pages-gate.html. -->
 </body>
 </html>

@@ -1,11 +1,14 @@
 (function () {
   const DATA_URL = 'data/aquarius-lima-retail-2026.json';
   const MONTH_STORAGE_KEY = 'aquarius_selected_month';
-  const SERIES = {
-    cost: { label: 'Inversion', unit: 'money', color: '#0284c7', fill: 'rgba(2,132,199,.18)', axis: 'y' },
-    conversions: { label: 'Conversaciones', unit: 'count', color: '#7c3aed', fill: 'rgba(124,58,237,.16)', axis: 'y1' },
-    costPerConversion: { label: 'Costo x Conversacion', unit: 'money', color: '#0f766e', fill: 'rgba(15,118,110,.16)', axis: 'y2' }
+  // Series del grafico principal: un punto por mes, lineas en el tiempo.
+  const MONTHLY = {
+    cost: { label: 'Inversion', unit: 'money', color: '#0284c7', fill: 'rgba(2,132,199,.12)', axis: 'y' },
+    conversions: { label: 'Resultados', unit: 'count', color: '#7c3aed', fill: 'rgba(124,58,237,.12)', axis: 'y1' },
+    costPerConversion: { label: 'Costo x resultado', unit: 'money', color: '#0f766e', fill: 'rgba(15,118,110,.12)', axis: 'y2', dashed: true },
+    impressions: { label: 'Impresiones', unit: 'count', color: '#f59e0b', fill: 'rgba(245,158,11,.12)', axis: 'y3' }
   };
+  const MONTHLY_ORDER = ['cost', 'conversions', 'costPerConversion', 'impressions'];
   // Series de la evolucion diaria dentro del mes.
   const DAILY = {
     cost: { label: 'Inversion', unit: 'money', color: '#0284c7', axis: 'y' },
@@ -109,6 +112,42 @@
     return state.daily.some(row => isNum(row[field]));
   }
 
+  // Totales de un mes: los del informe de campana si vienen en la fuente, y si
+  // no la suma de sus campanas. Son la base del grafico de lineas en el tiempo.
+  function monthTotals(month) {
+    const records = month.records || [];
+    const totals = month.totals || {};
+    const pick = (field, fallback) => (isNum(totals[field]) ? Number(totals[field]) : fallback);
+    const cost = pick('cost', sum(records, 'cost'));
+    const clicks = pick('clicks', sum(records, 'clicks'));
+    const conversions = pick('conversions', sum(records, 'conversions'));
+    const impressionsFromRecords = records.some(row => isNum(row.impressions)) ? sum(records, 'impressions') : null;
+    const dailyImpressions = (month.daily || []).reduce((total, row) => total + (isNum(row.impressions) ? Number(row.impressions) : 0), 0);
+    const impressions = pick('impressions', impressionsFromRecords !== null ? impressionsFromRecords : (dailyImpressions || null));
+    return {
+      id: month.id,
+      label: month.label,
+      shortLabel: shortMonthLabel(month.id, month.label),
+      cost,
+      clicks,
+      conversions,
+      impressions: isNum(impressions) ? Number(impressions) : null,
+      costPerConversion: conversions > 0 ? cost / conversions : null,
+      ctr: isNum(impressions) && Number(impressions) > 0 ? clicks / Number(impressions) : (isNum(totals.ctr) ? Number(totals.ctr) : weightedCtr(records)),
+      hasData: records.length > 0 || isNum(totals.cost)
+    };
+  }
+
+  function shortMonthLabel(monthId, label) {
+    const match = /^(\d{4})-(\d{2})$/.exec(String(monthId || ''));
+    if (!match) return label || String(monthId || '');
+    return `${MONTH_NAMES[Number(match[2]) - 1].slice(0, 3)} ${match[1].slice(2)}`;
+  }
+
+  function monthlyTotals() {
+    return state.months.map(monthTotals).filter(month => month.hasData);
+  }
+
   // Acepta el esquema por meses y tambien el formato antiguo de un solo bloque de records.
   function normalizeMonths(data) {
     if (Array.isArray(data.months) && data.months.length) {
@@ -118,6 +157,7 @@
           label: month.label || monthLabel(month.id),
           sourceFile: month.sourceFile || null,
           records: Array.isArray(month.records) ? month.records : [],
+          totals: month.totals || null,
           daily: dailyRows(month)
         }))
         .sort((a, b) => a.id.localeCompare(b.id));
@@ -129,6 +169,7 @@
         label: /^\d{4}-\d{2}$/.test(id) ? monthLabel(id) : 'Historico',
         sourceFile: data.sourceFile || null,
         records: data.records,
+        totals: null,
         daily: []
       }];
     }
@@ -164,6 +205,19 @@
     return state.months.find(month => month.id === state.monthId) || null;
   }
 
+  // Fecha de la ultima sincronizacion, venga de la fuente publicada o del
+  // navegador (drive-sync.js la actualiza al terminar).
+  function lastSyncLabel() {
+    const drive = (state.data && state.data.drive) || {};
+    const stamp = drive.lastSync;
+    if (!stamp) return 'Sin sincronizar con Drive';
+    const date = new Date(stamp);
+    if (Number.isNaN(date.getTime())) return `Datos actualizados: ${stamp}`;
+    const fecha = date.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
+    const hora = date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+    return `Datos actualizados: ${fecha}, ${hora}`;
+  }
+
   function renderFilters() {
     const host = document.getElementById('retail-filters');
     if (!host) return;
@@ -181,7 +235,15 @@
       </label>
       <div class="retail-filter filter-hint">
         <span>Periodos cargados</span>
-        <p>${state.months.length} ${state.months.length === 1 ? 'mes disponible' : 'meses disponibles'}. Cada nuevo cierre se agrega a este filtro.</p>
+        <p>${state.months.length} ${state.months.length === 1 ? 'mes disponible' : 'meses disponibles'}. Cada CSV nuevo en Drive se agrega a este filtro.</p>
+      </div>
+      <div class="retail-filter filter-sync">
+        <span>Sincronizacion</span>
+        <button class="sync-btn" id="sync-now" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+          <b>Sincronizar</b>
+        </button>
+        <small id="sync-status">${escapeHtml(lastSyncLabel())}</small>
       </div>
     `;
     const select = document.getElementById('filter-month');
@@ -195,25 +257,20 @@
 
   function renderKpis() {
     const host = document.getElementById('kpi-strip');
-    const rows = state.rows;
-    const hasRows = rows.length > 0;
-    const cost = sum(rows, 'cost');
-    const conversions = sum(rows, 'conversions');
+    const month = currentMonth();
+    const totals = month ? monthTotals(month) : null;
+    const hasData = !!(totals && totals.hasData);
+    const impressions = totals && isNum(totals.impressions) ? Number(totals.impressions) : null;
+    const days = state.daily.filter(row => isNum(row.impressions)).length;
     const cards = [
-      ['Coste total', hasRows ? fmtMoney(cost) : '-', 'Inversion registrada'],
-      ['CTR promedio', hasRows ? fmtPercent(weightedCtr(rows)) : '-', 'Ponderado por clics'],
-      ['Clics', hasRows ? fmtCount(sum(rows, 'clicks')) : '-', 'Trafico generado'],
-      ['Conversaciones', hasRows ? fmtCount(conversions) : '-', 'Resultados registrados'],
-      ['Costo x conversacion', hasRows && conversions > 0 ? fmtMoney(cost / conversions) : '-', 'Inversion / conversaciones']
+      ['Coste total', hasData ? fmtMoney(totals.cost) : '-', 'Inversion registrada'],
+      ['CTR promedio', hasData && isNum(totals.ctr) ? fmtPercent(totals.ctr) : '-', impressions ? 'Clics / impresiones del mes' : 'Ponderado por clics'],
+      ['Clics', hasData ? fmtCount(totals.clicks) : '-', 'Trafico generado'],
+      ['Conversaciones', hasData ? fmtCount(totals.conversions) : '-', 'Resultados registrados'],
+      ['Costo x conversacion', hasData && isNum(totals.costPerConversion) ? fmtMoney(totals.costPerConversion) : '-', 'Inversion / conversaciones']
     ];
-    if (dailyHas('impressions')) {
-      const total = dailyTotal('impressions');
-      const days = state.daily.filter(row => isNum(row.impressions)).length;
-      cards.push(['Impresiones', fmtCount(total), `Promedio ${fmtCount(days ? total / days : null)} x dia`]);
-      // Con impresiones reales el CTR sale de la serie diaria, no del CTR por campana.
-      if (hasRows && total > 0) {
-        cards[1] = ['CTR promedio', fmtPercent(sum(rows, 'clicks') / total), 'Clics / impresiones del mes'];
-      }
+    if (impressions !== null) {
+      cards.push(['Impresiones', fmtCount(impressions), days ? `Promedio ${fmtCount(impressions / days)} x dia` : 'Total del mes']);
     }
     host.innerHTML = cards.map(([label, value, meta]) => `<div class="kpi-pill"><span>${label}</span><strong>${value}</strong><small>${meta}</small></div>`).join('');
   }
@@ -223,66 +280,32 @@
     if (host) host.innerHTML = '';
   }
 
-  function chartOptions() {
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: context => {
-              const series = SERIES[context.dataset.metricKey];
-              return ` ${series.label}: ${formatValue(context.raw, series.unit)}`;
-            }
-          }
-        }
-      },
-      scales: {
-        x: { grid: { display: false }, border: { color: '#bfdbfe' }, ticks: { color: '#7890b5', font: { size: 10 }, maxRotation: 35, minRotation: 0 } },
-        y: {
-          beginAtZero: true,
-          border: { display: false },
-          grid: { color: 'rgba(14,165,233,.16)' },
-          ticks: { color: '#7890b5', font: { size: 10 }, callback: value => formatValue(value, 'money', true) }
-        },
-        y1: {
-          beginAtZero: true,
-          position: 'right',
-          border: { display: false },
-          grid: { drawOnChartArea: false },
-          ticks: { color: '#7c3aed', font: { size: 10 }, precision: 0 }
-        },
-        y2: {
-          beginAtZero: true,
-          display: false,
-          grid: { drawOnChartArea: false }
-        }
-      }
-    };
-  }
-
-  function renderChart() {
+  // Grafico principal: lineas en el tiempo con un punto por mes cargado.
+  function renderMonthly() {
     const panel = document.getElementById('chart-panel');
     const notice = document.getElementById('records-empty');
-    const hasRows = state.rows.length > 0;
-    if (panel) panel.hidden = !hasRows;
+    const months = monthlyTotals();
+    const hasRecords = state.rows.length > 0;
     if (notice) {
-      notice.hidden = hasRows;
-      notice.innerHTML = hasRows ? '' : `<strong>Sin tabla de campanas para ${escapeHtml(currentMonth() ? currentMonth().label : 'este mes')}.</strong>Envia el Excel de resultados de pauta y se cargara en este mismo filtro.`;
+      notice.hidden = hasRecords;
+      notice.innerHTML = hasRecords ? '' : `<strong>Sin tabla de campanas para ${escapeHtml(currentMonth() ? currentMonth().label : 'este mes')}.</strong>Agrega el CSV del mes a la carpeta de Drive y sincroniza.`;
     }
-    if (!hasRows) {
+    if (panel) panel.hidden = !months.length;
+    if (!months.length) {
       if (state.chart) { state.chart.destroy(); state.chart = null; }
       return;
     }
-    const rows = sortedRows();
-    const labels = rows.map(row => campaignLabel(row.campaign));
-    const metrics = ['cost', 'conversions', 'costPerConversion'];
-    document.getElementById('chart-title').textContent = 'Resultados por campana | Inversion, Conversaciones y Costo x Conversacion';
+    const metrics = MONTHLY_ORDER.filter(metric => months.some(month => isNum(month[metric])));
+    document.getElementById('chart-title').textContent = 'Evolucion mensual | Inversion, resultados y costo por resultado';
+    const sub = document.getElementById('chart-sub');
+    if (sub) {
+      const totalCost = months.reduce((total, month) => total + (month.cost || 0), 0);
+      const totalConversions = months.reduce((total, month) => total + (month.conversions || 0), 0);
+      sub.textContent = `${months.length} meses | ${fmtMoney(totalCost)} de inversion | ${fmtCount(totalConversions)} resultados | ${fmtMoney(totalConversions > 0 ? totalCost / totalConversions : null)} por resultado en el acumulado.`;
+    }
     const legend = document.querySelector('.chart-legend span');
     if (legend) {
-      legend.innerHTML = metrics.map(metric => `<i class="legend-line" style="background:${SERIES[metric].color}"></i><b>${SERIES[metric].label}</b>`).join('');
+      legend.innerHTML = metrics.map(metric => `<i class="legend-line" style="background:${MONTHLY[metric].color}"></i><b>${MONTHLY[metric].label}</b>`).join('');
     }
     const canvas = document.getElementById('chart-monthly');
     if (typeof Chart === 'undefined') {
@@ -291,50 +314,74 @@
     }
     if (state.chart) state.chart.destroy();
     state.chart = new Chart(canvas, {
-      type: 'bar',
+      type: 'line',
       data: {
-        labels,
-        datasets: metrics.map(metric => ({
-          metricKey: metric,
-          label: SERIES[metric].label,
-          data: rows.map(row => Number(row[metric] || 0)),
-          yAxisID: SERIES[metric].axis,
-          borderColor: SERIES[metric].color,
-          backgroundColor: SERIES[metric].fill,
-          borderWidth: 1.4,
-          borderRadius: 4,
-          barPercentage: 0.58,
-          categoryPercentage: 0.64,
-          maxBarThickness: 22
-        }))
+        labels: months.map(month => month.shortLabel),
+        datasets: metrics.map(metric => {
+          const series = MONTHLY[metric];
+          return {
+            metricKey: metric,
+            label: series.label,
+            data: months.map(month => (isNum(month[metric]) ? Number(month[metric]) : null)),
+            yAxisID: series.axis,
+            borderColor: series.color,
+            backgroundColor: series.fill,
+            borderWidth: 2.2,
+            borderDash: series.dashed ? [5, 4] : [],
+            tension: 0.3,
+            spanGaps: true,
+            fill: false,
+            // El mes del filtro se marca con un punto mas grande.
+            pointRadius: months.map(month => (month.id === state.monthId ? 6 : 3)),
+            pointHoverRadius: 7,
+            pointBackgroundColor: months.map(month => (month.id === state.monthId ? series.color : '#fff')),
+            pointBorderColor: series.color,
+            pointBorderWidth: 2
+          };
+        })
       },
-      options: chartOptions(),
-      plugins: [{
-        id: 'insideBarValues',
-        afterDatasetsDraw(chart) {
-          const { ctx } = chart;
-          ctx.save();
-          chart.data.datasets.forEach((dataset, datasetIndex) => {
-            const series = SERIES[dataset.metricKey];
-            const meta = chart.getDatasetMeta(datasetIndex);
-            meta.data.forEach((bar, index) => {
-              const value = dataset.data[index];
-              if (!Number.isFinite(Number(value)) || Number(value) <= 0) return;
-              const label = formatValue(value, series.unit, true);
-              const top = Math.min(bar.y, bar.base);
-              const bottom = Math.max(bar.y, bar.base);
-              const height = bottom - top;
-              ctx.fillStyle = series.color;
-              ctx.font = '700 9px Inter, sans-serif';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'middle';
-              const y = height > 28 ? top + 14 : top - 8;
-              ctx.fillText(label, bar.x, y);
-            });
-          });
-          ctx.restore();
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        onClick: (event, elements) => {
+          // Un clic en el grafico cambia el mes seleccionado.
+          if (!elements.length) return;
+          const month = months[elements[0].index];
+          if (month && month.id !== state.monthId) { selectMonth(month.id); renderAll(); }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: items => months[items[0].dataIndex].label,
+              label: context => {
+                const series = MONTHLY[context.dataset.metricKey];
+                return ` ${series.label}: ${formatValue(context.raw, series.unit)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, border: { color: '#bfdbfe' }, ticks: { color: '#7890b5', font: { size: 11, weight: '600' } } },
+          y: {
+            beginAtZero: true,
+            border: { display: false },
+            grid: { color: 'rgba(14,165,233,.16)' },
+            ticks: { color: '#7890b5', font: { size: 10 }, callback: value => formatValue(value, 'money', true) }
+          },
+          y1: {
+            beginAtZero: true,
+            position: 'right',
+            border: { display: false },
+            grid: { drawOnChartArea: false },
+            ticks: { color: '#7c3aed', font: { size: 10 }, precision: 0 }
+          },
+          // Ejes ocultos: cada serie conserva su escala y su forma se lee igual.
+          y2: { display: false, beginAtZero: true, grid: { drawOnChartArea: false } },
+          y3: { display: false, beginAtZero: true, grid: { drawOnChartArea: false } }
         }
-      }]
+      }
     });
   }
 
@@ -347,8 +394,11 @@
   function dailySeries() {
     const rows = state.daily.map(row => Object.assign({}, row));
     const estimated = new Set();
-    const monthlyCost = sum(state.rows, 'cost');
-    const monthlyConversions = sum(state.rows, 'conversions');
+    // Mismos totales que los KPIs: los del informe cuando vienen en la fuente.
+    const month = currentMonth();
+    const totals = month ? monthTotals(month) : { cost: 0, conversions: 0 };
+    const monthlyCost = Number(totals.cost) || 0;
+    const monthlyConversions = Number(totals.conversions) || 0;
     const hasDailyCost = rows.some(row => isNum(row.cost));
     const hasDailyConversions = rows.some(row => isNum(row.conversions));
 
@@ -548,7 +598,7 @@
   function renderAll() {
     renderFilters();
     renderKpis();
-    renderChart();
+    renderMonthly();
     renderDaily();
     renderTabs();
     renderTable();
@@ -582,6 +632,24 @@
       console.error(error);
     }
   }
+
+  // Interfaz publica del modulo: drive-sync.js la usa para pintar la data que
+  // acaba de traer de Drive sin recargar la pagina.
+  window.AquariusDashboard = {
+    getData: () => state.data,
+    applyData(data) {
+      const months = normalizeMonths(data);
+      if (!months.length) throw new Error('La data sincronizada no trae meses.');
+      state.data = data;
+      state.months = months;
+      window.AQUARIUS_RETAIL_DATA = data;
+      const keep = state.months.some(month => month.id === state.monthId) ? state.monthId : (data.defaultMonth || months[months.length - 1].id);
+      selectMonth(keep, false);
+      renderAll();
+      window.dispatchEvent(new CustomEvent('aquarius:data-ready', { detail: data }));
+    },
+    render: renderAll
+  };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

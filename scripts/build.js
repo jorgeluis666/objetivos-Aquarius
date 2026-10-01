@@ -52,7 +52,15 @@ function main() {
   if (/<link rel="stylesheet" href="(?!https:)|<script src="(?!https:)/.test(html)) {
     throw new Error('index.html carga un css o js local que el build no incrusta');
   }
-  html = html.replace('</head>', () => `<script>window.AQUARIUS_RETAIL_DATA = ${data};</script></head>`);
+  // Configuracion de la carpeta de Drive. La clave publica no vive en el repo:
+  // llega por AQ_DRIVE_API_KEY y solo queda dentro del HTML cifrado.
+  const driveConfig = JSON.parse(readFile('data/drive-config.json'));
+  driveConfig.apiKey = process.env.AQ_DRIVE_API_KEY || driveConfig.apiKey || '';
+  const driveJson = JSON.stringify(driveConfig).replace(/</g, '\u003c');
+  if (driveConfig.apiKey) console.log('[build] sincronizacion desde el navegador habilitada');
+  else console.warn('[build] sin AQ_DRIVE_API_KEY: el boton Sincronizar trae la ultima publicacion');
+
+  html = html.replace('</head>', () => `<script>window.AQUARIUS_RETAIL_DATA = ${data};window.AQUARIUS_DRIVE_CONFIG = ${driveJson};</script></head>`);
 
   try {
     fs.rmSync(DIST_DIR, { recursive: true, force: true });

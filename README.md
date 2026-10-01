@@ -17,88 +17,90 @@ Dashboard de gasto publicitario para Aquarius.
 
 ## Fuente de datos
 
-La fuente normalizada del dashboard esta en:
+El tablero se arma desde la carpeta de Google Drive **Aquarius Campanas**:
 
-`data/aquarius-lima-retail-2026.json`
+<https://drive.google.com/drive/folders/1o4Ve9CuoQLuH0mDP6qDi07EvPEISAOvA>
 
-Desde la version 1.2.0 el JSON guarda la data agrupada por mes:
+Un CSV por mes, tal como lo exporta Google Ads (`Aquarius <mes> <ano>.csv`,
+informe de campana con Costo, Impr., Clics, CTR, Conversiones y Costo/conv.).
+Para agregar un mes basta con subir su CSV a esa carpeta: la sincronizacion lo
+detecta por el rango de fechas del archivo y lo suma al filtro.
+
+La fuente normalizada que consume el tablero sigue siendo
+`data/aquarius-lima-retail-2026.json`, agrupada por mes:
 
 ```json
 {
   "defaultMonth": "2026-08",
+  "drive": { "lastSync": "2026-10-01T17:00:25Z", "discovery": "publica", "files": [] },
   "months": [
     {
       "id": "2026-08",
       "label": "Agosto 2026",
-      "sourceFile": "...",
-      "records": [ /* tabla de campanas */ ],
-      "impressions": { "total": 33828, "daily": [ { "date": "2026-08-01", "impressions": 1234 } ] }
+      "sourceFile": "Aquarius agosto 2026.csv",
+      "records": [ /* una fila por campana, con impresiones y % de variacion */ ],
+      "totals": { "cost": 1854.85, "impressions": 33828, "clicks": 2325 },
+      "daily": { "rows": [ { "date": "2026-08-01", "impressions": 1234 } ] }
     }
   ]
 }
 ```
 
-El filtro `Mes` del dashboard lista cada entrada de `months` y recuerda la ultima
-seleccion del usuario. Los meses sin tabla de campanas muestran un aviso y solo
-grafican impresiones.
+Los `% Δ` de la tabla se calculan comparando cada campana con la del mes
+anterior, no vienen en el CSV. Las series diarias (`daily`) son independientes:
+la sincronizacion no las toca.
 
-## Paneles del modulo
+## Sincronizacion
 
-1. `Resultados por campana`: detalle del mes seleccionado.
-2. `Evolucion diaria`: lineas en el tiempo con los indicadores del mes
-   seleccionado. Dibuja las series que traiga la data diaria: inversion,
-   resultados, costo por resultado e impresiones. El costo por resultado se
-   calcula dia a dia como inversion entre resultados.
+### Automatica, todos los dias
 
-Si el mes tiene los totales de campanas pero no el export diario de inversion y
-resultados, el panel reparte esos totales entre los dias segun las impresiones de
-cada dia. Esas lineas salen punteadas, con `(est.)` en la leyenda y un aviso
-debajo del grafico: son un prorrateo, no cifras diarias reales. Al importar el
-export diario se reemplazan por los valores reales.
+`.github/workflows/sync-drive.yml` corre a las 11:20 UTC (06:20 en Lima), baja
+la carpeta, actualiza `data/` y, solo si algo cambio, hace commit y pide la
+publicacion del tablero. Tambien se puede lanzar a mano desde
+**Actions > Sincronizar Drive > Run workflow**.
 
-El CTR de la cabecera usa las impresiones reales de la serie diaria cuando
-existen (clics / impresiones). Sin serie diaria cae al CTR ponderado que trae la
-tabla de campanas.
+Para correrla en local:
 
-### Formatos aceptados
+```bash
+python scripts/sync-drive.py          # sincroniza
+python scripts/sync-drive.py --check  # dice si hay cambios, sin escribir
+```
 
-1. Tabla de resultados por campana (`.csv`, `.xlsx`, `.xlsm`):
-   `Campaña | Coste | % Δ | CTR | % Δ | Clics | % Δ | Conv | % Δ | Cos/con | % Δ`
-2. Serie diaria (`.csv`): primera columna `Fecha` y una o mas de estas columnas,
-   en cualquier combinacion: `Impresiones`, `Coste` (o `Costo`, `Inversion`,
-   `Importe gastado`, `Gasto`), `Resultados` (o `Conversaciones`, `Conv`,
-   `Mensajes`) y `Clics`.
+El script encuentra los archivos en este orden: API de Drive (si hay API key),
+vista publica de la carpeta (sin credenciales, mientras siga compartida por
+enlace) y, como ultimo recurso, `data/drive-manifest.json`.
 
-Cada archivo diario se fusiona por fecha dentro del mes, asi que puedes enviar
-las impresiones en un export y la inversion diaria en otro.
+### Manual, desde el tablero
 
-## Origen de la data cargada
+El filtro tiene un boton **Sincronizar** con la fecha de los datos que se estan
+viendo. Su comportamiento depende de `data/drive-config.json`:
 
-Los archivos fuente se guardan en `data/csv-backups/`:
+- **Con `apiKey`**: el navegador lee la carpeta y los CSV directo de Drive,
+  actualiza el tablero sin recargar y guarda el resultado en `localStorage`.
+  Ademas se sincroniza solo cuando pasaron `autoSyncHours` horas (24 por
+  defecto) desde la ultima vez.
+- **Sin `apiKey`** (estado actual): el boton trae la ultima publicacion. La
+  carga diaria la sigue haciendo GitHub Actions.
 
-- `Gráfico_de_serie_temporal(2026.MM...).csv`: impresiones diarias de enero a
-  agosto de 2026, exportadas del panel de campanas.
-- `Reporte_Aquarius_Agosto2026_tabla.csv`: tabla de resultados de agosto 2026,
-  transcrita del reporte `Aquarius_-_Dashboard_Lima_Retail (4).pdf`
-  (1 ago 2026 - 31 ago 2026). Sus totales cuadran con el reporte:
-  S/ 1,854.85 de coste, 2,325 clics, 129 conversiones, S/ 14.38 por conversion
-  y CTR 6.87%. Reemplaza a la tabla anterior, que era de otro periodo.
+Para habilitar la sincronizacion desde el navegador hace falta una **clave de
+API de Google** (Google Cloud > APIs y servicios > Credenciales > Clave de API),
+con la **Google Drive API** habilitada y la clave restringida a
+`https://aquarius.limaretail.com/*`. La clave no va en el repo: se guarda en el
+secret **`AQ_DRIVE_API_KEY`** y `scripts/build.js` la incrusta en el HTML
+cifrado al publicar. Para probar en local se puede poner en `apiKey` dentro de
+`data/drive-config.json` (sin commitearla).
 
-## Importar la data de cada mes
+La carpeta debe seguir compartida como "cualquiera con el enlace puede ver": es
+lo que permite leerla sin cuenta de servicio.
+
+## Importar archivos sueltos
+
+`scripts/import-aquarius-data.py` sigue disponible para cargar un CSV o Excel
+que no este en Drive, por ejemplo las series diarias de impresiones:
 
 ```bash
 python scripts/import-aquarius-data.py "ruta/al/archivo.csv" --month 2026-09
 ```
-
-- `--month AAAA-MM` define el periodo destino. Si el nombre del archivo trae el
-  rango de fechas (por ejemplo `...(2026.08.01-2026.08.31).csv`) el mes se
-  detecta solo.
-- `--label "Setiembre 2026"` cambia la etiqueta visible del filtro.
-- La importacion actualiza solo el mes indicado y conserva los meses anteriores.
-- Ejecuta el importador una vez por cada archivo: uno para la tabla de campanas y
-  otro para la serie de impresiones del mismo mes.
-
-Despues de importar, regenera el build:
 
 ## Build
 
