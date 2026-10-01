@@ -8,12 +8,12 @@
       source: 'Fuente: data/aquarius-lima-retail-2026.json',
       footer: 'Resultados de pauta digital',
     },
-    'view-messages': {
-      title: 'Calculadora de Mensajes',
-      caption: 'Planificación WhatsApp por CPL',
-      status: 'Guardado automático',
-      source: 'Cálculo local de inversión para campañas de Mensajes',
-      footer: 'Datos guardados en este navegador',
+    'view-projections': {
+      title: 'Proyecciones',
+      caption: 'Cierre de mes y simulador de objetivo',
+      status: 'Proyección sobre datos reales',
+      source: 'Fuente: Gasto Publicitario / carpeta Aquarius Campanas',
+      footer: 'Proyección lineal según el ritmo del mes',
     },
   };
 
@@ -52,8 +52,10 @@
     document.getElementById('footer-status').textContent = meta.footer;
     saveView(viewId);
 
-    if (viewId === 'view-messages') window.MessagesCalculator?.init();
-    if (viewId === 'view-obj') window.setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
+    if (viewId === 'view-projections') window.AquariusProjections?.init();
+    // Vuelve a poner el mes en la barra superior, que la vista anterior reemplazo.
+    if (viewId === 'view-obj' && window.AquariusDashboard?.getData()) window.AquariusDashboard.render();
+    window.setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
   }
 
   function initNavigation() {

@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/dashboard.css?v=1.6.0">
+<link rel="stylesheet" href="css/dashboard.css?v=1.7.0">
 <style>
   .reservations-total-row td { height: auto !important; padding: 10px 12px !important; border-top: 2px solid #cbd5e1 !important; color: #0f172a !important; background: #f8fafc; font-size: 13px; font-weight: 800; vertical-align: middle; }
   .reservations-total-row .total-label { text-align: right; }
@@ -33,15 +33,15 @@
 <body>
 <div class="shell">
   <aside class="sidebar" id="aquarius-sidebar">
-    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.6.0</span></div></div>
+    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.7.0</span></div></div>
     <div class="s-group-lbl">Modulos activos</div>
     <button class="s-item active" type="button" data-view-target="view-obj">
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
       <div class="s-text"><div class="s-title-nav">Gasto Publicitario</div><div class="s-desc-nav">Branding y ventas</div></div>
     </button>
-    <button class="s-item" type="button" data-view-target="view-messages">
-      <div class="s-icon"><svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg></div>
-      <div class="s-text"><div class="s-title-nav">Calculadora de Mensajes</div><div class="s-desc-nav">Modulo heredado</div></div>
+    <button class="s-item" type="button" data-view-target="view-projections">
+      <div class="s-icon"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></div>
+      <div class="s-text"><div class="s-title-nav">Proyecciones</div><div class="s-desc-nav">Cierre de mes y simulador</div></div>
     </button>
     <div class="s-group-lbl paused-label">Modulos pausados</div>
     <button class="s-item disabled" type="button" disabled aria-disabled="true"><div class="s-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><div class="s-text"><div class="s-title-nav">Comparativo YoY</div><div class="s-desc-nav">Evolucion interanual</div></div><span class="module-status">Proximamente</span></button>
@@ -81,80 +81,63 @@
         <div class="panel campaigns-panel"><div class="panel-head"><div><div class="panel-title" id="campaigns-title">Tabla de resultados</div><div class="panel-sub" id="campaigns-sub"></div></div></div><div class="campaigns-note" id="campaigns-note"></div><div class="table-scroll"><table class="data-table campaigns-table"><thead><tr><th>Campaña</th><th class="num">Inversion</th><th class="num">% Δ</th><th class="num">CTR</th><th class="num">% Δ</th><th class="num">Clics</th><th class="num">% Δ</th><th class="num">Conversaciones</th><th class="num">% Δ</th><th class="num">Costo x conversacion</th><th class="num">% Δ</th></tr></thead><tbody id="campaigns-body"></tbody></table></div></div>
       </section>
 
-      <section class="view" id="view-messages">
-        <div class="sec-lbl">02 - Planificacion de mensajes</div>
-        <h1 class="section-title">Calculadora de Mensajes</h1>
-        <p class="section-desc">Proyecta la inversion necesaria para campañas de WhatsApp según la facturación pendiente, el ticket promedio y el costo por lead de cada conjunto de anuncios.</p>
-
-        <div class="messages-layout">
-          <div class="panel messages-planner">
-            <div class="panel-head messages-panel-head">
-              <div>
-                <div class="messages-kicker">Campaña de Mensajes / WhatsApp</div>
-                <div class="panel-title">Objetivo comercial e inversión por CPL</div>
-                <div class="panel-sub">Los resultados se actualizan y guardan automáticamente.</div>
-              </div>
-              <button class="messages-btn secondary" id="messages-reset" type="button">Restablecer valores</button>
+      <section class="view" id="view-projections">
+        <div class="sec-lbl">02 - Proyecciones</div>
+        <h1 class="section-title">Proyecciones</h1>
+        <p class="section-desc" id="projection-desc">Proyeccion al cierre de mes calculada con los datos reales del modulo Gasto Publicitario.</p>
+        <div class="kpi-strip projection-kpis" id="projection-kpis" aria-label="KPIs de proyeccion"></div>
+        <div class="panel projection-empty" id="projection-empty" hidden>
+          <div class="empty-state"><strong>Sin datos para proyectar</strong><span>Todavia no hay inversion registrada. Sube el CSV del mes a la carpeta de Drive y sincroniza.</span></div>
+        </div>
+        <div class="panel projection-panel" id="projection-panel">
+          <div class="panel-head projection-panel-head">
+            <div>
+              <div class="panel-title" id="projection-title">Linea de tiempo</div>
+              <div class="panel-sub" id="projection-sub">Cargando datos del mes en curso...</div>
             </div>
-
-            <div class="messages-controls">
-              <label class="messages-field" for="messages-target">
-                <span>Facturación objetivo</span>
-                <span class="messages-input-wrap"><b>S/</b><input id="messages-target" type="number" min="0" step="100"></span>
-              </label>
-              <label class="messages-field" for="messages-actual">
-                <span>Facturación ya realizada</span>
-                <span class="messages-input-wrap"><b>S/</b><input id="messages-actual" type="number" min="0" step="100"></span>
-              </label>
-              <label class="messages-field" for="messages-ticket">
-                <span>Ticket promedio</span>
-                <span class="messages-input-wrap"><b>S/</b><input id="messages-ticket" type="number" min="0.01" step="10"></span>
-              </label>
-              <label class="messages-field" for="messages-cpl">
-                <span>CPL promedio</span>
-                <span class="messages-input-wrap"><b>S/</b><input id="messages-cpl" type="number" min="0" step="0.01"></span>
-              </label>
-            </div>
-
-            <div class="messages-kpis">
-              <div class="messages-kpi"><span>Facturación restante</span><strong id="messages-remaining">S/ 0.00</strong></div>
-              <div class="messages-kpi"><span>Ventas necesarias</span><strong id="messages-sales">0</strong></div>
-              <div class="messages-kpi investment"><span>Inversión total en Mensajes</span><strong id="messages-investment">S/ 0.00</strong></div>
-            </div>
-
-            <div class="messages-table-head">
-              <div><div class="panel-title">Conjuntos de anuncios</div><div class="panel-sub">Edita el nombre, los mensajes objetivo y el CPL de cada conjunto.</div></div>
-              <button class="messages-btn secondary" id="messages-add-set" type="button">+ Agregar conjunto</button>
-            </div>
-            <div class="messages-table-wrap">
-              <table class="messages-table">
-                <thead><tr><th>Conjunto</th><th class="num">Mensajes / Reservas Objetivo</th><th class="num">Costo por lead</th><th class="num">Inversión</th><th><span class="sr-only">Acciones</span></th></tr></thead>
-                <tbody id="messages-sets"></tbody>
-              </table>
-              <div class="messages-add-row">
-                <button class="messages-btn secondary" id="messages-add-row" type="button">+ Agregar fila</button>
-              </div>
+            <div class="chart-series-toggles" id="projection-metrics" role="group" aria-label="Indicador proyectado">
+              <label class="series-toggle active" data-series="investment"><input type="radio" name="projection-metric" value="investment" checked>Inversion</label>
+              <label class="series-toggle" data-series="clicks"><input type="radio" name="projection-metric" value="clicks">Clics</label>
+              <label class="series-toggle" data-series="conversions"><input type="radio" name="projection-metric" value="conversions">Conversaciones</label>
             </div>
           </div>
+          <div class="chart-wrap h-360"><canvas id="chart-projection"></canvas></div>
+          <div class="chart-legend projection-legend" id="projection-legend"></div>
+          <p class="projection-note" id="projection-note"></p>
 
-          <aside class="panel messages-summary">
+          <div class="projection-sim" id="projection-sim">
+            <div class="projection-sim-head">
+              <div>
+                <div class="panel-title">Simulador de objetivo</div>
+                <div class="panel-sub" id="projection-sim-sub">Arrastra el nodo del ultimo dia de la grafica hacia el cierre que quieres alcanzar.</div>
+              </div>
+              <div class="projection-sim-actions">
+                <label class="messages-field projection-sim-field" for="projection-sim-value">
+                  <span id="projection-sim-label">Cierre objetivo</span>
+                  <span class="messages-input-wrap"><b id="projection-sim-prefix">S/</b><input id="projection-sim-value" type="number" min="0" step="1"></span>
+                </label>
+                <button class="messages-btn secondary" id="projection-sim-goal" type="button" hidden>Llevar al presupuesto</button>
+                <button class="messages-btn secondary" id="projection-sim-reset" type="button" disabled>Restablecer</button>
+              </div>
+            </div>
+            <div class="projection-sim-grid" id="projection-sim-grid"></div>
+            <p class="projection-note" id="projection-sim-note"></p>
+          </div>
+        </div>
+
+        <div class="panel projection-table-panel">
+          <div class="panel-head">
             <div>
-              <div class="messages-kicker">Resumen</div>
-              <div class="panel-title">Propuesta de inversión</div>
-              <div class="panel-sub">Lista para compartir o descargar.</div>
+              <div class="panel-title">Proyeccion al cierre del mes</div>
+              <div class="panel-sub">Ritmo diario = acumulado real / dias con datos. La proyeccion mantiene ese ritmo hasta el ultimo dia del mes.</div>
             </div>
-            <div class="messages-summary-total"><span>Inversión total</span><strong id="messages-summary-total">S/ 0.00</strong></div>
-            <div class="messages-formula">
-              <span>Fórmulas aplicadas</span>
-              <p>Ventas necesarias = facturación restante ÷ ticket promedio</p>
-              <p>Inversión = mensajes objetivo × costo por lead</p>
-            </div>
-            <div class="messages-actions">
-              <button class="messages-btn secondary" id="messages-copy" type="button">Copiar resumen</button>
-              <button class="messages-btn primary" id="messages-export" type="button">Exportar a Excel</button>
-            </div>
-            <div class="messages-feedback" id="messages-feedback" aria-live="polite"></div>
-          </aside>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table projection-table">
+              <thead><tr><th>Indicador</th><th class="num" id="projection-actual-head">Actual</th><th class="num">Ritmo diario</th><th class="num" id="projection-close-head">Proyeccion al cierre</th><th class="num">Referencia</th><th>Brecha</th></tr></thead>
+              <tbody id="projection-body"><tr><td class="table-empty" colspan="6">Cargando proyeccion...</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -162,12 +145,12 @@
     </div>
   </main>
 </div>
-<script src="js/objectives.js?v=1.6.0"></script>
-<script src="js/drive-sync.js?v=1.6.0"></script>
-<script src="js/reservation-goals.js?v=1.6.0"></script>
-<script src="js/messages-calculator.js?v=1.6.0"></script>
-<script src="js/navigation.js?v=1.6.0"></script>
-<script src="js/sidebar.js?v=1.6.0"></script>
+<script src="js/objectives.js?v=1.7.0"></script>
+<script src="js/drive-sync.js?v=1.7.0"></script>
+<script src="js/reservation-goals.js?v=1.7.0"></script>
+<script src="js/projections.js?v=1.7.0"></script>
+<script src="js/navigation.js?v=1.7.0"></script>
+<script src="js/sidebar.js?v=1.7.0"></script>
 <!-- El acceso lo pone el build: con AQ_PAGE_PASSWORD cifra el tablero dentro de deploy/pages-gate.html. -->
 </body>
 </html>

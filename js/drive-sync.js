@@ -38,6 +38,16 @@
     'costo/conv.': ['costPerConversion', 'number'],
     'coste/conv.': ['costPerConversion', 'number']
   };
+  // Columnas que no van a cada campana sino al presupuesto diario del mes.
+  const BUDGET_COLUMNS = {
+    'presupuesto': 'budget',
+    'nombre del presupuesto': 'budgetName',
+    'tipo de presupuesto': 'budgetType',
+    'estado de la campana': 'status'
+  };
+  // El rango del informe puede venir como "1 de agosto de 2026" o "1 ago 2026".
+  const MONTH_PREFIX = {};
+  Object.keys(MONTH_BY_NAME).forEach(name => { MONTH_PREFIX[name.slice(0, 3)] = MONTH_BY_NAME[name]; });
   const DELTA_FIELDS = {
     cost: 'costDelta',
     ctr: 'ctrDelta',
@@ -109,6 +119,32 @@
     return numeric ? numeric[1] + '-' + numeric[2] : null;
   }
 
+  // Lee el rango del informe: 1 de agosto de 2026 - 31 de agosto de 2026.
+  function periodFromText(text) {
+    const plain = normalize(text);
+    const pattern = /\b(\d{1,2})\s+(?:de\s+)?([a-z]{3})[a-z]*\.?\s+(?:de\s+)?(\d{4})/g;
+    const dates = [];
+    let match;
+    while ((match = pattern.exec(plain))) {
+      if (MONTH_PREFIX[match[2]]) {
+        dates.push(match[3] + '-' + String(MONTH_PREFIX[match[2]]).padStart(2, '0') + '-' + match[1].padStart(2, '0'));
+      }
+    }
+    return dates.length >= 2 ? { start: dates[0], end: dates[dates.length - 1] } : null;
+  }
+
+  // Presupuesto diario de una campana habilitada. Uno compartido se cuenta una sola vez.
+  function addBudget(budgets, row, positions, campaign) {
+    const cell = field => (positions[field] !== undefined && positions[field] < row.length ? row[positions[field]] : '');
+    const amount = parseNumber(cell('budget'));
+    const status = normalize(cell('status'));
+    const kind = normalize(cell('budgetType'));
+    // Una campana detenida no gasta en lo que queda del mes; un presupuesto total no es diario.
+    if (amount === null || (status && status.indexOf('habilitad') !== 0) || (kind && kind.indexOf('diari') !== 0)) return;
+    const shared = String(cell('budgetName')).trim();
+    budgets[shared && shared !== '--' ? 'budget:' + shared : 'campaign:' + campaign] = amount;
+  }
+
   function monthLabel(monthId) {
     const parts = String(monthId || '').split('-');
     return parts.length === 2 ? MONTH_NAMES[Number(parts[1]) - 1] + ' ' + parts[0] : String(monthId || '');
@@ -127,17 +163,25 @@
     if (headerIndex < 0) return null;
 
     let monthId = null;
-    for (let index = 0; index < headerIndex; index += 1) monthId = monthId || monthFromText(rows[index].join(' '));
+    let period = null;
+    for (let index = 0; index < headerIndex; index += 1) {
+      monthId = monthId || monthFromText(rows[index].join(' '));
+      period = period || periodFromText(rows[index].join(' '));
+    }
     monthId = monthId || monthFromText(name);
     if (!monthId) return null;
 
     const columns = {};
+    const budgetColumns = {};
     rows[headerIndex].forEach((cell, position) => {
       const mapped = COLUMNS[normalize(cell)];
       if (mapped && !columns[mapped[0]]) columns[mapped[0]] = { position: position, kind: mapped[1] };
+      const budgetField = BUDGET_COLUMNS[normalize(cell)];
+      if (budgetField && budgetColumns[budgetField] === undefined) budgetColumns[budgetField] = position;
     });
 
     const records = [];
+    const budgets = {};
     let totals = null;
     for (let index = headerIndex + 1; index < rows.length; index += 1) {
       const row = rows[index];
@@ -157,9 +201,14 @@
         }
         continue;
       }
-      if (entry.campaign) records.push(entry);
+      if (entry.campaign) {
+        records.push(entry);
+        addBudget(budgets, row, budgetColumns, entry.campaign);
+      }
     }
-    return records.length ? { monthId: monthId, records: records, totals: totals } : null;
+    const amounts = Object.keys(budgets).map(key => budgets[key]);
+    const dailyBudget = amounts.length ? Math.round(amounts.reduce((total, value) => total + value, 0) * 100) / 100 : null;
+    return records.length ? { monthId: monthId, records: records, totals: totals, period: period, dailyBudget: dailyBudget } : null;
   }
 
   function applyDeltas(months) {
@@ -220,6 +269,11 @@
       month.driveFileId = parsed.fileId;
       month.records = parsed.records;
       if (parsed.totals) month.totals = parsed.totals;
+      // El rango da la fecha de corte de Proyecciones; el presupuesto es el vigente al exportar.
+      ['period', 'dailyBudget'].forEach(key => {
+        if (parsed[key] === null) delete month[key];
+        else month[key] = parsed[key];
+      });
       byId[parsed.monthId] = month;
     });
     data.months = Object.keys(byId).sort().map(id => byId[id]);

@@ -69,6 +69,15 @@ COLUMNS = {
     "costo/conv.": ("costPerConversion", "number"),
     "coste/conv.": ("costPerConversion", "number"),
 }
+# Columnas que no van a cada campana sino al presupuesto diario del mes.
+BUDGET_COLUMNS = {
+    "presupuesto": "budget",
+    "nombre del presupuesto": "budgetName",
+    "tipo de presupuesto": "budgetType",
+    "estado de la campana": "status",
+}
+# El rango del informe puede venir como "1 de agosto de 2026" o "1 ago 2026".
+MONTH_PREFIX = {name[:3]: number for name, number in MONTH_BY_NAME.items()}
 DELTA_FIELDS = {
     "cost": "costDelta",
     "ctr": "ctrDelta",
@@ -126,6 +135,30 @@ def month_from_text(text):
     if match:
         return f"{match.group(1)}-{match.group(2)}"
     return None
+
+
+def period_from_text(text):
+    """Lee el rango del informe: 1 de agosto de 2026 - 31 de agosto de 2026."""
+    found = re.findall(r"\b(\d{1,2})\s+(?:de\s+)?([a-z]{3})[a-z]*\.?\s+(?:de\s+)?(\d{4})", normalize(text))
+    dates = [f"{int(year):04d}-{MONTH_PREFIX[month]:02d}-{int(day):02d}"
+             for day, month, year in found if month in MONTH_PREFIX]
+    return {"start": dates[0], "end": dates[-1]} if len(dates) >= 2 else None
+
+
+def add_budget(budgets, row, positions, campaign):
+    """Presupuesto diario de una campana habilitada. Uno compartido se cuenta una sola vez."""
+    def cell(field):
+        position = positions.get(field)
+        return row[position] if position is not None and position < len(row) else ""
+
+    amount = parse_number(cell("budget"))
+    status = normalize(cell("status"))
+    kind = normalize(cell("budgetType"))
+    # Una campana detenida no gasta en lo que queda del mes; un presupuesto total no es diario.
+    if amount is None or (status and not status.startswith("habilitad")) or (kind and not kind.startswith("diari")):
+        return
+    shared = cell("budgetName").strip()
+    budgets[f"budget:{shared}" if shared not in ("", "--") else f"campaign:{campaign}"] = amount
 
 
 def fetch(url):
@@ -219,21 +252,28 @@ def parse_campaign_report(text, name):
             header_index = index
             break
     if header_index is None:
-        return None, [], {}
+        return None, [], {}, {}
 
     month_id = None
+    period = None
     for row in rows[:header_index]:
         month_id = month_id or month_from_text(" ".join(row))
+        period = period or period_from_text(" ".join(row))
     month_id = month_id or month_from_text(name)
 
     columns = {}
+    budget_columns = {}
     for position, cell in enumerate(rows[header_index]):
         mapped = COLUMNS.get(normalize(cell))
         if mapped and mapped[0] not in columns:
             columns[mapped[0]] = (position, mapped[1])
+        budget_field = BUDGET_COLUMNS.get(normalize(cell))
+        if budget_field and budget_field not in budget_columns:
+            budget_columns[budget_field] = position
 
     records = []
     totals = {}
+    budgets = {}
     total_fields = ("cost", "impressions", "clicks", "ctr", "conversions", "costPerConversion")
     for row in rows[header_index + 1:]:
         if not row or not any(cell.strip() for cell in row):
@@ -250,7 +290,9 @@ def parse_campaign_report(text, name):
             continue
         if entry.get("campaign"):
             records.append(entry)
-    return month_id, records, totals
+            add_budget(budgets, row, budget_columns, entry["campaign"])
+    summary = {"period": period, "dailyBudget": round(sum(budgets.values()), 2) if budgets else None}
+    return month_id, records, totals, summary
 
 
 def apply_deltas(months):
@@ -331,7 +373,7 @@ def main():
 
     for item in sorted(csv_files, key=lambda entry: entry["name"]):
         text = download(item["id"], item["name"])
-        month_id, records, totals = parse_campaign_report(text, item["name"])
+        month_id, records, totals, summary = parse_campaign_report(text, item["name"])
         if not month_id or not records:
             print(f"[sync-drive] omito {item['name']}: no parece un informe de campana.")
             continue
@@ -342,6 +384,12 @@ def main():
         month["records"] = records
         if totals:
             month["totals"] = totals
+        # El rango da la fecha de corte de Proyecciones; el presupuesto es el vigente al exportar.
+        for key, value in summary.items():
+            if value is None:
+                month.pop(key, None)
+            else:
+                month[key] = value
         (BACKUPS / item["name"]).write_text(text, encoding="utf-8")
         print(f"[sync-drive] {month_label(month_id)}: {len(records)} campanas")
 

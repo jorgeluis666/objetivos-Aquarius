@@ -158,7 +158,9 @@
           sourceFile: month.sourceFile || null,
           records: Array.isArray(month.records) ? month.records : [],
           totals: month.totals || null,
-          daily: dailyRows(month)
+          daily: dailyRows(month),
+          period: month.period || null,
+          dailyBudget: isNum(month.dailyBudget) ? Number(month.dailyBudget) : null
         }))
         .sort((a, b) => a.id.localeCompare(b.id));
     }
@@ -170,7 +172,9 @@
         sourceFile: data.sourceFile || null,
         records: data.records,
         totals: null,
-        daily: []
+        daily: [],
+        period: null,
+        dailyBudget: null
       }];
     }
     return [];
@@ -584,6 +588,8 @@
   }
 
   function updateSourceLabels() {
+    // La barra superior y el pie son de la vista activa: con otra vista abierta no se pisan.
+    if (!document.getElementById('view-obj').classList.contains('visible')) return;
     const month = currentMonth();
     const status = document.getElementById('topbar-status');
     const source = document.getElementById('footer-source');
@@ -633,6 +639,54 @@
     }
   }
 
+  // Dia de la ultima sincronizacion en Lima (UTC-5 todo el ano, sin horario de verano).
+  function syncDay() {
+    const date = new Date((state.data && state.data.drive && state.data.drive.lastSync) || '');
+    return Number.isNaN(date.getTime()) ? null : new Date(date.getTime() - 5 * 3600000).toISOString().slice(0, 10);
+  }
+
+  // Corte de un mes: fin del rango del informe de Google Ads o, sin rango, el ultimo dia del mes.
+  // Nunca es posterior a la sincronizacion: un informe de "este mes" puede traer el mes completo.
+  function monthCutoff(month) {
+    const [year, number] = month.id.split('-').map(Number);
+    const end = month.period && /^\d{4}-\d{2}-\d{2}$/.test(month.period.end)
+      ? month.period.end
+      : `${month.id}-${String(new Date(year, number, 0).getDate()).padStart(2, '0')}`;
+    const synced = syncDay();
+    return synced && synced < end ? synced : end;
+  }
+
+  // Snapshot de solo lectura para los modulos que dependen de estos datos (Proyecciones).
+  function snapshot() {
+    if (!state.data) return null;
+    const months = state.months.filter(month => /^\d{4}-\d{2}$/.test(month.id) && monthTotals(month).hasData);
+    const latest = months[months.length - 1];
+    return {
+      cutoff: latest ? monthCutoff(latest) : null,
+      source: (latest && latest.sourceFile) || DATA_URL,
+      year: latest ? Number(latest.id.slice(0, 4)) : null,
+      lastSync: (state.data.drive && state.data.drive.lastSync) || null,
+      months: months.map(month => {
+        const totals = monthTotals(month);
+        const [year, number] = month.id.split('-').map(Number);
+        return {
+          id: month.id,
+          name: MONTH_NAMES[number - 1],
+          label: month.label,
+          cost: totals.cost,
+          clicks: totals.clicks,
+          conversions: totals.conversions,
+          impressions: totals.impressions,
+          dailyBudget: month.dailyBudget,
+          // Google Ads fija presupuestos diarios: el del mes es el diario vigente por los dias del mes.
+          budgetTotal: month.dailyBudget ? month.dailyBudget * new Date(year, number, 0).getDate() : null,
+          period: month.period ? Object.assign({}, month.period) : null,
+          campaigns: month.records.map(record => Object.assign({}, record))
+        };
+      })
+    };
+  }
+
   // Interfaz publica del modulo: drive-sync.js la usa para pintar la data que
   // acaba de traer de Drive sin recargar la pagina.
   window.AquariusDashboard = {
@@ -648,7 +702,8 @@
       renderAll();
       window.dispatchEvent(new CustomEvent('aquarius:data-ready', { detail: data }));
     },
-    render: renderAll
+    render: renderAll,
+    snapshot
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

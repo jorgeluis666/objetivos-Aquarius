@@ -295,7 +295,12 @@
         "ctr": 0.1444,
         "conversions": 294,
         "costPerConversion": 9.84
-      }
+      },
+      "period": {
+        "start": "2026-01-01",
+        "end": "2026-01-31"
+      },
+      "dailyBudget": 63.2
     },
     {
       "id": "2026-02",
@@ -574,7 +579,12 @@
         "ctr": 0.1434,
         "conversions": 171,
         "costPerConversion": 9.52
-      }
+      },
+      "period": {
+        "start": "2026-02-01",
+        "end": "2026-02-28"
+      },
+      "dailyBudget": 63.2
     },
     {
       "id": "2026-03",
@@ -865,7 +875,12 @@
         "ctr": 0.1625,
         "conversions": 233,
         "costPerConversion": 9.32
-      }
+      },
+      "period": {
+        "start": "2026-03-01",
+        "end": "2026-03-31"
+      },
+      "dailyBudget": 63.2
     },
     {
       "id": "2026-04",
@@ -1152,7 +1167,12 @@
         "ctr": 0.1606,
         "conversions": 189,
         "costPerConversion": 9.39
-      }
+      },
+      "period": {
+        "start": "2026-04-01",
+        "end": "2026-04-30"
+      },
+      "dailyBudget": 63.2
     },
     {
       "id": "2026-05",
@@ -1427,7 +1447,12 @@
         "ctr": 0.15460000000000002,
         "conversions": 217,
         "costPerConversion": 8.45
-      }
+      },
+      "period": {
+        "start": "2026-05-01",
+        "end": "2026-05-31"
+      },
+      "dailyBudget": 63.2
     },
     {
       "id": "2026-06",
@@ -1698,7 +1723,12 @@
         "ctr": 0.1643,
         "conversions": 206,
         "costPerConversion": 9.74
-      }
+      },
+      "period": {
+        "start": "2026-06-01",
+        "end": "2026-06-30"
+      },
+      "dailyBudget": 63.2
     },
     {
       "id": "2026-07",
@@ -1941,7 +1971,12 @@
         "ctr": 0.09970000000000001,
         "conversions": 150,
         "costPerConversion": 11.96
-      }
+      },
+      "period": {
+        "start": "2026-07-01",
+        "end": "2026-07-31"
+      },
+      "dailyBudget": 63.2
     },
     {
       "id": "2026-08",
@@ -2181,7 +2216,12 @@
         "ctr": 0.0687,
         "conversions": 129,
         "costPerConversion": 14.38
-      }
+      },
+      "period": {
+        "start": "2026-08-01",
+        "end": "2026-08-31"
+      },
+      "dailyBudget": 53.6
     }
   ],
   "month": "2026-08",
@@ -2284,7 +2324,7 @@
   "drive": {
     "folderId": "1o4Ve9CuoQLuH0mDP6qDi07EvPEISAOvA",
     "discovery": "publica",
-    "lastSync": "2026-10-01T17:00:25Z",
+    "lastSync": "2026-10-01T18:26:01Z",
     "files": [
       {
         "id": "1-kfM3myJ3397tC5wToNO-HVKQzy6_jzW",

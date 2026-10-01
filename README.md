@@ -15,6 +15,46 @@ Dashboard de gasto publicitario para Aquarius.
 - Subtitulo: `Branding y ventas`
 - KPIs: coste total, CTR, clics, conversiones y costo por conversion.
 
+## Proyecciones
+
+El modulo Proyecciones (pestana del panel lateral) proyecta el cierre del mes con los datos reales de
+Gasto Publicitario. No lee el JSON ni Drive por su cuenta: consume el snapshot de solo lectura
+`window.AquariusDashboard.snapshot()`:
+
+```js
+{ cutoff: '2026-08-31', source: 'Aquarius agosto 2026.csv', year: 2026, lastSync: '...',
+  months: [{ id, name, label, cost, clicks, conversions, impressions, dailyBudget, budgetTotal, period, campaigns }] }
+```
+
+- **Fecha de corte**: fin del rango del informe de Google Ads (`period.end`, la linea
+  "1 de agosto de 2026 - 31 de agosto de 2026" del CSV), nunca posterior al dia de la ultima sincronizacion.
+  El mes proyectado es el del corte; si no tiene inversion, el ultimo mes con datos.
+- **Proyeccion**: ritmo diario = acumulado / dias con datos; cierre = ritmo x dias del mes. Si el informe
+  ya cubre el mes completo, la proyeccion es igual al acumulado y el simulador se desactiva.
+- **Indicadores**: Inversion (referencia = presupuesto), Clics y Conversaciones (sin referencia).
+- **Presupuesto**: suma de la columna Presupuesto (diario) de las campanas *habilitadas* del informe, por los
+  dias del mes. Un presupuesto compartido se cuenta una vez. Es el presupuesto vigente al exportar el CSV, no
+  el historico: en meses pasados es solo una referencia.
+- Cada `applyData` emite `aquarius:data-ready` y el modulo se recalcula solo; si se abre antes de que
+  carguen los datos muestra "Esperando los datos...".
+
+### Simulador de objetivo
+
+El ultimo punto de la linea proyectada es un nodo arrastrable: al moverlo se define el cierre deseado.
+
+- El estado es un solo numero, `factor = cierre objetivo / cierre proyectado`, comun a los tres
+  indicadores: el escenario conserva el CPC, el costo por conversacion y la tasa de conversion del mes, asi
+  que mover uno mueve los otros dos en la misma proporcion y cambiar de indicador conserva el escenario.
+- El cierre objetivo nunca queda por debajo de lo ya realizado (`factor >= dias con datos / dias del mes`).
+- Por indicador muestra el cierre objetivo, la diferencia contra la proyeccion, el ritmo diario requerido
+  (para inversion, "Presupuesto diario requerido"), el ritmo actual, lo que falta realizar y la brecha contra
+  el presupuesto. La cuarta tarjeta resume la inversion adicional o menor y la eficiencia que se conserva.
+- Controles: arrastrar el nodo (escritorio), escribir el valor en "<Indicador> al cierre" (obligatorio en
+  celular, donde arrastrar desplaza la pagina), "Llevar al presupuesto" y "Restablecer" (o doble clic sobre
+  el nodo).
+- Con los datos de hoy el simulador queda desactivado hasta que llegue a Drive el informe de un mes en curso
+  (por ejemplo, del 1 al 17 de octubre).
+
 ## Fuente de datos
 
 El tablero se arma desde la carpeta de Google Drive **Aquarius Campanas**:
@@ -40,6 +80,8 @@ La fuente normalizada que consume el tablero sigue siendo
       "sourceFile": "Aquarius agosto 2026.csv",
       "records": [ /* una fila por campana, con impresiones y % de variacion */ ],
       "totals": { "cost": 1854.85, "impressions": 33828, "clicks": 2325 },
+      "period": { "start": "2026-08-01", "end": "2026-08-31" },
+      "dailyBudget": 53.6,
       "daily": { "rows": [ { "date": "2026-08-01", "impressions": 1234 } ] }
     }
   ]
@@ -47,8 +89,10 @@ La fuente normalizada que consume el tablero sigue siendo
 ```
 
 Los `% Δ` de la tabla se calculan comparando cada campana con la del mes
-anterior, no vienen en el CSV. Las series diarias (`daily`) son independientes:
-la sincronizacion no las toca.
+anterior, no vienen en el CSV. `period` es el rango de fechas del informe y
+`dailyBudget` la suma de presupuestos diarios de las campanas habilitadas (ver
+Proyecciones). Las series diarias (`daily`) son independientes: la
+sincronizacion no las toca.
 
 ## Sincronizacion
 
@@ -134,7 +178,7 @@ URL publica: **https://aquarius.limaretail.com**. Cada push a `main` la actualiz
   ejecutar el workflow (Actions > Publicar en GitHub Pages > Run workflow).
 - Tras entrar, la llave queda en `sessionStorage` de esa pestana para no pedir la clave al recargar; cada deploy
   genera una sal nueva, asi que despues de publicar se vuelve a pedir. Una pestana nueva tambien la pide.
-- Las preferencias (mes elegido, vista, panel minimizado y ediciones de la calculadora) viven en `localStorage`
+- Las preferencias (mes elegido, vista y panel minimizado) viven en `localStorage`
   de cada dominio: las de `github.io` no pasan a `aquarius.limaretail.com`.
 - El repo es publico: lo que esta en `data/` (y el historial de git, que incluye la clave anterior) sigue
   siendo visible en GitHub aunque el sitio vaya con clave.
