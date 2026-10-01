@@ -1,6 +1,7 @@
 (function () {
   const DATA_URL = 'data/aquarius-lima-retail-2026.json';
   const MONTH_STORAGE_KEY = 'aquarius_selected_month';
+  const VIEW_STORAGE_KEY = 'aquarius_chart_view';
   // Series del grafico principal: un punto por mes, lineas en el tiempo.
   const MONTHLY = {
     cost: { label: 'Inversion', unit: 'money', color: '#0284c7', fill: 'rgba(2,132,199,.12)', axis: 'y' },
@@ -29,7 +30,7 @@
     PRODUCTOSTI: 'Productos TI',
     OUTSOURCINGDEALMACENES: 'Outsourcing de almacenes'
   };
-  const state = { data: null, months: [], monthId: null, rows: [], daily: [], chart: null, dailyChart: null };
+  const state = { data: null, months: [], monthId: null, rows: [], daily: [], chartView: 'month', chart: null };
 
   const fmtMoney = value => Number.isFinite(Number(value)) ? `S/ ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
   const fmtCount = value => Number.isFinite(Number(value)) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 }) : '-';
@@ -180,6 +181,24 @@
     return [];
   }
 
+  function readStoredView() {
+    try {
+      return window.localStorage.getItem(VIEW_STORAGE_KEY);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function setChartView(view) {
+    state.chartView = view === 'year' ? 'year' : 'month';
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, state.chartView);
+    } catch (error) {
+      /* sin almacenamiento: la vista dura lo que la pestana */
+    }
+    renderChart();
+  }
+
   function readStoredMonth() {
     try {
       return window.localStorage.getItem(MONTH_STORAGE_KEY);
@@ -285,15 +304,30 @@
   }
 
   // Grafico principal: lineas en el tiempo con un punto por mes cargado.
-  function renderMonthly() {
-    const panel = document.getElementById('chart-panel');
+  // El grafico sigue al filtro: por defecto muestra el mes elegido y con el boton
+  // Vision total pasa a todo lo que va del ano.
+  function renderChart() {
     const notice = document.getElementById('records-empty');
-    const months = monthlyTotals();
-    const hasRecords = state.rows.length > 0;
     if (notice) {
+      const hasRecords = state.rows.length > 0;
       notice.hidden = hasRecords;
       notice.innerHTML = hasRecords ? '' : `<strong>Sin tabla de campanas para ${escapeHtml(currentMonth() ? currentMonth().label : 'este mes')}.</strong>Agrega el CSV del mes a la carpeta de Drive y sincroniza.`;
     }
+    document.querySelectorAll('[data-chart-view]').forEach(button => {
+      const active = button.dataset.chartView === state.chartView;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    if (state.chartView === 'year') renderYearView();
+    else renderMonthView();
+  }
+
+  // Vista total: un punto por mes con todo lo que va del ano.
+  function renderYearView() {
+    const panel = document.getElementById('chart-panel');
+    const months = monthlyTotals();
+    const note = document.getElementById('chart-note');
+    if (note) { note.hidden = true; note.textContent = ''; }
     if (panel) panel.hidden = !months.length;
     if (!months.length) {
       if (state.chart) { state.chart.destroy(); state.chart = null; }
@@ -446,24 +480,33 @@
     return `${parts.join(' | ')}.${tail}`;
   }
 
-  function renderDaily() {
-    const panel = document.getElementById('daily-panel');
+  // Vista Mes: evolucion diaria dentro del mes del filtro.
+  function renderMonthView() {
+    const panel = document.getElementById('chart-panel');
     if (!panel) return;
     const { rows, active, estimated } = dailySeries();
+    const month = currentMonth();
+    panel.hidden = false;
     if (!rows.length || !active.length) {
-      panel.hidden = true;
-      if (state.dailyChart) { state.dailyChart.destroy(); state.dailyChart = null; }
+      if (state.chart) { state.chart.destroy(); state.chart = null; }
+      document.getElementById('chart-title').textContent = `Evolucion diaria | ${month ? month.label : ''}`.trim();
+      document.getElementById('chart-sub').textContent = 'Este mes no tiene detalle por dia.';
+      const emptyLegend = document.querySelector('.chart-legend span');
+      if (emptyLegend) emptyLegend.innerHTML = '';
+      const emptyNote = document.getElementById('chart-note');
+      if (emptyNote) {
+        emptyNote.hidden = false;
+        emptyNote.textContent = 'Sin serie diaria para este mes. En Vision total si aparece con los demas meses del ano.';
+      }
       return;
     }
-    panel.hidden = false;
-    const month = currentMonth();
-    document.getElementById('daily-title').textContent = `Evolucion diaria | ${month ? month.label : ''}`.trim();
-    document.getElementById('daily-sub').textContent = dailySummary(rows, active, estimated);
-    const legend = document.querySelector('.daily-legend span');
+    document.getElementById('chart-title').textContent = `Evolucion diaria | ${month ? month.label : ''}`.trim();
+    document.getElementById('chart-sub').textContent = dailySummary(rows, active, estimated);
+    const legend = document.querySelector('.chart-legend span');
     if (legend) {
       legend.innerHTML = active.map(metric => `<i class="legend-line" style="background:${DAILY[metric].color}"></i><b>${DAILY[metric].label}${estimated.has(metric) ? ' (est.)' : ''}</b>`).join('');
     }
-    const note = document.getElementById('daily-note');
+    const note = document.getElementById('chart-note');
     if (note) {
       const missing = ['cost', 'conversions'].filter(metric => !active.includes(metric)).map(metric => DAILY[metric].label.toLowerCase());
       const guessed = ['cost', 'conversions'].filter(metric => estimated.has(metric)).map(metric => DAILY[metric].label.toLowerCase());
@@ -476,19 +519,19 @@
         note.textContent = '';
       }
     }
-    const canvas = document.getElementById('chart-daily');
+    const canvas = document.getElementById('chart-monthly');
     if (typeof Chart === 'undefined') {
       canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Grafico no disponible sin conexion.</strong><span>Los totales siguen visibles en los KPIs.</span></div>';
       return;
     }
-    if (state.dailyChart) state.dailyChart.destroy();
+    if (state.chart) state.chart.destroy();
     // Sin resultados diarios, las impresiones pasan al eje visible de conteo.
     const impressionsAlone = active.includes('impressions') && !active.includes('conversions');
     const axisFor = metric => (metric === 'impressions' && impressionsAlone ? 'y1' : DAILY[metric].axis);
     const usesMoney = active.some(metric => axisFor(metric) === 'y');
     const usesCount = active.some(metric => axisFor(metric) === 'y1');
     const costPerResultValues = rows.map(row => Number(row.costPerConversion)).filter(value => Number.isFinite(value) && value > 0);
-    state.dailyChart = new Chart(canvas, {
+    state.chart = new Chart(canvas, {
       type: 'line',
       data: {
         labels: rows.map(row => formatDay(row.date)),
@@ -604,8 +647,7 @@
   function renderAll() {
     renderFilters();
     renderKpis();
-    renderMonthly();
-    renderDaily();
+    renderChart();
     renderTabs();
     renderTable();
     updateSourceLabels();
@@ -631,6 +673,7 @@
         ? stored
         : (state.data.defaultMonth || state.months[state.months.length - 1].id);
       selectMonth(initialMonth, false);
+      state.chartView = readStoredView() === 'year' ? 'year' : 'month';
       renderAll();
       window.dispatchEvent(new CustomEvent('aquarius:data-ready', { detail: state.data }));
     } catch (error) {
@@ -705,6 +748,12 @@
     render: renderAll,
     snapshot
   };
+
+  // Los botones de vista viven en el encabezado del panel, que no se repinta.
+  document.addEventListener('click', event => {
+    const button = event.target.closest && event.target.closest('[data-chart-view]');
+    if (button && button.dataset.chartView !== state.chartView) setChartView(button.dataset.chartView);
+  });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

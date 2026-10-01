@@ -13,7 +13,17 @@ Dashboard de gasto publicitario para Aquarius.
 
 - Titulo: `Gasto Publicitario`
 - Subtitulo: `Branding y ventas`
-- KPIs: coste total, CTR, clics, conversiones y costo por conversion.
+- KPIs: coste total, CTR, clics, conversiones, costo por conversion e impresiones.
+- Grafico de lineas con dos vistas, que se eligen con los botones del panel y
+  quedan guardadas en `localStorage`:
+  - **Mes** (por defecto): evolucion diaria del mes del filtro. Cambia cada vez
+    que se cambia de mes. Si el mes no trae serie diaria, el panel lo avisa.
+  - **Vision total**: un punto por mes con todo lo que va del ano. El mes del
+    filtro se marca con un punto mas grande y un clic en cualquier punto cambia
+    el filtro a ese mes.
+- Las lineas de inversion y resultados salen punteadas y marcadas `(est.)`
+  cuando el mes solo tiene impresiones diarias: son el total del mes repartido
+  entre los dias segun las impresiones, no cifras diarias reales.
 
 ## Proyecciones
 
