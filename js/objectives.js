@@ -2,6 +2,8 @@
   const DATA_URL = 'data/aquarius-lima-retail-2026.json';
   const MONTH_STORAGE_KEY = 'aquarius_selected_month';
   const VIEW_STORAGE_KEY = 'aquarius_chart_view';
+  // Detalle del grafico: dia y semana se mueven con el filtro, mes recorre el ano.
+  const CHART_VIEWS = ['day', 'week', 'year'];
   // Series del grafico principal: un punto por mes, lineas en el tiempo.
   const MONTHLY = {
     cost: { label: 'Inversion', unit: 'money', color: '#0284c7', fill: 'rgba(2,132,199,.12)', axis: 'y' },
@@ -30,7 +32,7 @@
     PRODUCTOSTI: 'Productos TI',
     OUTSOURCINGDEALMACENES: 'Outsourcing de almacenes'
   };
-  const state = { data: null, months: [], monthId: null, rows: [], daily: [], chartView: 'month', chart: null };
+  const state = { data: null, months: [], monthId: null, rows: [], daily: [], chartView: 'day', chart: null };
 
   const fmtMoney = value => Number.isFinite(Number(value)) ? `S/ ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
   const fmtCount = value => Number.isFinite(Number(value)) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 }) : '-';
@@ -181,6 +183,12 @@
     return [];
   }
 
+  // 'month' es la vista diaria de las versiones anteriores.
+  function normalizeView(view) {
+    if (view === 'month') return 'day';
+    return CHART_VIEWS.includes(view) ? view : 'day';
+  }
+
   function readStoredView() {
     try {
       return window.localStorage.getItem(VIEW_STORAGE_KEY);
@@ -190,7 +198,7 @@
   }
 
   function setChartView(view) {
-    state.chartView = view === 'year' ? 'year' : 'month';
+    state.chartView = CHART_VIEWS.includes(view) ? view : 'day';
     try {
       window.localStorage.setItem(VIEW_STORAGE_KEY, state.chartView);
     } catch (error) {
@@ -313,13 +321,21 @@
       notice.hidden = hasRecords;
       notice.innerHTML = hasRecords ? '' : `<strong>Sin tabla de campanas para ${escapeHtml(currentMonth() ? currentMonth().label : 'este mes')}.</strong>Agrega el CSV del mes a la carpeta de Drive y sincroniza.`;
     }
+    // Dia y semana necesitan la serie diaria del mes. Si no existe, los botones
+    // quedan apagados y el grafico cae a la vista del ano sin perder la eleccion.
+    const hasDaily = state.daily.length > 0;
+    const view = state.chartView !== 'year' && !hasDaily ? 'year' : state.chartView;
     document.querySelectorAll('[data-chart-view]').forEach(button => {
-      const active = button.dataset.chartView === state.chartView;
+      const target = button.dataset.chartView;
+      const available = target === 'year' || hasDaily;
+      const active = target === view;
+      button.disabled = !available;
+      button.title = available ? '' : 'Este mes no tiene detalle por dia';
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
-    if (state.chartView === 'year') renderYearView();
-    else renderMonthView();
+    if (view === 'year') renderYearView();
+    else renderMonthView(view);
   }
 
   // Vista total: un punto por mes con todo lo que va del ano.
@@ -464,9 +480,10 @@
     return { rows, active, estimated };
   }
 
-  function dailySummary(rows, active, estimated) {
+  function dailySummary(rows, active, estimated, weeks) {
     const month = currentMonth();
-    const parts = [`${rows.length} dias de ${month ? month.label : 'el periodo'}`];
+    const scope = weeks ? `${weeks} semanas (${rows.length} dias)` : `${rows.length} dias`;
+    const parts = [`${scope} de ${month ? month.label : 'el periodo'}`];
     const totalOf = metric => rows.reduce((total, row) => total + (isNum(row[metric]) ? Number(row[metric]) : 0), 0);
     if (active.includes('cost')) parts.push(`${fmtMoney(totalOf('cost'))} de inversion`);
     if (active.includes('conversions')) parts.push(`${fmtCount(totalOf('conversions'))} resultados`);
@@ -481,27 +498,74 @@
   }
 
   // Vista Mes: evolucion diaria dentro del mes del filtro.
-  function renderMonthView() {
+  // Agrupa la serie diaria en bloques de siete dias contados desde el 1 del mes
+  // (1-7, 8-14, ...). Solo el ultimo bloque puede quedar corto, asi que las
+  // caidas de los extremos no se confunden con semanas incompletas del calendario.
+  function weeklyFromDaily(rows) {
+    const buckets = new Map();
+    rows.forEach(row => {
+      const day = Number(String(row.date).slice(8, 10));
+      if (!day) return;
+      const index = Math.floor((day - 1) / 7);
+      const bucket = buckets.get(index) || { index, first: row.date, last: row.date, days: 0 };
+      bucket.first = row.date < bucket.first ? row.date : bucket.first;
+      bucket.last = row.date > bucket.last ? row.date : bucket.last;
+      bucket.days += 1;
+      ['cost', 'conversions', 'impressions', 'clicks'].forEach(field => {
+        if (!isNum(row[field])) return;
+        bucket[field] = (isNum(bucket[field]) ? bucket[field] : 0) + Number(row[field]);
+      });
+      buckets.set(index, bucket);
+    });
+    return [...buckets.values()]
+      .sort((a, b) => a.index - b.index)
+      .map(bucket => Object.assign(bucket, {
+        date: bucket.first,
+        costPerConversion: isNum(bucket.cost) && isNum(bucket.conversions) && bucket.conversions > 0
+          ? bucket.cost / bucket.conversions
+          : null,
+        label: weekLabel(bucket.first, bucket.last),
+        longLabel: weekLongLabel(bucket.first, bucket.last, bucket.days)
+      }));
+  }
+
+  function weekLabel(first, last) {
+    const month = MONTH_NAMES[Number(first.slice(5, 7)) - 1].slice(0, 3).toLowerCase();
+    const from = Number(first.slice(8, 10));
+    const to = Number(last.slice(8, 10));
+    return from === to ? `${from} ${month}` : `${from}-${to} ${month}`;
+  }
+
+  function weekLongLabel(first, last, days) {
+    const corto = days && days < 7 ? ` (${days} ${days === 1 ? 'dia' : 'dias'})` : '';
+    if (first === last) return `${formatLongDate(first)}${corto}`;
+    return `Del ${formatLongDate(first)} al ${formatLongDate(last)}${corto}`;
+  }
+
+  function renderMonthView(granularity) {
     const panel = document.getElementById('chart-panel');
     if (!panel) return;
-    const { rows, active, estimated } = dailySeries();
+    const weekly = granularity === 'week';
+    const detail = weekly ? 'semanal' : 'diaria';
+    const { rows: dayRows, active, estimated } = dailySeries();
+    const rows = weekly ? weeklyFromDaily(dayRows) : dayRows;
     const month = currentMonth();
     panel.hidden = false;
     if (!rows.length || !active.length) {
       if (state.chart) { state.chart.destroy(); state.chart = null; }
-      document.getElementById('chart-title').textContent = `Evolucion diaria | ${month ? month.label : ''}`.trim();
+      document.getElementById('chart-title').textContent = `Evolucion ${detail} | ${month ? month.label : ''}`.trim();
       document.getElementById('chart-sub').textContent = 'Este mes no tiene detalle por dia.';
       const emptyLegend = document.querySelector('.chart-legend span');
       if (emptyLegend) emptyLegend.innerHTML = '';
       const emptyNote = document.getElementById('chart-note');
       if (emptyNote) {
         emptyNote.hidden = false;
-        emptyNote.textContent = 'Sin serie diaria para este mes. En Vision total si aparece con los demas meses del ano.';
+        emptyNote.textContent = 'Sin serie diaria para este mes. En la vista Mes si aparece junto a los demas meses del ano.';
       }
       return;
     }
-    document.getElementById('chart-title').textContent = `Evolucion diaria | ${month ? month.label : ''}`.trim();
-    document.getElementById('chart-sub').textContent = dailySummary(rows, active, estimated);
+    document.getElementById('chart-title').textContent = `Evolucion ${detail} | ${month ? month.label : ''}`.trim();
+    document.getElementById('chart-sub').textContent = dailySummary(dayRows, active, estimated, weekly ? rows.length : 0);
     const legend = document.querySelector('.chart-legend span');
     if (legend) {
       legend.innerHTML = active.map(metric => `<i class="legend-line" style="background:${DAILY[metric].color}"></i><b>${DAILY[metric].label}${estimated.has(metric) ? ' (est.)' : ''}</b>`).join('');
@@ -534,7 +598,7 @@
     state.chart = new Chart(canvas, {
       type: 'line',
       data: {
-        labels: rows.map(row => formatDay(row.date)),
+        labels: rows.map(row => (weekly ? row.label : formatDay(row.date))),
         datasets: active.map(metric => {
           const series = DAILY[metric];
           return {
@@ -546,7 +610,7 @@
             backgroundColor: active.length === 1 ? 'rgba(245,158,11,.14)' : 'transparent',
             borderWidth: 2,
             borderDash: estimated.has(metric) || series.dashed ? [5, 4] : [],
-            pointRadius: rows.length > 20 ? 2 : 3,
+            pointRadius: rows.length > 20 ? 2 : 4,
             pointHoverRadius: 5,
             pointBackgroundColor: series.color,
             tension: 0.32,
@@ -563,7 +627,7 @@
           legend: { display: false },
           tooltip: {
             callbacks: {
-              title: items => formatLongDate(rows[items[0].dataIndex].date),
+              title: items => (weekly ? rows[items[0].dataIndex].longLabel : formatLongDate(rows[items[0].dataIndex].date)),
               label: context => {
                 const metric = context.dataset.metricKey;
                 const series = DAILY[metric];
@@ -673,7 +737,7 @@
         ? stored
         : (state.data.defaultMonth || state.months[state.months.length - 1].id);
       selectMonth(initialMonth, false);
-      state.chartView = readStoredView() === 'year' ? 'year' : 'month';
+      state.chartView = normalizeView(readStoredView());
       renderAll();
       window.dispatchEvent(new CustomEvent('aquarius:data-ready', { detail: state.data }));
     } catch (error) {

@@ -22,6 +22,15 @@
   color: var(--brand-text);
 }
 
+.chart-view-btn:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.chart-view-btn:disabled:hover {
+  color: #cbd5e1;
+}
+
 .chart-view-btn.is-active {
   color: var(--brand-text);
   background: #fff;
