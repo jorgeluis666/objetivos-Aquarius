@@ -37,8 +37,8 @@ Gasto Publicitario. No lee el JSON ni Drive por su cuenta: consume el snapshot d
 ```
 
 - **Fecha de corte**: fin del rango del informe de Google Ads (`period.end`, la linea
-  "1 de agosto de 2026 - 31 de agosto de 2026" del CSV), nunca posterior al dia de la ultima sincronizacion.
-  El mes proyectado es el del corte; si no tiene inversion, el ultimo mes con datos.
+  "1 de agosto de 2026 - 31 de agosto de 2026" del CSV), nunca posterior a hoy en Lima. El mes proyectado es
+  el del corte; si no tiene inversion, el ultimo mes con datos.
 - **Proyeccion**: ritmo diario = acumulado / dias con datos; cierre = ritmo x dias del mes. Si el informe
   ya cubre el mes completo, la proyeccion es igual al acumulado y el simulador se desactiva.
 - **Indicadores**: Inversion (referencia = presupuesto), Clics y Conversaciones (sin referencia).
@@ -62,8 +62,87 @@ El ultimo punto de la linea proyectada es un nodo arrastrable: al moverlo se def
 - Controles: arrastrar el nodo (escritorio), escribir el valor en "<Indicador> al cierre" (obligatorio en
   celular, donde arrastrar desplaza la pagina), "Llevar al presupuesto" y "Restablecer" (o doble clic sobre
   el nodo).
-- Con los datos de hoy el simulador queda desactivado hasta que llegue a Drive el informe de un mes en curso
-  (por ejemplo, del 1 al 17 de octubre).
+- El simulador se desactiva cuando el informe del mes proyectado ya cubre el mes completo.
+
+### Proyeccion por campana
+
+Un cuadro por campana del mes proyectado (el mismo de la linea de tiempo; hoy, octubre con datos al 1).
+
+- Cada cuadro tiene inversion, clics y conversaciones: real a la fecha de corte, ritmo diario y proyeccion al
+  cierre, con el mismo metodo que la proyeccion general (ritmo diario de la campana x dias del mes).
+- Presupuesto del mes = presupuesto diario de la campana x dias del mes, con una barra de avance de la
+  proyeccion y lo que queda o excede. Es el presupuesto vigente al exportar el CSV.
+- Una campana con estado distinto de "Habilitada" (por ejemplo, "Detenida") cierra el mes con lo ya gastado.
+- Tambien aparecen las campanas con gasto el mes anterior que aun no salen en el informe del mes, y cada
+  cuadro muestra el gasto del mes anterior si su CSV esta cargado.
+- Con pocos dias de datos la proyeccion es muy sensible (un dia en cero proyecta cero): el cuadro lo avisa la
+  primera semana del mes.
+
+### Informe del mes en curso fuera de Drive
+
+Un informe de campana descargado de Google Ads se puede cargar sin pasar por Drive, con el mismo parser:
+
+```bash
+python scripts/sync-drive.py --file "ruta/Informe de campaña.csv"
+```
+
+El mes se toma de la linea de rango del informe. Queda en el JSON como cualquier mes y la sincronizacion con
+Drive lo conserva hasta que la carpeta traiga un CSV del mismo mes, que entonces lo reemplaza. Lo ideal es
+subir el informe a la carpeta como `Aquarius <mes> <ano>.csv` y reemplazarlo cada vez que se actualice.
+
+## Analisis de Palabras Clave
+
+Pestana **Palabras Clave** del panel lateral. Lee el informe de palabras clave de busqueda de Google Ads de la
+carpeta de Drive **Google Ads Aquarius Keywords**, una hoja de calculo por mes (`Aquarius KW <mes> <ano>`):
+
+<https://drive.google.com/drive/folders/1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO>
+
+- **Filtros**: mes, campana (todas o una) e indicador de tendencia (clics, impresiones, costo, conversiones,
+  CTR o costo por conversion). Quedan guardados en `localStorage` (`aquarius_keywords_prefs`).
+- **KPIs del mes**: palabras clave (y cuantas convierten), impresiones, clics, costo, conversiones, costo por
+  conversion y gasto sin conversiones, con la variacion contra el mes anterior.
+- **Un cuadro por campana**, ordenadas por costo, con sus totales y dos vistas:
+  - **Detalle del mes**: una fila por palabra clave con estado, impresiones, clics, CTR, CPC, costo,
+    conversiones, costo por conversion, % de impresiones perdidas por ranking, una linea de tendencia del
+    indicador elegido en todos los meses (punto lleno = mes del filtro) con la variacion contra el mes
+    anterior, y una **Lectura**: *Eficiente* (costo por conversion igual o menor al de su campana), *CPA alto*
+    (mayor), *Gasta sin convertir* (costo sin conversiones), *Sin clics* o *Sin impresiones*.
+  - **Evolucion mensual**: una fila por palabra clave y una columna por mes con el indicador elegido, con
+    color por intensidad dentro de la fila y el acumulado del periodo.
+- Una palabra clave se identifica por texto y concordancia dentro de su campana; si esta en varios grupos de
+  anuncios se suma en una fila. CTR, CPC y costo por conversion se calculan sobre las sumas, como Google Ads.
+- La campana se marca "Campaña detenida" cuando todas sus palabras clave traen ese motivo de estado.
+
+### Datos y sincronizacion
+
+- `scripts/sync-keywords.py` exporta cada hoja como CSV (`docs.google.com/spreadsheets/d/<id>/export?format=csv`,
+  sin credenciales mientras la carpeta siga compartida por enlace) y escribe
+  `data/aquarius-palabras-clave-2026.json`, `data/keywords-manifest.json` y una copia de cada informe en
+  `data/csv-backups/keywords/`. El mes sale de la linea de rango del informe ("1 de septiembre de 2026 - ...")
+  y, si no esta, del nombre del archivo. Reusa los helpers de `scripts/sync-drive.py`.
+- **Todos los dias**: es un paso mas de `.github/workflows/sync-drive.yml` (06:20 en Lima). Si cambio algo,
+  hace commit y publica el tablero. Cada carpeta se sincroniza aunque la otra falle.
+- **Boton Actualizar** (en el filtro): el navegador vuelve a leer las hojas de Drive y repinta el modulo sin
+  recargar. La exportacion CSV de Sheets permite CORS, asi que **no necesita API key**; el resultado queda en
+  `localStorage` (`aquarius_keywords_cache`) y gana contra la publicacion mientras sea mas reciente. Sin API
+  key usa la lista de hojas que dejo la ultima sincronizacion diaria: una hoja de un mes nuevo aparece al dia
+  siguiente (o al correr el workflow a mano). Con `AQ_DRIVE_API_KEY` incrustada en el build, el boton tambien
+  lista la carpeta y encuentra los meses nuevos al instante.
+- La carpeta y su ID estan en `data/drive-config.json` (`keywords.folderId`).
+
+```bash
+python scripts/sync-keywords.py          # sincroniza
+python scripts/sync-keywords.py --check  # dice si hay cambios, sin escribir
+python scripts/sync-keywords.py --file "Aquarius KW octubre 2026.csv"  # importa un informe local
+```
+
+**Numeros dañados por Sheets.** Al convertir los CSV a hoja de calculo, Sheets leyo los miles como decimales y
+perdio los ceros finales: `1,290` impresiones quedaron como `1,29` y `1,200` como `1,2`. Como un grupo de miles
+siempre tiene tres digitos, el parser los completa (`1,29` -> 1290). Con eso las sumas de cada mes cuadran con
+la fila "Total: Palabras clave filtradas" del informe (el costo difiere en centimos por el redondeo por fila).
+Los costos tipo `01.04` (Sheets los leyo como fechas) se leen como 1.04. No hay que corregir nada a mano. Un CSV
+subido sin convertir tambien sirve para la sincronizacion diaria, pero sin API key el boton Actualizar solo lee
+hojas de Google Sheets.
 
 ## Usuarios y Claves
 
@@ -155,7 +234,7 @@ La fuente normalizada que consume el tablero sigue siendo
 Los `% Δ` de la tabla se calculan comparando cada campana con la del mes
 anterior, no vienen en el CSV. `period` es el rango de fechas del informe y
 `dailyBudget` la suma de presupuestos diarios de las campanas habilitadas (ver
-Proyecciones). Las series diarias (`daily`) son independientes: la
+Proyecciones); cada campana trae ademas su `status` y su `dailyBudget`. Las series diarias (`daily`) son independientes: la
 sincronizacion no las toca.
 
 ## Sincronizacion

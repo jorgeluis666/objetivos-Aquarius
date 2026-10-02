@@ -25,6 +25,7 @@
   // Los ritmos de conteo se muestran con un decimal: 0.8 conversaciones por dia no debe verse como 1.
   const formatPace = (value, unit) => (unit === 'money' ? money(value) : Number(value || 0).toLocaleString('es-PE', { maximumFractionDigits: 1 }));
   const signedPct = value => (value == null ? '' : `${value >= 0 ? '+' : '-'}${Math.abs(value).toFixed(1)}%`);
+  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
   function toDate(iso) {
     const value = /^\d{4}-\d{2}-\d{2}$/.test(String(iso)) ? `${iso}T00:00:00` : iso;
@@ -98,8 +99,49 @@
       costPerConversion: conversions.actual ? spend.actual / conversions.actual : null,
       conversionRate: clicks.actual ? (conversions.actual / clicks.actual) * 100 : null,
       projectedCostPerClick: clicks.projected ? spend.projected / clicks.projected : null,
-      projectedCostPerConversion: conversions.projected ? spend.projected / conversions.projected : null
+      projectedCostPerConversion: conversions.projected ? spend.projected / conversions.projected : null,
+      campaigns: month.campaigns || [],
+      previous: (snapshot.months || []).find(item => item.id === previousMonth(month.id)) || null
     };
+  }
+
+  const previousMonth = monthId => {
+    const [year, month] = monthId.split('-').map(Number);
+    return month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, '0')}`;
+  };
+
+  // Un cuadro por campana del mes proyectado, con el mismo metodo que la proyeccion general: ritmo diario de la
+  // campana x dias del mes. Se suman las campanas con gasto el mes anterior que aun no salen en el informe, para
+  // que ninguna quede fuera. Una campana detenida cierra con lo ya gastado.
+  function buildCampaignProjections(projection) {
+    const current = projection.campaigns;
+    const previous = (projection.previous?.campaigns || []).filter(campaign => Number(campaign.cost) > 0);
+    const names = [...new Set([...current, ...previous].map(campaign => campaign.campaign))];
+    return names.map(name => {
+      const now = current.find(campaign => campaign.campaign === name) || null;
+      const before = previous.find(campaign => campaign.campaign === name) || null;
+      // El informe del mes proyectado es el mas reciente: manda en estado y presupuesto.
+      const info = now || before;
+      const active = !info.status || /^habilitad/i.test(info.status);
+      const dailyBudget = Number(info.dailyBudget) || null;
+      const metrics = Object.values(METRICS).map(metric => {
+        const actual = Number(now?.[metric.field]) || 0;
+        const pace = actual / projection.daysWithData;
+        const projected = projection.closed || !active ? actual : pace * projection.daysInMonth;
+        const reference = metric.reference === 'budget' && active && dailyBudget ? dailyBudget * projection.daysInMonth : null;
+        return { ...metric, actual, pace, projected, reference, gap: reference == null ? null : reference - projected };
+      });
+      return {
+        label: info.label || info.campaign,
+        campaign: info.campaign,
+        status: info.status || null,
+        active,
+        dailyBudget,
+        metrics,
+        byKey: Object.fromEntries(metrics.map(metric => [metric.key, metric])),
+        previousCost: before ? Number(before.cost) : null
+      };
+    }).sort((a, b) => b.byKey.investment.projected - a.byKey.investment.projected || (b.previousCost || 0) - (a.previousCost || 0));
   }
 
   function canSimulate(projection, metric) {
@@ -455,6 +497,91 @@
     }
   }
 
+  function campaignCard(card, projection, previousName) {
+    const spend = card.byKey.investment;
+    const realDay = `${projection.daysWithData}-${projection.shortMonth}`;
+    const closeDay = `${projection.daysInMonth}-${projection.shortMonth}`;
+    const rows = card.metrics.map(metric => `
+          <tr>
+            <td>${metric.label}</td>
+            <td class="num">${format(metric.actual, metric.unit)}</td>
+            <td class="num">${formatPace(metric.pace, metric.unit)}</td>
+            <td class="num projection-value">${format(metric.projected, metric.unit)}</td>
+          </tr>`).join('');
+
+    let budget;
+    if (!card.active) {
+      budget = `<p class="campaign-card-note">${escapeHtml(card.status)}: cierra el mes con lo ya gastado.</p>`;
+    } else if (spend.reference == null) {
+      budget = '<p class="campaign-card-note">El informe no trae presupuesto diario para esta campana.</p>';
+    } else {
+      const pct = (spend.projected / spend.reference) * 100;
+      const over = spend.gap < 0;
+      budget = `
+        <div class="campaign-card-budget">
+          <div><span>Presupuesto del mes</span><b>${money(spend.reference)}</b></div>
+          <div class="campaign-meter" role="img" aria-label="Proyeccion al ${pct.toFixed(0)}% del presupuesto"><i class="${over ? 'over' : ''}" style="width:${Math.min(100, pct).toFixed(1)}%"></i></div>
+          <div><small>${money(card.dailyBudget)} x ${projection.daysInMonth} dias | proyeccion al ${pct.toFixed(0)}%</small><span class="projection-gap ${over ? 'over' : 'ok'}">${over ? 'Excede' : 'Quedan'} ${money(Math.abs(spend.gap))}</span></div>
+        </div>`;
+    }
+
+    const clicks = card.byKey.clicks.actual;
+    const conversions = card.byKey.conversions.actual;
+    const facts = [
+      ['CPC', clicks ? money(spend.actual / clicks) : '-'],
+      ['Costo x conversacion', conversions ? money(spend.actual / conversions) : '-']
+    ];
+    if (previousName) facts.push([`Gasto ${previousName.toLowerCase()}`, card.previousCost == null ? '-' : money(card.previousCost)]);
+
+    return `
+      <article class="campaign-card">
+        <header class="campaign-card-head">
+          <div class="campaign-name"><span>${escapeHtml(card.label)}</span><small>${escapeHtml(card.campaign)}</small></div>
+          ${card.status ? `<span class="status-pill ${card.active ? 'green' : 'muted'}">${escapeHtml(card.status)}</span>` : ''}
+        </header>
+        <table class="campaign-card-table">
+          <thead><tr><th>Indicador</th><th class="num">Real al ${realDay}</th><th class="num">Ritmo diario</th><th class="num">Proyeccion ${closeDay}</th></tr></thead>
+          <tbody>${rows}
+          </tbody>
+        </table>
+        ${budget}
+        <dl class="campaign-card-facts">${facts.map(([term, value]) => `<div><dt>${term}</dt><dd>${value}</dd></div>`).join('')}</dl>
+      </article>`;
+  }
+
+  function renderCampaignCards(projection) {
+    const grid = document.getElementById('projection-campaigns-grid');
+    if (!grid) return;
+    const title = document.getElementById('projection-campaigns-title');
+    const sub = document.getElementById('projection-campaigns-sub');
+    const foot = document.getElementById('projection-campaigns-foot');
+    const cards = buildCampaignProjections(projection);
+    if (title) title.textContent = `Proyeccion por campana | ${projection.monthLabel}`;
+    if (!cards.length) {
+      if (sub) sub.textContent = `El informe de ${projection.monthLabel} no trae campanas.`;
+      if (foot) foot.textContent = '';
+      grid.innerHTML = '<div class="empty-state projection-sim-empty"><strong>Sin campanas para proyectar</strong>Sube el informe de campana del mes a la carpeta de Drive y sincroniza.</div>';
+      return;
+    }
+
+    const sum = (key, field) => cards.reduce((total, card) => total + card.byKey[key][field], 0);
+    const realDay = `${projection.daysWithData}-${projection.shortMonth}`;
+    const days = projection.daysWithData;
+    if (sub) {
+      sub.textContent = `${cards.length} campanas | ${money(sum('investment', 'actual'))} invertidos al ${realDay} | ${money(sum('investment', 'projected'))} proyectados al cierre del mes.`;
+    }
+    const previousName = projection.previous ? MONTHS[Number(projection.previous.id.slice(5)) - 1] : null;
+    grid.innerHTML = cards.map(card => campaignCard(card, projection, previousName)).join('');
+
+    if (foot) {
+      // Con pocos dias un solo dia fuerte o en cero mueve mucho la proyeccion; se avisa la primera semana.
+      const early = !projection.closed && days < 7
+        ? ` Con ${days} ${days === 1 ? 'dia' : 'dias'} de datos la proyeccion es muy sensible: se estabiliza a medida que llegan mas dias.`
+        : '';
+      foot.textContent = `Cada cuadro usa el ritmo diario de la campana (real al ${realDay} / ${days} ${days === 1 ? 'dia' : 'dias'}) x ${projection.daysInMonth} dias. Presupuesto del mes = presupuesto diario de la campana x ${projection.daysInMonth} dias, el vigente al exportar el informe. Una campana detenida cierra con lo ya gastado.${early}`;
+    }
+  }
+
   // Sin nada que proyectar se oculta el panel en vez de vaciarlo: si luego llegan datos, se vuelve a usar.
   function toggleEmpty(empty) {
     const panel = document.getElementById('projection-panel');
@@ -470,6 +597,8 @@
     if (state.chart) { state.chart.destroy(); state.chart = null; }
     const body = document.getElementById('projection-body');
     if (body) body.innerHTML = '<tr><td class="table-empty" colspan="6">Sin datos para proyectar.</td></tr>';
+    const grid = document.getElementById('projection-campaigns-grid');
+    if (grid) grid.innerHTML = '<div class="empty-state projection-sim-empty"><strong>Sin campanas para proyectar</strong>Todavia no hay inversion registrada.</div>';
   }
 
   function renderWaiting() {
@@ -477,6 +606,8 @@
     if (sub) sub.textContent = 'Esperando los datos del modulo Gasto Publicitario...';
     const body = document.getElementById('projection-body');
     if (body) body.innerHTML = '<tr><td class="table-empty" colspan="6">Esperando los datos del modulo Gasto Publicitario...</td></tr>';
+    const grid = document.getElementById('projection-campaigns-grid');
+    if (grid) grid.innerHTML = '<div class="empty-state projection-sim-empty">Esperando los datos del modulo Gasto Publicitario...</div>';
   }
 
   function render() {
@@ -498,6 +629,7 @@
     renderChart(projection);
     renderTable(projection);
     renderSimulator(projection);
+    renderCampaignCards(projection);
   }
 
   function handlePosition(chart, projection, metric) {

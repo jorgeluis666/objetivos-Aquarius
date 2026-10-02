@@ -133,16 +133,20 @@
     return dates.length >= 2 ? { start: dates[0], end: dates[dates.length - 1] } : null;
   }
 
-  // Presupuesto diario de una campana habilitada. Uno compartido se cuenta una sola vez.
-  function addBudget(budgets, row, positions, campaign) {
-    const cell = field => (positions[field] !== undefined && positions[field] < row.length ? row[positions[field]] : '');
-    const amount = parseNumber(cell('budget'));
-    const status = normalize(cell('status'));
+  // Anota estado y presupuesto diario de la campana y lo suma al del mes si esta habilitada.
+  function addBudget(budgets, entry, row, positions) {
+    const cell = field => (positions[field] !== undefined && positions[field] < row.length ? String(row[positions[field]]).trim() : '');
+    const status = cell('status');
     const kind = normalize(cell('budgetType'));
-    // Una campana detenida no gasta en lo que queda del mes; un presupuesto total no es diario.
-    if (amount === null || (status && status.indexOf('habilitad') !== 0) || (kind && kind.indexOf('diari') !== 0)) return;
-    const shared = String(cell('budgetName')).trim();
-    budgets[shared && shared !== '--' ? 'budget:' + shared : 'campaign:' + campaign] = amount;
+    // Un presupuesto total de campana no es diario.
+    const amount = !kind || kind.indexOf('diari') === 0 ? parseNumber(cell('budget')) : null;
+    if (status) entry.status = status;
+    if (amount === null) return;
+    entry.dailyBudget = amount;
+    // Una campana detenida no gasta en lo que queda del mes; un presupuesto compartido se cuenta una vez.
+    if (status && normalize(status).indexOf('habilitad') !== 0) return;
+    const shared = cell('budgetName');
+    budgets[shared && shared !== '--' ? 'budget:' + shared : 'campaign:' + entry.campaign] = amount;
   }
 
   function monthLabel(monthId) {
@@ -202,8 +206,8 @@
         continue;
       }
       if (entry.campaign) {
+        addBudget(budgets, entry, row, budgetColumns);
         records.push(entry);
-        addBudget(budgets, row, budgetColumns, entry.campaign);
       }
     }
     const amounts = Object.keys(budgets).map(key => budgets[key]);

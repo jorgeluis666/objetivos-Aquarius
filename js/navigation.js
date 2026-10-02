@@ -15,6 +15,13 @@
       source: 'Fuente: Gasto Publicitario / carpeta Aquarius Campanas',
       footer: 'Proyección lineal según el ritmo del mes',
     },
+    'view-keywords': {
+      title: 'Análisis de Palabras Clave',
+      caption: 'Comportamiento de las palabras clave por campaña',
+      status: 'Informe de palabras clave de Google Ads',
+      source: 'Fuente: data/aquarius-palabras-clave-2026.json (Drive: Google Ads Aquarius Keywords)',
+      footer: 'Sincronización diaria con Drive y botón Actualizar',
+    },
     'view-users': {
       title: 'Usuarios y Claves',
       caption: 'Quién tiene la clave del tablero',
@@ -60,6 +67,7 @@
     saveView(viewId);
 
     if (viewId === 'view-projections') window.AquariusProjections?.init();
+    if (viewId === 'view-keywords') window.AquariusKeywords?.init();
     if (viewId === 'view-users') window.AquariusUsuarios?.init();
     // Vuelve a poner el mes en la barra superior, que la vista anterior reemplazo.
     if (viewId === 'view-obj' && window.AquariusDashboard?.getData()) window.AquariusDashboard.render();

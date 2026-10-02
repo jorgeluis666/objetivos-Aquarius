@@ -42,6 +42,7 @@ function main() {
   const css = readFile('css/dashboard.css').replaceAll('../assets/', 'assets/');
   // '\\u003c' es el texto < (no el caracter <): un "</script>" en los datos cerraria el <script>.
   const data = readFile('data/aquarius-lima-retail-2026.json').replace(/</g, '\\u003c');
+  const keywords = readFile('data/aquarius-palabras-clave-2026.json').replace(/</g, '\\u003c');
 
   // Los assets llevan ?v=<version> para evitar caches viejos, asi que el build ubica cada etiqueta
   // ignorando ese sufijo. Reemplazos con funcion: una cadena de reemplazo interpretaria "$'" o "$&"
@@ -70,7 +71,7 @@ function main() {
   const usuarios = JSON.stringify(directory).replace(/</g, '\\u003c');
   const usuariosKey = JSON.stringify(usuariosCifrado.publicKeyBase64());
 
-  html = html.replace('</head>', () => `<script>window.AQUARIUS_RETAIL_DATA = ${data};window.AQUARIUS_DRIVE_CONFIG = ${driveJson};window.AQUARIUS_USUARIOS = ${usuarios};window.AQUARIUS_USUARIOS_PUBLIC_KEY = ${usuariosKey};</script></head>`);
+  html = html.replace('</head>', () => `<script>window.AQUARIUS_RETAIL_DATA = ${data};window.AQUARIUS_KEYWORDS_DATA = ${keywords};window.AQUARIUS_DRIVE_CONFIG = ${driveJson};window.AQUARIUS_USUARIOS = ${usuarios};window.AQUARIUS_USUARIOS_PUBLIC_KEY = ${usuariosKey};</script></head>`);
 
   try {
     fs.rmSync(DIST_DIR, { recursive: true, force: true });

@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/dashboard.css?v=1.9.0">
+<link rel="stylesheet" href="css/dashboard.css?v=1.11.0">
 <style>
   .reservations-total-row td { height: auto !important; padding: 10px 12px !important; border-top: 2px solid #cbd5e1 !important; color: #0f172a !important; background: #f8fafc; font-size: 13px; font-weight: 800; vertical-align: middle; }
   .reservations-total-row .total-label { text-align: right; }
@@ -33,7 +33,7 @@
 <body>
 <div class="shell">
   <aside class="sidebar" id="aquarius-sidebar">
-    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.9.0</span></div></div>
+    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.11.0</span></div></div>
     <div class="s-group-lbl">Modulos activos</div>
     <button class="s-item active" type="button" data-view-target="view-obj">
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
@@ -42,6 +42,10 @@
     <button class="s-item" type="button" data-view-target="view-projections">
       <div class="s-icon"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></div>
       <div class="s-text"><div class="s-title-nav">Proyecciones</div><div class="s-desc-nav">Cierre de mes y simulador</div></div>
+    </button>
+    <button class="s-item" type="button" data-view-target="view-keywords">
+      <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
+      <div class="s-text"><div class="s-title-nav">Palabras Clave</div><div class="s-desc-nav">Análisis por campaña</div></div>
     </button>
     <button class="s-item s-item-bottom" type="button" data-view-target="view-users">
       <div class="s-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
@@ -134,10 +138,35 @@
             </table>
           </div>
         </div>
+
+        <div class="panel projection-table-panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title" id="projection-campaigns-title">Proyeccion por campana</div>
+              <div class="panel-sub" id="projection-campaigns-sub">Un cuadro por campana con su proyeccion al cierre del mes.</div>
+            </div>
+          </div>
+          <div class="campaign-grid" id="projection-campaigns-grid"><div class="empty-state projection-sim-empty">Cargando proyeccion...</div></div>
+          <p class="projection-note" id="projection-campaigns-foot"></p>
+        </div>
+      </section>
+
+      <section class="view" id="view-keywords">
+        <div class="sec-lbl">03 - Palabras clave</div>
+        <h1 class="section-title">Análisis de Palabras Clave</h1>
+        <p class="section-desc">Rendimiento de cada palabra clave de búsqueda en Google Ads, agrupado por campaña. Los datos salen de la carpeta de Drive "Google Ads Aquarius Keywords": se actualizan solos todos los días y en el momento con el botón Actualizar.</p>
+        <div class="retail-filters kw-filters" id="kw-filters"></div>
+        <div class="kpi-strip" id="kw-kpis" aria-label="Resumen de palabras clave"></div>
+        <div class="kw-toolbar">
+          <div><div class="panel-title" id="kw-campaigns-title">Comportamiento por campaña</div><div class="panel-sub" id="kw-campaigns-sub"></div></div>
+          <div class="chart-views" role="group" aria-label="Vista de los cuadros por campaña"><button class="chart-view-btn is-active" type="button" data-kw-view="month" aria-pressed="true">Detalle del mes</button><button class="chart-view-btn" type="button" data-kw-view="trend" aria-pressed="false">Evolución mensual</button></div>
+        </div>
+        <div class="kw-campaigns" id="kw-campaigns"><div class="empty-state">Cargando palabras clave...</div></div>
+        <p class="projection-note kw-foot" id="kw-foot"></p>
       </section>
 
       <section class="view" id="view-users">
-        <div class="sec-lbl">03 - Usuarios y Claves</div>
+        <div class="sec-lbl">04 - Usuarios y Claves</div>
         <h1 class="section-title">Usuarios y Claves</h1>
         <p class="section-desc">Directorio de quién tiene la clave del tablero. El acceso es una sola clave compartida que nunca se guarda aquí: esta lista registra a quién se le entregó y avisa cuando hay que cambiarla. Se edita como borrador en este navegador hasta exportar el archivo para publicarlo, que sale cifrado: en el repo público nadie puede leer los nombres.</p>
         <div class="kpi-strip" id="users-kpis" aria-label="Resumen de accesos"></div>
@@ -178,13 +207,14 @@
     </div>
   </main>
 </div>
-<script src="js/objectives.js?v=1.9.0"></script>
-<script src="js/drive-sync.js?v=1.9.0"></script>
-<script src="js/reservation-goals.js?v=1.9.0"></script>
-<script src="js/projections.js?v=1.9.0"></script>
-<script src="js/usuarios.js?v=1.9.0"></script>
-<script src="js/navigation.js?v=1.9.0"></script>
-<script src="js/sidebar.js?v=1.9.0"></script>
+<script src="js/objectives.js?v=1.11.0"></script>
+<script src="js/drive-sync.js?v=1.11.0"></script>
+<script src="js/reservation-goals.js?v=1.11.0"></script>
+<script src="js/projections.js?v=1.11.0"></script>
+<script src="js/keywords.js?v=1.11.0"></script>
+<script src="js/usuarios.js?v=1.11.0"></script>
+<script src="js/navigation.js?v=1.11.0"></script>
+<script src="js/sidebar.js?v=1.11.0"></script>
 <!-- El acceso lo pone el build: con AQ_PAGE_PASSWORD cifra el tablero dentro de deploy/pages-gate.html. -->
 </body>
 </html>

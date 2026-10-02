@@ -682,21 +682,16 @@
     }
   }
 
-  // Dia de la ultima sincronizacion en Lima (UTC-5 todo el ano, sin horario de verano).
-  function syncDay() {
-    const date = new Date((state.data && state.data.drive && state.data.drive.lastSync) || '');
-    return Number.isNaN(date.getTime()) ? null : new Date(date.getTime() - 5 * 3600000).toISOString().slice(0, 10);
-  }
-
   // Corte de un mes: fin del rango del informe de Google Ads o, sin rango, el ultimo dia del mes.
-  // Nunca es posterior a la sincronizacion: un informe de "este mes" puede traer el mes completo.
+  // Nunca es posterior a hoy en Lima (UTC-5 todo el ano): un informe de "este mes" puede traer el mes
+  // completo. No se usa la fecha de sincronizacion porque un CSV importado a mano no la actualiza.
   function monthCutoff(month) {
     const [year, number] = month.id.split('-').map(Number);
     const end = month.period && /^\d{4}-\d{2}-\d{2}$/.test(month.period.end)
       ? month.period.end
       : `${month.id}-${String(new Date(year, number, 0).getDate()).padStart(2, '0')}`;
-    const synced = syncDay();
-    return synced && synced < end ? synced : end;
+    const today = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
+    return today < end ? today : end;
   }
 
   // Snapshot de solo lectura para los modulos que dependen de estos datos (Proyecciones).
@@ -724,7 +719,7 @@
           // Google Ads fija presupuestos diarios: el del mes es el diario vigente por los dias del mes.
           budgetTotal: month.dailyBudget ? month.dailyBudget * new Date(year, number, 0).getDate() : null,
           period: month.period ? Object.assign({}, month.period) : null,
-          campaigns: month.records.map(record => Object.assign({}, record))
+          campaigns: month.records.map(record => Object.assign({ label: campaignLabel(record.campaign) }, record))
         };
       })
     };

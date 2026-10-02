@@ -1,7 +1,11 @@
 name: Sincronizar Drive
 
-# Trae los CSV mensuales de la carpeta de Drive (uno por mes, informe de campana
-# de Google Ads), actualiza data/ y republica el tablero si algo cambio.
+# Trae los informes mensuales de Google Ads desde Drive, actualiza data/ y
+# republica el tablero si algo cambio:
+# - carpeta "Aquarius Campanas": un CSV por mes con el informe de campana
+#   (Gasto Publicitario y Proyecciones);
+# - carpeta "Google Ads Aquarius Keywords": una hoja por mes con el informe de
+#   palabras clave (Analisis de Palabras Clave).
 # Corre todos los dias a las 11:20 UTC (06:20 en Lima) y a mano desde
 # Actions > Sincronizar Drive > Run workflow.
 on:
@@ -31,24 +35,32 @@ jobs:
           AQ_DRIVE_API_KEY: ${{ secrets.AQ_DRIVE_API_KEY }}
         run: python3 scripts/sync-drive.py
 
+      # Corre aunque falle el paso anterior: una carpeta no frena a la otra.
+      - name: Sincronizar palabras clave
+        id: keywords
+        if: ${{ !cancelled() }}
+        env:
+          AQ_DRIVE_API_KEY: ${{ secrets.AQ_DRIVE_API_KEY }}
+        run: python3 scripts/sync-keywords.py
+
       - name: Guardar los datos nuevos
-        if: steps.sync.outputs.changed == 'true'
+        if: ${{ !cancelled() && (steps.sync.outputs.changed == 'true' || steps.keywords.outputs.changed == 'true') }}
         run: |
           git config user.name "aquarius-sync[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data
-          git commit -m "Sincroniza el gasto publicitario desde Drive"
+          git commit -m "Sincroniza los informes de Google Ads desde Drive"
           git pull --rebase --autostash origin main
           git push origin HEAD:main
 
       # Un push hecho con GITHUB_TOKEN no dispara otros workflows, asi que la
       # publicacion se pide a mano.
       - name: Publicar el tablero
-        if: steps.sync.outputs.changed == 'true'
+        if: ${{ !cancelled() && (steps.sync.outputs.changed == 'true' || steps.keywords.outputs.changed == 'true') }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh workflow run deploy-pages.yml --ref main
 
       - name: Sin novedades
-        if: steps.sync.outputs.changed != 'true'
-        run: echo "La carpeta de Drive no trajo datos nuevos; el tablero sigue igual."
+        if: ${{ !cancelled() && steps.sync.outputs.changed != 'true' && steps.keywords.outputs.changed != 'true' }}
+        run: echo "Las carpetas de Drive no trajeron datos nuevos; el tablero sigue igual."

@@ -835,6 +835,156 @@
   background: #f8fafc;
 }
 
+/* Un cuadro de proyeccion por campana */
+.campaign-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 12px;
+}
+
+.campaign-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 15px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.campaign-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.campaign-card-head .campaign-name {
+  min-width: 0;
+}
+
+.campaign-card-head .campaign-name small {
+  overflow-wrap: anywhere;
+}
+
+.campaign-card-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.campaign-card-table th {
+  padding: 0 0 6px;
+  border-bottom: 1px solid var(--border);
+  color: #526987;
+  font-size: 9px;
+  letter-spacing: .04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.campaign-card-table td {
+  padding: 7px 0;
+  border-bottom: 1px solid #eef4fb;
+  color: #334155;
+}
+
+.campaign-card-table th + th,
+.campaign-card-table td + td {
+  padding-left: 8px;
+}
+
+.campaign-card-table .num {
+  text-align: right;
+}
+
+/* Los montos no se parten; los encabezados si, para que el cuadro entre en un celular. */
+.campaign-card-table td.num {
+  white-space: nowrap;
+}
+
+.campaign-card-table .projection-value {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.campaign-card-budget {
+  display: grid;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.campaign-card-budget > div:not(.campaign-meter) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.campaign-card-budget span {
+  color: var(--muted);
+}
+
+.campaign-card-budget small {
+  color: #94a3b8;
+}
+
+.campaign-meter {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #e2e8f0;
+}
+
+.campaign-meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+}
+
+.campaign-meter i.over {
+  background: #dc2626;
+}
+
+.campaign-card-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.campaign-card-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: auto 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+}
+
+.campaign-card-facts div {
+  display: flex;
+  gap: 5px;
+}
+
+.campaign-card-facts dt {
+  color: var(--muted);
+}
+
+.campaign-card-facts dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+@media(max-width:520px) {
+  .campaign-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .projection-gap {
   display: inline-flex;
   padding: 4px 8px;
@@ -1007,7 +1157,227 @@
   }
 }
 
-/* ===== 03 - Usuarios y Claves ===== */
+/* ===== 03 - Palabras clave ===== */
+
+.retail-filters.kw-filters {
+  grid-template-columns: repeat(3, minmax(160px, 1fr)) minmax(190px, 240px);
+}
+
+#kw-sync-status.is-working { color: var(--brand-text); }
+#kw-sync-status.is-ok { color: var(--green-text); }
+#kw-sync-status.is-error { color: var(--red); white-space: normal; }
+
+.kw-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin: 24px 0 12px;
+}
+
+.kw-campaigns {
+  display: grid;
+  gap: 16px;
+}
+
+.kw-campaign {
+  min-width: 0;
+}
+
+.kw-campaign-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.kw-campaign-head .campaign-name {
+  min-width: 0;
+}
+
+.kw-campaign-head .campaign-name span {
+  font-size: 14px;
+}
+
+.kw-campaign-head .campaign-name small {
+  overflow-wrap: anywhere;
+}
+
+.kw-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.kw-facts div {
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid #e6eef9;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.kw-facts dt {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.kw-facts dd {
+  margin: 5px 0 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.kw-facts dd small,
+.kw-facts dd .kw-delta {
+  display: block;
+  margin-top: 3px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.kw-table td {
+  padding: 9px 12px;
+}
+
+.kw-table td small {
+  display: block;
+  margin-top: 3px;
+  color: #94a3b8;
+  font-size: 9px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.kw-table .kw-name {
+  min-width: 180px;
+}
+
+.kw-table .kw-name span {
+  display: block;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.kw-table .kw-reason {
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kw-table .kw-strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.kw-table tfoot td {
+  border-top: 2px solid var(--border);
+  color: var(--ink);
+  background: #f8fafc;
+  font-weight: 800;
+}
+
+.status-pill.amber {
+  color: #b45309;
+  background: #fffbeb;
+}
+
+.kw-trend {
+  min-width: 124px;
+}
+
+.kw-spark {
+  display: block;
+  overflow: visible;
+}
+
+.kw-spark path {
+  fill: none;
+  stroke: var(--brand);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.kw-spark circle {
+  fill: #fff;
+  stroke: var(--brand);
+  stroke-width: 1.2;
+}
+
+.kw-spark circle.is-current {
+  fill: var(--brand);
+}
+
+.kw-delta {
+  display: block;
+  margin-top: 3px;
+  color: #94a3b8;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.kw-delta.up,
+.kw-delta-inline.up {
+  color: var(--green-text);
+}
+
+.kw-delta.down,
+.kw-delta-inline.down {
+  color: var(--red);
+}
+
+.kw-delta.new {
+  color: var(--brand-text);
+}
+
+.kw-trend-table th.kw-col-active {
+  color: var(--brand-text);
+  background: var(--brand-soft);
+}
+
+.kw-trend-table .kw-heat-empty {
+  color: #cbd5e1;
+}
+
+.kw-empty {
+  min-height: 120px;
+}
+
+.kw-foot {
+  margin-top: 14px;
+}
+
+@media (max-width: 1180px) {
+  .retail-filters.kw-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .retail-filters.kw-filters .filter-sync {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .retail-filters.kw-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .kw-campaign-head {
+    flex-direction: column;
+  }
+}
+
+/* ===== 04 - Usuarios y Claves ===== */
 
 .users-alert {
   margin-bottom: 0;

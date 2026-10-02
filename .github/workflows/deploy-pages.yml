@@ -38,7 +38,7 @@ jobs:
           node scripts/build.js
           # Ultimo control: lo que se sube tiene que ser la pantalla de acceso, no el tablero en claro.
           grep -q 'id="gate-payload"' dist/index.html || { echo "::error::dist/index.html no salio cifrado"; exit 1; }
-          if grep -q 'AQUARIUS_RETAIL_DATA' dist/index.html; then echo "::error::dist/index.html trae los datos en claro"; exit 1; fi
+          if grep -qE 'AQUARIUS_(RETAIL|KEYWORDS)_DATA' dist/index.html; then echo "::error::dist/index.html trae los datos en claro"; exit 1; fi
 
       - uses: actions/upload-pages-artifact@v3
         with:

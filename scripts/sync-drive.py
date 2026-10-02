@@ -145,20 +145,26 @@ def period_from_text(text):
     return {"start": dates[0], "end": dates[-1]} if len(dates) >= 2 else None
 
 
-def add_budget(budgets, row, positions, campaign):
-    """Presupuesto diario de una campana habilitada. Uno compartido se cuenta una sola vez."""
+def add_budget(budgets, entry, row, positions):
+    """Anota estado y presupuesto diario de la campana y lo suma al del mes si esta habilitada."""
     def cell(field):
         position = positions.get(field)
-        return row[position] if position is not None and position < len(row) else ""
+        return row[position].strip() if position is not None and position < len(row) else ""
 
-    amount = parse_number(cell("budget"))
-    status = normalize(cell("status"))
+    status = cell("status")
     kind = normalize(cell("budgetType"))
-    # Una campana detenida no gasta en lo que queda del mes; un presupuesto total no es diario.
-    if amount is None or (status and not status.startswith("habilitad")) or (kind and not kind.startswith("diari")):
+    # Un presupuesto total de campana no es diario.
+    amount = parse_number(cell("budget")) if not kind or kind.startswith("diari") else None
+    if status:
+        entry["status"] = status
+    if amount is None:
         return
-    shared = cell("budgetName").strip()
-    budgets[f"budget:{shared}" if shared not in ("", "--") else f"campaign:{campaign}"] = amount
+    entry["dailyBudget"] = amount
+    # Una campana detenida no gasta en lo que queda del mes; un presupuesto compartido se cuenta una vez.
+    if status and not normalize(status).startswith("habilitad"):
+        return
+    shared = cell("budgetName")
+    budgets[f"budget:{shared}" if shared not in ("", "--") else f"campaign:{entry['campaign']}"] = amount
 
 
 def fetch(url):
@@ -289,8 +295,8 @@ def parse_campaign_report(text, name):
                 totals = {field: entry.get(field) for field in total_fields}
             continue
         if entry.get("campaign"):
+            add_budget(budgets, entry, row, budget_columns)
             records.append(entry)
-            add_budget(budgets, row, budget_columns, entry["campaign"])
     summary = {"period": period, "dailyBudget": round(sum(budgets.values()), 2) if budgets else None}
     return month_id, records, totals, summary
 
@@ -347,11 +353,71 @@ def comparable(document):
                       ensure_ascii=False, sort_keys=True)
 
 
+def store_report(months, month_id, records, totals, summary, source_name, file_id=None):
+    """Guarda un informe ya normalizado en su mes y reemplaza lo que hubiera de ese mes."""
+    month = months.setdefault(month_id, {"id": month_id, "label": month_label(month_id), "records": []})
+    month["label"] = month.get("label") or month_label(month_id)
+    month["sourceFile"] = source_name
+    if file_id:
+        month["driveFileId"] = file_id
+    else:
+        month.pop("driveFileId", None)
+    month["records"] = records
+    if totals:
+        month["totals"] = totals
+    # El rango da la fecha de corte de Proyecciones; el presupuesto es el vigente al exportar.
+    for key, value in summary.items():
+        if value is None:
+            month.pop(key, None)
+        else:
+            month[key] = value
+
+
+def finish_document(document, months):
+    """Ordena los meses, recalcula las variaciones y deja el ultimo mes como el del filtro."""
+    document["months"] = sorted(months.values(), key=lambda month: month["id"])
+    apply_deltas(document["months"])
+    document["defaultMonth"] = document["months"][-1]["id"] if document["months"] else None
+    document["schemaVersion"] = 3
+    document["status"] = "ok"
+    mirror_legacy_month(document)
+
+
+def import_file(path, check):
+    """Carga un informe de campana local, por ejemplo el del mes en curso que aun no esta en Drive.
+
+    Queda en el JSON como cualquier mes: la sincronizacion con Drive lo conserva hasta que la carpeta
+    traiga un CSV del mismo mes, que entonces lo reemplaza.
+    """
+    text = path.read_text(encoding="utf-8-sig")
+    month_id, records, totals, summary = parse_campaign_report(text, path.name)
+    if not month_id or not records:
+        print(f"[sync-drive] {path.name} no parece un informe de campana.")
+        return 1
+    document = load_document()
+    before = comparable(document)
+    months = {month["id"]: month for month in document["months"]}
+    store_report(months, month_id, records, totals, summary, path.name)
+    finish_document(document, months)
+    changed = comparable(document) != before
+    if check:
+        print("[sync-drive] hay cambios." if changed else "[sync-drive] sin cambios.")
+        return 0
+    (BACKUPS.parent / path.name).write_text(text, encoding="utf-8")
+    DATA.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"[sync-drive] {month_label(month_id)}: {len(records)} campanas desde {path.name}")
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description="Sincroniza el gasto publicitario desde Google Drive.")
     parser.add_argument("--check", action="store_true", help="Informa si hay cambios sin escribir el JSON")
     parser.add_argument("--folder", help="ID de la carpeta de Drive")
+    parser.add_argument("--file", type=Path, help="Importa un informe de campana local en vez de leer Drive")
     args = parser.parse_args()
+
+    if args.file:
+        return import_file(args.file, args.check)
 
     config = load_config()
     folder_id = args.folder or config.get("folderId")
@@ -377,28 +443,11 @@ def main():
         if not month_id or not records:
             print(f"[sync-drive] omito {item['name']}: no parece un informe de campana.")
             continue
-        month = months.setdefault(month_id, {"id": month_id, "label": month_label(month_id), "records": []})
-        month["label"] = month.get("label") or month_label(month_id)
-        month["sourceFile"] = item["name"]
-        month["driveFileId"] = item["id"]
-        month["records"] = records
-        if totals:
-            month["totals"] = totals
-        # El rango da la fecha de corte de Proyecciones; el presupuesto es el vigente al exportar.
-        for key, value in summary.items():
-            if value is None:
-                month.pop(key, None)
-            else:
-                month[key] = value
+        store_report(months, month_id, records, totals, summary, item["name"], item["id"])
         (BACKUPS / item["name"]).write_text(text, encoding="utf-8")
         print(f"[sync-drive] {month_label(month_id)}: {len(records)} campanas")
 
-    document["months"] = sorted(months.values(), key=lambda month: month["id"])
-    apply_deltas(document["months"])
-    document["defaultMonth"] = document["months"][-1]["id"] if document["months"] else None
-    document["schemaVersion"] = 3
-    document["status"] = "ok"
-    mirror_legacy_month(document)
+    finish_document(document, months)
     changed = comparable(document) != before
     document["drive"] = {
         "folderId": folder_id,
