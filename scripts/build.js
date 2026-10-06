@@ -19,7 +19,9 @@ function readFile(relativePath) {
 const PBKDF2_ITERATIONS = 600000;
 
 function encryptPage(html, password) {
-  const salt = crypto.randomBytes(16);
+  // Sal fija por marca (no es secreta): la llave que recuerda el navegador sigue sirviendo despues del deploy
+  // diario y solo deja de servir cuando cambia la clave. El iv si es nuevo en cada build.
+  const salt = crypto.createHash('sha256').update('lr-gate:aquarius').digest().subarray(0, 16);
   const iv = crypto.randomBytes(12);
   const key = crypto.pbkdf2Sync(password.normalize('NFC'), salt, PBKDF2_ITERATIONS, 32, 'sha256');
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
