@@ -1,9 +1,10 @@
 {
-  "folderId": "1o4Ve9CuoQLuH0mDP6qDi07EvPEISAOvA",
-  "folderName": "Aquarius Campanas",
-  "folderUrl": "https://drive.google.com/drive/folders/1o4Ve9CuoQLuH0mDP6qDi07EvPEISAOvA",
+  "folderId": "1MBCTlit_mxS6wOXyGsXZL3HcS5SPTEIk",
+  "folderName": "Google files - Aquarius",
+  "folderUrl": "https://drive.google.com/drive/folders/1MBCTlit_mxS6wOXyGsXZL3HcS5SPTEIk",
   "apiKey": "",
   "autoSyncHours": 24,
+  "excludeCampaigns": ["Website traffic-Search-33"],
   "keywords": {
     "folderId": "1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO",
     "folderName": "Google Ads Aquarius Keywords",

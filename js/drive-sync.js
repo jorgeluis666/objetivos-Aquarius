@@ -9,8 +9,9 @@
  * 2. Sin apiKey: el boton recarga el tablero para traer la ultima publicacion.
  *    La sincronizacion diaria sigue corriendo en GitHub Actions.
  *
- * El parser de los CSV sigue el mismo criterio que scripts/sync-drive.py: busca
- * la fila de encabezados del informe de campana y mapea las columnas por nombre.
+ * El parser sigue el mismo criterio que scripts/sync-drive.py: busca la fila de
+ * encabezados del informe de campana, mapea las columnas por nombre y lee los
+ * numeros en formato espanol o ingles. Las hojas de calculo se exportan a CSV.
  */
 (function () {
   'use strict';
@@ -18,6 +19,7 @@
   // El build incrusta la configuracion; en local se lee del JSON del repo.
   let CONFIG = window.AQUARIUS_DRIVE_CONFIG || {};
   const CACHE_KEY = 'aquarius_drive_cache';
+  const SHEET_MIME = 'application/vnd.google-apps.spreadsheet';
   const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const MONTH_BY_NAME = {
     enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6, julio: 7,
@@ -32,7 +34,9 @@
     'impresiones': ['impressions', 'int'],
     'clics': ['clicks', 'int'],
     'prom. cpc': ['cpc', 'number'],
+    'cpc medio': ['cpc', 'number'],
     'ctr': ['ctr', 'percent'],
+    'tipo de campana': ['type', 'text'],
     'conversiones': ['conversions', 'number'],
     'conv.': ['conversions', 'number'],
     'costo/conv.': ['costPerConversion', 'number'],
@@ -62,10 +66,24 @@
     .replace(/[óòö]/g, 'o').replace(/[úùü]/g, 'u').replace(/ñ/g, 'n')
     .replace(/\s+/g, ' ');
 
-  function parseNumber(value) {
+  // Google Sheets en espanol exporta 99,46 y 1.894; el CSV de Google Ads en ingles, 99.46 y 1,894.
+  // Una coma seguida de uno o dos digitos solo existe en el formato espanol: decide como leer el archivo.
+  const DECIMAL_COMMA = /^-?(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}%?$/;
+  const DOT_THOUSANDS = /^-?\d{1,3}(?:\.\d{3})+$/;
+  const DOT_DECIMAL = /^-?\d+\.\d{1,2}%?$/;
+
+  function usesDecimalComma(rows) {
+    const cells = [].concat(...rows).map(cell => String(cell).trim());
+    if (cells.some(cell => DECIMAL_COMMA.test(cell))) return true;
+    // Sin decimales a la vista, un 1.894 sin ningun 9.39 tambien delata el formato espanol.
+    return cells.some(cell => DOT_THOUSANDS.test(cell)) && !cells.some(cell => DOT_DECIMAL.test(cell));
+  }
+
+  function parseNumber(value, comma) {
     const text = String(value == null ? '' : value).trim();
     if (!text || text === '--' || text === '-' || text.charAt(0) === '<') return null;
-    const cleaned = text.replace(/[^\d,.\-]/g, '').replace(/,/g, '');
+    const digits = text.replace(/[^\d,.\-]/g, '');
+    const cleaned = comma ? digits.replace(/\./g, '').replace(/,/g, '.') : digits.replace(/,/g, '');
     if (!cleaned || cleaned === '-' || cleaned === '.') return null;
     const number = Number(cleaned);
     return Number.isFinite(number) ? number : null;
@@ -73,8 +91,8 @@
 
   const PARSERS = {
     number: parseNumber,
-    int: value => { const n = parseNumber(value); return n === null ? null : Math.round(n); },
-    percent: value => { const n = parseNumber(value); return n === null ? null : n / 100; }
+    int: (value, comma) => { const n = parseNumber(value, comma); return n === null ? null : Math.round(n); },
+    percent: (value, comma) => { const n = parseNumber(value, comma); return n === null ? null : n / 100; }
   };
 
   // Lector de CSV con comillas: los exports traen "1,885" y textos con comas.
@@ -134,12 +152,12 @@
   }
 
   // Anota estado y presupuesto diario de la campana y lo suma al del mes si esta habilitada.
-  function addBudget(budgets, entry, row, positions) {
+  function addBudget(budgets, entry, row, positions, comma) {
     const cell = field => (positions[field] !== undefined && positions[field] < row.length ? String(row[positions[field]]).trim() : '');
     const status = cell('status');
     const kind = normalize(cell('budgetType'));
     // Un presupuesto total de campana no es diario.
-    const amount = !kind || kind.indexOf('diari') === 0 ? parseNumber(cell('budget')) : null;
+    const amount = !kind || kind.indexOf('diari') === 0 ? parseNumber(cell('budget'), comma) : null;
     if (status) entry.status = status;
     if (amount === null) return;
     entry.dailyBudget = amount;
@@ -185,8 +203,12 @@
     });
 
     const records = [];
+    const excluded = [];
     const budgets = {};
     let totals = null;
+    const comma = usesDecimalComma(rows.slice(headerIndex + 1));
+    // Campanas de excludeCampaigns (data/drive-config.json): no se guardan y su gasto sale de los totales.
+    const exclude = (CONFIG.excludeCampaigns || []).map(normalize);
     for (let index = headerIndex + 1; index < rows.length; index += 1) {
       const row = rows[index];
       if (!row.some(cell => String(cell).trim())) continue;
@@ -194,7 +216,7 @@
       Object.keys(columns).forEach(field => {
         const column = columns[field];
         const raw = column.position < row.length ? row[column.position] : null;
-        entry[field] = column.kind === 'text' ? String(raw == null ? '' : raw).trim() : PARSERS[column.kind](raw);
+        entry[field] = column.kind === 'text' ? String(raw == null ? '' : raw).trim() : PARSERS[column.kind](raw, comma);
       });
       const first = normalize(row[0]);
       if (first.indexOf('total') === 0) {
@@ -205,14 +227,29 @@
         }
         continue;
       }
+      if (entry.campaign && exclude.indexOf(normalize(entry.campaign)) >= 0) {
+        excluded.push({ campaign: entry.campaign, cost: entry.cost, impressions: entry.impressions, clicks: entry.clicks, conversions: entry.conversions });
+        continue;
+      }
       if (entry.campaign) {
-        addBudget(budgets, entry, row, budgetColumns);
+        addBudget(budgets, entry, row, budgetColumns, comma);
         records.push(entry);
       }
     }
+    if (excluded.length && totals) {
+      // Los totales del informe incluyen las campanas excluidas: se descuentan y se recalculan los cocientes.
+      ['cost', 'impressions', 'clicks', 'conversions'].forEach(field => {
+        if (totals[field] === null) return;
+        totals[field] = Math.round((totals[field] - excluded.reduce((total, item) => total + (item[field] || 0), 0)) * 100) / 100;
+      });
+      totals.ctr = totals.impressions ? totals.clicks / totals.impressions : null;
+      totals.costPerConversion = totals.conversions ? Math.round(totals.cost / totals.conversions * 100) / 100 : null;
+    }
     const amounts = Object.keys(budgets).map(key => budgets[key]);
     const dailyBudget = amounts.length ? Math.round(amounts.reduce((total, value) => total + value, 0) * 100) / 100 : null;
-    return records.length ? { monthId: monthId, records: records, totals: totals, period: period, dailyBudget: dailyBudget } : null;
+    return records.length
+      ? { monthId: monthId, records: records, totals: totals, period: period, dailyBudget: dailyBudget, excluded: excluded.length ? excluded : null }
+      : null;
   }
 
   function applyDeltas(months) {
@@ -246,14 +283,17 @@
     const query = encodeURIComponent("'" + CONFIG.folderId + "' in parents and trashed = false");
     const url = 'https://www.googleapis.com/drive/v3/files?q=' + query
       + '&key=' + encodeURIComponent(CONFIG.apiKey)
-      + '&fields=' + encodeURIComponent('files(id,name,modifiedTime)')
+      + '&fields=' + encodeURIComponent('files(id,name,modifiedTime,mimeType)')
       + '&pageSize=200';
     const payload = await driveJson(url);
-    return (payload.files || []).filter(file => /\.csv$/i.test(file.name));
+    return (payload.files || []).filter(file => file.mimeType === SHEET_MIME || /\.csv$/i.test(file.name));
   }
 
+  // Las hojas de calculo se exportan como CSV (la exportacion de Sheets responde con CORS abierto).
   async function downloadFile(file) {
-    const url = 'https://www.googleapis.com/drive/v3/files/' + file.id + '?alt=media&key=' + encodeURIComponent(CONFIG.apiKey);
+    const url = file.mimeType === SHEET_MIME
+      ? 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(file.id) + '/export?format=csv'
+      : 'https://www.googleapis.com/drive/v3/files/' + file.id + '?alt=media&key=' + encodeURIComponent(CONFIG.apiKey);
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error('No se pudo bajar ' + file.name + ' (' + response.status + ')');
     return response.text();
@@ -274,7 +314,7 @@
       month.records = parsed.records;
       if (parsed.totals) month.totals = parsed.totals;
       // El rango da la fecha de corte de Proyecciones; el presupuesto es el vigente al exportar.
-      ['period', 'dailyBudget'].forEach(key => {
+      ['period', 'dailyBudget', 'excluded'].forEach(key => {
         if (parsed[key] === null) delete month[key];
         else month[key] = parsed[key];
       });

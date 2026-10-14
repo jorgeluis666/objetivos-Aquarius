@@ -162,7 +162,9 @@
           period: month.period || null,
           dailyBudget: isNum(month.dailyBudget) ? Number(month.dailyBudget) : null,
           // Informe por dia y campana (opcional, ver detailRows): hoy no llega.
-          detail: month.detail || null
+          detail: month.detail || null,
+          // Campanas de excludeCampaigns que traia el informe: el tablero las avisa.
+          excluded: Array.isArray(month.excluded) ? month.excluded : []
         }))
         .sort((a, b) => a.id.localeCompare(b.id));
     }
@@ -177,7 +179,8 @@
         daily: [],
         period: null,
         dailyBudget: null,
-        detail: null
+        detail: null,
+        excluded: []
       }];
     }
     return [];
@@ -249,7 +252,7 @@
   // del informe): la fuente se nombra por la carpeta, nunca por el archivo.
   function folderName() {
     const config = window.AQUARIUS_DRIVE_CONFIG || gasto.config || {};
-    return config.folderName || 'Aquarius Campanas';
+    return config.folderName || 'Google files - Aquarius';
   }
 
   // ── Sincronizacion: pildora de la barra superior con su detalle y el boton Sincronizar ──
@@ -854,6 +857,7 @@
         status: record.status || '',
         dailyBudget: isNum(record.dailyBudget) ? Number(record.dailyBudget) : null
       })),
+      excluded: month.excluded || [],
       detail,
       detailFirst: days.length ? Math.min(...days) : null,
       detailLast: days.length ? Math.max(...days) : null,
@@ -1053,7 +1057,7 @@
 
   function statusPill(status) {
     const plain = normalizeText(status);
-    const tone = /^habilitad/.test(plain) ? 'green' : !plain || /^(detenid|pausad|quitad|eliminad)/.test(plain) ? 'muted' : 'amber';
+    const tone = /^habilitad/.test(plain) ? 'green' : !plain || /^(detenid|pausad|en pausa|quitad|eliminad)/.test(plain) ? 'muted' : 'amber';
     return `<span class="status-pill ${tone}">${escapeHtml(status || 'Sin estado')}</span>`;
   }
 
@@ -1096,9 +1100,14 @@
     return missing;
   }
 
-  function renderAlerts() {
+  function renderAlerts(period) {
     const host = document.getElementById('gasto-alerts');
     if (!host) return;
+    // Campanas excluidas en los meses del periodo: su gasto no entra en ninguna cifra del tablero.
+    const excludedNotes = (period ? period.months : []).flatMap(month => month.excluded.map(item => (
+      `<b>Excluida:</b> ${escapeHtml(month.label)} no incluye la campaña «${escapeHtml(item.campaign)}» `
+      + `(${fmtMoney(item.cost)}, ${fmtCount(item.impressions)} impresiones, ${fmtCount(item.clicks)} clics): está excluida del tablero.`
+    )));
     const notes = missingMonths().map(key => {
       const [year, number] = key.split('-').map(Number);
       const nextMonth = gastoMonthByKey(monthKeyOf(number === 12 ? year + 1 : year, number === 12 ? 1 : number + 1));
@@ -1108,7 +1117,7 @@
       if (nextMonth && nextMonth.hasData) parts.push(`${escapeHtml(nextMonth.name)} queda sin mes anterior para comparar. `);
       parts.push('Sube el CSV del mes a la carpeta y pulsa Sincronizar, arriba a la derecha.');
       return parts.join('');
-    });
+    }).concat(excludedNotes);
     host.innerHTML = notes.map(note => `<p>${note}</p>`).join('');
     host.hidden = !notes.length;
   }
@@ -1665,7 +1674,7 @@
   function renderGasto() {
     const period = currentPeriod();
     renderTabs(period);
-    renderAlerts();
+    renderAlerts(period);
     if (!period) {
       document.getElementById('gasto-period-title').textContent = 'Sin informes de campaña';
       document.getElementById('gasto-period-sub').textContent = `Sube el CSV del mes a la carpeta ${folderName()} de Drive y sincroniza.`;

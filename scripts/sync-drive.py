@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Sincroniza el gasto publicitario de Aquarius desde la carpeta de Google Drive.
 
-La carpeta guarda un CSV por mes con el informe de campana de Google Ads
-(Aquarius <mes> <ano>.csv). Este script los descarga, los normaliza y actualiza
+La carpeta guarda un informe de campana de Google Ads por mes, como hoja de
+calculo de Google (Aquarius GA - <mes> <ano>) o como CSV. Este script los
+descarga (las hojas se exportan a CSV), los normaliza y actualiza
 data/aquarius-lima-retail-2026.json sin tocar las series diarias ya cargadas.
+Lee los numeros en formato espanol (99,46 y 1.894) o ingles (99.46 y 1,894).
 
 Descubrimiento de archivos, en orden:
 
@@ -63,7 +65,9 @@ COLUMNS = {
     "impresiones": ("impressions", "int"),
     "clics": ("clicks", "int"),
     "prom. cpc": ("cpc", "number"),
+    "cpc medio": ("cpc", "number"),
     "ctr": ("ctr", "percent"),
+    "tipo de campana": ("type", "text"),
     "conversiones": ("conversions", "number"),
     "conv.": ("conversions", "number"),
     "costo/conv.": ("costPerConversion", "number"),
@@ -93,11 +97,28 @@ def normalize(text):
     return re.sub(r"\s+", " ", value.translate(str.maketrans("\u00e1\u00e9\u00ed\u00f3\u00fa\u00fc\u00f1", "aeiouun")))
 
 
-def parse_number(value):
+# Google Sheets en espanol exporta 99,46 y 1.894; el CSV de Google Ads en ingles, 99.46 y 1,894.
+# Una coma seguida de uno o dos digitos solo existe en el formato espanol: decide como leer el archivo.
+DECIMAL_COMMA = re.compile(r"^-?(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}%?$")
+DOT_THOUSANDS = re.compile(r"^-?\d{1,3}(?:\.\d{3})+$")
+DOT_DECIMAL = re.compile(r"^-?\d+\.\d{1,2}%?$")
+
+
+def uses_decimal_comma(rows):
+    """True si el informe viene con coma decimal (formato espanol)."""
+    cells = [cell.strip() for row in rows for cell in row]
+    if any(DECIMAL_COMMA.match(cell) for cell in cells):
+        return True
+    # Sin decimales a la vista, un 1.894 sin ningun 9.39 tambien delata el formato espanol.
+    return any(DOT_THOUSANDS.match(cell) for cell in cells) and not any(DOT_DECIMAL.match(cell) for cell in cells)
+
+
+def parse_number(value, comma=False):
     text = str(value or "").strip()
     if not text or text in {"--", "-"} or text.startswith("<"):
         return None
-    cleaned = re.sub(r"[^\d,.\-]", "", text).replace(",", "")
+    cleaned = re.sub(r"[^\d,.\-]", "", text)
+    cleaned = cleaned.replace(".", "").replace(",", ".") if comma else cleaned.replace(",", "")
     if not cleaned or cleaned in {"-", ".", "-."}:
         return None
     try:
@@ -107,13 +128,13 @@ def parse_number(value):
     return int(number) if number.is_integer() else number
 
 
-def parse_percent(value):
-    number = parse_number(value)
+def parse_percent(value, comma=False):
+    number = parse_number(value, comma)
     return None if number is None else number / 100
 
 
-def parse_int(value):
-    number = parse_number(value)
+def parse_int(value, comma=False):
+    number = parse_number(value, comma)
     return None if number is None else int(round(number))
 
 
@@ -145,7 +166,7 @@ def period_from_text(text):
     return {"start": dates[0], "end": dates[-1]} if len(dates) >= 2 else None
 
 
-def add_budget(budgets, entry, row, positions):
+def add_budget(budgets, entry, row, positions, comma=False):
     """Anota estado y presupuesto diario de la campana y lo suma al del mes si esta habilitada."""
     def cell(field):
         position = positions.get(field)
@@ -154,7 +175,7 @@ def add_budget(budgets, entry, row, positions):
     status = cell("status")
     kind = normalize(cell("budgetType"))
     # Un presupuesto total de campana no es diario.
-    amount = parse_number(cell("budget")) if not kind or kind.startswith("diari") else None
+    amount = parse_number(cell("budget"), comma) if not kind or kind.startswith("diari") else None
     if status:
         entry["status"] = status
     if amount is None:
@@ -232,13 +253,25 @@ def list_files(folder_id):
     return [], "sin fuente"
 
 
+def is_report(item):
+    """Hojas de calculo de Google (sin extension) o CSV; el resto de la carpeta se ignora."""
+    suffix = Path(item["name"]).suffix.lower()
+    return suffix == ".csv" or suffix == ""
+
+
 def download(file_id, name):
+    """Baja el CSV o exporta la hoja de calculo como CSV."""
     key = api_key()
     urls = []
-    if key:
-        urls.append(f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media&key={key}")
-    urls.append(f"https://drive.google.com/uc?export=download&id={file_id}")
-    urls.append(f"https://drive.usercontent.google.com/download?id={file_id}&export=download")
+    if name.lower().endswith(".csv"):
+        if key:
+            urls.append(f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media&key={key}")
+        urls.append(f"https://drive.google.com/uc?export=download&id={file_id}")
+        urls.append(f"https://drive.usercontent.google.com/download?id={file_id}&export=download")
+    else:
+        if key:
+            urls.append(f"https://www.googleapis.com/drive/v3/files/{file_id}/export?mimeType=text/csv&key={key}")
+        urls.append(f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=csv")
     last_error = None
     for url in urls:
         try:
@@ -248,8 +281,17 @@ def download(file_id, name):
     raise SystemExit(f"[sync-drive] no se pudo descargar {name}: {last_error}")
 
 
-def parse_campaign_report(text, name):
-    """Normaliza el informe de campana de Google Ads."""
+def excluded_campaigns():
+    """Campanas de excludeCampaigns en data/drive-config.json (por ejemplo, una ajena a la cuenta)."""
+    return {normalize(name) for name in load_config().get("excludeCampaigns") or []}
+
+
+def parse_campaign_report(text, name, exclude=frozenset()):
+    """Normaliza el informe de campana de Google Ads.
+
+    Las campanas de exclude no se guardan: su gasto se descuenta de los totales del mes y queda
+    anotado en summary["excluded"] para que el tablero lo avise.
+    """
     rows = list(csv.reader(io.StringIO(text)))
     header_index = None
     for index, row in enumerate(rows[:12]):
@@ -278,9 +320,11 @@ def parse_campaign_report(text, name):
             budget_columns[budget_field] = position
 
     records = []
+    excluded = []
     totals = {}
     budgets = {}
     total_fields = ("cost", "impressions", "clicks", "ctr", "conversions", "costPerConversion")
+    comma = uses_decimal_comma(rows[header_index + 1:])
     for row in rows[header_index + 1:]:
         if not row or not any(cell.strip() for cell in row):
             continue
@@ -288,16 +332,30 @@ def parse_campaign_report(text, name):
         entry = {}
         for field, (position, kind) in columns.items():
             raw = row[position] if position < len(row) else None
-            entry[field] = str(raw or "").strip() if kind == "text" else PARSERS[kind](raw)
+            entry[field] = str(raw or "").strip() if kind == "text" else PARSERS[kind](raw, comma)
         if first.startswith("total"):
             # Total: Campanas filtradas trae los totales del mes ya calculados.
             if first.startswith("total: campanas") or not totals:
                 totals = {field: entry.get(field) for field in total_fields}
             continue
+        if entry.get("campaign") and normalize(entry["campaign"]) in exclude:
+            excluded.append({field: entry.get(field) for field in ("campaign", "cost", "impressions", "clicks", "conversions")})
+            continue
         if entry.get("campaign"):
-            add_budget(budgets, entry, row, budget_columns)
+            add_budget(budgets, entry, row, budget_columns, comma)
             records.append(entry)
-    summary = {"period": period, "dailyBudget": round(sum(budgets.values()), 2) if budgets else None}
+    if excluded and totals:
+        # Los totales del informe incluyen las campanas excluidas: se descuentan y se recalculan los cocientes.
+        for field in ("cost", "impressions", "clicks", "conversions"):
+            if totals.get(field) is not None:
+                totals[field] = round(totals[field] - sum(item.get(field) or 0 for item in excluded), 2)
+        totals["ctr"] = totals["clicks"] / totals["impressions"] if totals.get("impressions") else None
+        totals["costPerConversion"] = round(totals["cost"] / totals["conversions"], 2) if totals.get("conversions") else None
+    summary = {
+        "period": period,
+        "dailyBudget": round(sum(budgets.values()), 2) if budgets else None,
+        "excluded": excluded or None,
+    }
     return month_id, records, totals, summary
 
 
@@ -390,7 +448,7 @@ def import_file(path, check):
     traiga un CSV del mismo mes, que entonces lo reemplaza.
     """
     text = path.read_text(encoding="utf-8-sig")
-    month_id, records, totals, summary = parse_campaign_report(text, path.name)
+    month_id, records, totals, summary = parse_campaign_report(text, path.name, excluded_campaigns())
     if not month_id or not records:
         print(f"[sync-drive] {path.name} no parece un informe de campana.")
         return 1
@@ -426,25 +484,28 @@ def main():
         return 1
 
     files, origin = list_files(folder_id)
-    csv_files = [item for item in files if item["name"].lower().endswith(".csv")]
+    csv_files = [item for item in files if is_report(item)]
     if not csv_files:
-        print(f"[sync-drive] la carpeta no devolvio CSV (origen: {origin}).")
+        print(f"[sync-drive] la carpeta no devolvio informes (origen: {origin}).")
         return 1
-    print(f"[sync-drive] {len(csv_files)} CSV en la carpeta (origen: {origin}).")
+    print(f"[sync-drive] {len(csv_files)} informes en la carpeta (origen: {origin}).")
 
     document = load_document()
     before = comparable(document)
     months = {month["id"]: month for month in document["months"]}
     BACKUPS.mkdir(parents=True, exist_ok=True)
+    exclude = excluded_campaigns()
 
     for item in sorted(csv_files, key=lambda entry: entry["name"]):
         text = download(item["id"], item["name"])
-        month_id, records, totals, summary = parse_campaign_report(text, item["name"])
+        month_id, records, totals, summary = parse_campaign_report(text, item["name"], exclude)
         if not month_id or not records:
             print(f"[sync-drive] omito {item['name']}: no parece un informe de campana.")
             continue
         store_report(months, month_id, records, totals, summary, item["name"], item["id"])
-        (BACKUPS / item["name"]).write_text(text, encoding="utf-8")
+        # La copia cruda va como CSV aunque en Drive sea una hoja de calculo.
+        backup = item["name"] if item["name"].lower().endswith(".csv") else f"{item['name']}.csv"
+        (BACKUPS / backup).write_text(text, encoding="utf-8")
         print(f"[sync-drive] {month_label(month_id)}: {len(records)} campanas")
 
     finish_document(document, months)

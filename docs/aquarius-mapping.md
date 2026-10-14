@@ -31,6 +31,12 @@ Dashboard estatico de Aquarius con lectura de gasto publicitario: marca, visual 
 | `Presupuesto` de campanas habilitadas | `dailyBudget` (por mes) | Total de la distribucion; presupuesto de Proyecciones |
 | `Estado de la campaña` | `status` (por campana) | Distribucion y cuadro por campana; proyeccion por campana |
 | `Presupuesto` (tipo diario) | `dailyBudget` (por campana) | Distribucion y cuadro por campana; proyeccion por campana |
+| `Tipo de campaña` | `type` (por campana) | Guardado (hoy todas son de Busqueda) |
+| `Prom. CPC` / `CPC medio` | `cpc` | Guardado; el CPC se recalcula como inversion / clics |
+| Campanas de `excludeCampaigns` | `excluded` (por mes) | No entran como campana; su gasto sale de los totales y Gasto Publicitario lo avisa |
+
+Los informes llegan como hoja de calculo de Google (`Aquarius GA - <mes> <año>`, carpeta Google files - Aquarius)
+o como CSV; los numeros se leen en formato espanol (`99,46`, `1.894`) o ingles (`99.46`, `1,894`).
 
 ## Palabras clave (informe de palabras clave de busqueda)
 

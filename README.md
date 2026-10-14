@@ -20,7 +20,8 @@ Dashboard de gasto publicitario para Aquarius.
   (`data/aquarius-palabras-clave-2026.json`, tal como lo publica el build).
 - **Pestanas de mes**: Enero a Diciembre y **Anual**. Un mes sin informe de campana queda apagado y el punto
   marca el ultimo mes con datos. La eleccion se guarda en `aquarius_selected_month` (`anual` incluido). Si
-  falta el informe de un mes entre el primero y el ultimo (hoy, setiembre), un aviso lo dice.
+  falta el informe de un mes entre el primero y el ultimo, un aviso lo dice; tambien avisa las campanas
+  excluidas del mes (ver Fuente de datos).
 - **Periodo** (`Periodo: 1-31 Agosto 2026`, o `1-1 Octubre 2026 (mes en curso)`) con 8 KPIs: inversion,
   impresiones, clics, CTR, CPC, conversiones, costo por conversion y tasa de conversion (conversiones /
   clics). Los cocientes se recalculan sobre las sumas.
@@ -129,8 +130,8 @@ python scripts/sync-drive.py --file "ruta/Informe de campaña.csv"
 ```
 
 El mes se toma de la linea de rango del informe. Queda en el JSON como cualquier mes y la sincronizacion con
-Drive lo conserva hasta que la carpeta traiga un CSV del mismo mes, que entonces lo reemplaza. Lo ideal es
-subir el informe a la carpeta como `Aquarius <mes> <ano>.csv` y reemplazarlo cada vez que se actualice.
+Drive lo conserva hasta que la carpeta traiga un informe del mismo mes, que entonces lo reemplaza. Lo ideal
+es actualizar la hoja del mes en la carpeta (`Aquarius GA - <mes> <ano>`) cada vez que cambie.
 
 ## Analisis de Palabras Clave
 
@@ -242,14 +243,25 @@ Contenido descifrado:
 
 ## Fuente de datos
 
-El tablero se arma desde la carpeta de Google Drive **Aquarius Campanas**:
+El tablero se arma desde la carpeta de Google Drive **Google files - Aquarius**:
 
-<https://drive.google.com/drive/folders/1o4Ve9CuoQLuH0mDP6qDi07EvPEISAOvA>
+<https://drive.google.com/drive/folders/1MBCTlit_mxS6wOXyGsXZL3HcS5SPTEIk>
 
-Un CSV por mes, tal como lo exporta Google Ads (`Aquarius <mes> <ano>.csv`,
-informe de campana con Costo, Impr., Clics, CTR, Conversiones y Costo/conv.).
-Para agregar un mes basta con subir su CSV a esa carpeta: la sincronizacion lo
-detecta por el rango de fechas del archivo y lo suma a las pestanas de mes.
+Un informe de campana de Google Ads por mes, como hoja de calculo de Google
+(`Aquarius GA - <mes> <ano>`) o como CSV, con Coste, Impr., Clics, CTR,
+Conversiones, Coste/conv., Presupuesto, Estado de la campana y Tipo de campana.
+Las hojas se exportan a CSV al sincronizar y los numeros se leen en formato
+espanol (`99,46` y `1.894`) o ingles (`99.46` y `1,894`). Para agregar un mes
+basta con subir su informe a esa carpeta: la sincronizacion lo detecta por el
+rango de fechas del archivo y lo suma a las pestanas de mes. La carpeta esta en
+`data/drive-config.json` (`folderId`, `folderName`, `folderUrl`).
+
+- **Campanas excluidas**: `excludeCampaigns` en `data/drive-config.json` lista
+  campanas del informe que no entran al tablero. Hoy: `Website traffic-Search-33`
+  (S/ 4,320.20 en setiembre 2026), que no es una campana de Aquarius. No se guarda
+  como campana, su gasto se descuenta de los totales del mes y queda anotada en
+  `months[].excluded`; Gasto Publicitario avisa en el mes que la tenia. La copia
+  cruda del informe en `data/csv-backups/drive/` la conserva, tal como viene de Drive.
 
 La fuente normalizada que consume el tablero sigue siendo
 `data/aquarius-lima-retail-2026.json`, agrupada por mes:
@@ -276,7 +288,7 @@ La fuente normalizada que consume el tablero sigue siendo
 Los campos `*Delta` de cada campana (variacion contra el mes anterior cargado) los calcula la
 sincronizacion; el tablero no los usa: compara con el mes calendario anterior (ver Modulo principal). `period` es el rango de fechas del informe y
 `dailyBudget` la suma de presupuestos diarios de las campanas habilitadas (ver
-Proyecciones); cada campana trae ademas su `status` y su `dailyBudget`. Las series diarias (`daily`) son independientes: la
+Proyecciones); cada campana trae ademas su `status`, su `dailyBudget` y su `type` (Tipo de campana); `excluded` lista las campanas descontadas del mes. Las series diarias (`daily`) son independientes: la
 sincronizacion no las toca.
 
 ## Sincronizacion

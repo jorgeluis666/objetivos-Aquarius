@@ -27,14 +27,15 @@ decisiones salen de la data de Aquarius. Implementado en la versión 1.13.0.
 | Serie diaria **solo de impresiones y a nivel cuenta** (`months[].daily.rows`); informe de palabras clave **por mes** (`data/aquarius-palabras-clave-2026.json`); no hay datos de anuncios | Los cuadros por campaña muestran el gráfico **Por mes**. En SKAG el grupo de anuncios es la campaña: el detalle de cada cuadro son sus **palabras clave**, y el ranking del periodo es de **palabras clave**. |
 | Cada campaña trae `status` y `dailyBudget` | Estado y presupuesto diario en la distribución y en cada cuadro. |
 
-Huecos de la data al 14 de octubre de 2026 (el tablero los avisa, no los inventa):
+Los informes de campaña están en la carpeta de Drive **Google files - Aquarius** (`folderId` en
+`data/drive-config.json`), una hoja de cálculo por mes (`Aquarius GA - <mes> <año>`) con los números en formato
+español. Estado de la data al 14 de octubre de 2026 (el tablero avisa los huecos, no los inventa):
 
-- **Setiembre 2026 no tiene informe de campaña** en la carpeta Aquarius Campanas (sí tiene palabras clave). Octubre
-  queda **sin mes anterior para comparar** y Setiembre aparece apagado en las pestañas. Pendiente: subir el informe
-  de campaña de setiembre.
-- **Octubre trae un solo día** (1 de octubre).
-- Los archivos de enero y febrero tienen los nombres cruzados (`sourceFile`); el mes sale del rango del informe, así
-  que está bien, pero el nombre del archivo no se usa para nada.
+- Enero a Setiembre completos; **Octubre en curso**, del 1 al 13.
+- Setiembre traía la campaña **Website traffic-Search-33** (S/ 4,320.20), que no es de Aquarius: está en
+  `excludeCampaigns`, su gasto se descuenta del mes y el tablero lo avisa (`months[].excluded`).
+- El estado y el presupuesto de cada campaña son los vigentes al exportar: en meses viejos son solo una referencia.
+- El mes sale siempre del rango del informe, nunca del nombre del archivo.
 
 ## 3. Estructura (en este orden, dentro de `view-obj`)
 
@@ -98,13 +99,13 @@ como lo publica el build, sin duplicar la lectura ni la caché de Palabras Clave
 ## 4. Datos
 
 ### 4.1 Lo que ya alcanza
-`data/aquarius-lima-retail-2026.json` (campañas por mes con `status` y `dailyBudget`, `period`, `daily`) y
+`data/aquarius-lima-retail-2026.json` (campañas por mes con `status`, `dailyBudget` y `type`, `period`, `daily`) y
 `data/aquarius-palabras-clave-2026.json` (palabras clave por mes) traen todo. `scripts/build.js` incrusta los dos en el
 HTML publicado.
 
 ### 4.2 Mejoras opcionales (no bloquean)
-- Guardar `Tipo de campaña` como `type` en `scripts/sync-drive.py` (`COLUMNS`), por si se suman campañas que no sean
-  de Búsqueda; entonces los cuadros podrían agruparse por tipo.
+- `Tipo de campaña` ya se guarda como `type` (hoy, "Buscar" en todas). Si se suman campañas que no sean de Búsqueda,
+  los cuadros podrían agruparse por tipo.
 - Si se empieza a subir el **informe por día y palabra clave** (Día, Campaña, Grupo de anuncios, Anuncio, URL final,
   Palabra clave de la búsqueda, Costo, Clics, Conversiones), leerlo en `scripts/sync-drive.py` (detectar por
   encabezado, sumar por día × campaña) y guardarlo en `months[].detail` como
