@@ -13,7 +13,23 @@ Dashboard de gasto publicitario para Aquarius.
 
 - Titulo: `Gasto Publicitario`
 - Subtitulo: `Branding y ventas`
-- KPIs: coste total, CTR, clics, conversiones, costo por conversion e impresiones.
+- Logica en `js/objectives.js`. Sale del informe de campana de Google Ads (un total por mes,
+  `data/aquarius-lima-retail-2026.json`) y del informe de palabras clave
+  (`data/aquarius-palabras-clave-2026.json`, tal como lo publica el build).
+- **Pestanas de mes**: Enero a Diciembre y **Anual**. Un mes sin informe de campana queda apagado y el punto
+  marca el ultimo mes con datos. La eleccion se guarda en `aquarius_selected_month` (`anual` incluido). Si
+  falta el informe de un mes entre el primero y el ultimo (hoy, setiembre), un aviso lo dice.
+- **Periodo** (`Periodo: 1-31 Agosto 2026`, o `1-1 Octubre 2026 (mes en curso)`) con 8 KPIs: inversion,
+  impresiones, clics, CTR, CPC, conversiones, costo por conversion y tasa de conversion (conversiones /
+  clics). Los cocientes se recalculan sobre las sumas.
+  - Mes cerrado: contra el mes anterior completo. Mes en curso: contra el mes anterior **prorrateado a los
+    mismos dias** ("vs Agosto prorrateado a 13 dias"), porque el informe trae un total por mes; CTR, CPC,
+    costo y tasa no cambian al prorratear. Solo el mes calendario anterior: si falta, "Sin mes anterior para
+    comparar".
+  - Flecha y color segun si subir es bueno: inversion neutra; CPC y costo por conversion, bajar es bueno.
+  - Anual: acumulado de los meses con informe; los KPIs sumables muestran el promedio mensual de los meses
+    cerrados en lugar de la variacion.
+- Debajo del periodo queda el grafico de la cuenta, el unico lugar con la serie diaria real de impresiones.
 - Grafico de lineas con dos vistas, que se eligen con los botones del panel y
   quedan guardadas en `localStorage`:
   - **Mes** (por defecto): evolucion diaria del mes del filtro. Cambia cada vez
@@ -24,6 +40,30 @@ Dashboard de gasto publicitario para Aquarius.
 - Las lineas de inversion y resultados salen punteadas y marcadas `(est.)`
   cuando el mes solo tiene impresiones diarias: son el total del mes repartido
   entre los dias segun las impresiones, no cifras diarias reales.
+- En Anual el grafico queda en la vista Mes.
+- **Distribucion de inversion por campana**: estado, presupuesto diario, inversion y su %, impresiones, clics,
+  CTR, CPC, conversiones, costo por conversion y tasa de conversion, con el total del periodo. En Anual las
+  campanas se suman por nombre y el estado y el presupuesto son los del ultimo mes.
+- **Un cuadro por campana** (todas son de Busqueda, una SKAG por servicio, con el nombre de `campaignLabel()`):
+  - KPIs con variacion: inversion, clics, CTR, CPC, conversiones, costo por conversion y presupuesto diario.
+    El subtitulo dice contra que se compara, "Nueva: no corria en ..." o, en Anual, en que meses corrio.
+  - Grafico **por mes** del ano, con hueco donde la campana no corrio. Indicadores: inversion y conversiones
+    (por defecto), clics e impresiones; con varios, cada uno en su panel con su escala sobre el mismo eje.
+    Acumulado del mes y Por dia no se ofrecen (no hay serie diaria por campana): quedan listos para cuando
+    llegue un informe por dia y campana en `months[].detail`.
+  - **Palabras clave de la campana** del mes (en SKAG el grupo de anuncios es la campana): conversiones,
+    conversiones del mes anterior y variacion ("Nuevo" si no estaba), costo por conversion, inversion y su %
+    de la campana, impresiones, clics y CPC. Una palabra clave es su texto mas su concordancia, como en el
+    modulo Palabras Clave. Solo se compara con el mes anterior si los dos informes son de mes completo o
+    cubren los mismos dias; si no, las columnas de comparacion se ocultan.
+  - Se minimiza con la flecha. Indicadores, vista y minimizado se recuerdan por campana
+    (`aquarius_gasto_campaign_charts`).
+- **Ranking de palabras clave del periodo**: por conversiones dentro de cada campana, con la lider marcada
+  con una estrella, conversiones del mes anterior y variacion. Cabecera fija, Campana y Palabra clave
+  ancladas, filtro por campana, Compacto (`aquarius_gasto_kw_compact`) y Pantalla completa (las pestanas
+  de mes entran al panel; `Esc` sale). "Ver analisis completo" abre el modulo Palabras Clave, que sigue
+  siendo el analisis a fondo.
+- Las palabras clave respetan `keywords.excludeCampaigns` de `data/drive-config.json`.
 
 ## Proyecciones
 
@@ -207,7 +247,7 @@ El tablero se arma desde la carpeta de Google Drive **Aquarius Campanas**:
 Un CSV por mes, tal como lo exporta Google Ads (`Aquarius <mes> <ano>.csv`,
 informe de campana con Costo, Impr., Clics, CTR, Conversiones y Costo/conv.).
 Para agregar un mes basta con subir su CSV a esa carpeta: la sincronizacion lo
-detecta por el rango de fechas del archivo y lo suma al filtro.
+detecta por el rango de fechas del archivo y lo suma a las pestanas de mes.
 
 La fuente normalizada que consume el tablero sigue siendo
 `data/aquarius-lima-retail-2026.json`, agrupada por mes:
@@ -231,8 +271,8 @@ La fuente normalizada que consume el tablero sigue siendo
 }
 ```
 
-Los `% Δ` de la tabla se calculan comparando cada campana con la del mes
-anterior, no vienen en el CSV. `period` es el rango de fechas del informe y
+Los campos `*Delta` de cada campana (variacion contra el mes anterior cargado) los calcula la
+sincronizacion; el tablero no los usa: compara con el mes calendario anterior (ver Modulo principal). `period` es el rango de fechas del informe y
 `dailyBudget` la suma de presupuestos diarios de las campanas habilitadas (ver
 Proyecciones); cada campana trae ademas su `status` y su `dailyBudget`. Las series diarias (`daily`) son independientes: la
 sincronizacion no las toca.

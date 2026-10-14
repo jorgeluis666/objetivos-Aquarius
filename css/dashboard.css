@@ -739,6 +739,605 @@
   }
 }
 
+/* ===== 01 - Gasto Publicitario ===== */
+/* Pestanas de mes y Anual, periodo con KPIs, distribucion por campana con un cuadro por campana y el
+   ranking de palabras clave. */
+
+.gasto-month-tabs {
+  grid-template-columns: repeat(13, minmax(78px, 1fr));
+}
+
+.gasto-alerts {
+  margin-top: 0;
+}
+
+.gasto-alerts p {
+  margin: 0;
+}
+
+.gasto-alerts p + p {
+  margin-top: 6px;
+}
+
+.gasto-period-head {
+  margin-bottom: 14px;
+}
+
+.gasto-period-panel .kpi-strip {
+  margin: 0;
+}
+
+.kpi-pill small.gasto-delta {
+  font-weight: 700;
+}
+
+.gasto-delta.good { color: var(--green-text); }
+.gasto-delta.bad { color: var(--red); }
+.gasto-delta.flat { color: var(--muted); }
+
+.gasto-dist-panel,
+.gasto-kw-panel {
+  margin-top: 20px;
+}
+
+.gasto-dist-table {
+  min-width: 1180px;
+}
+
+.gasto-share-col {
+  white-space: nowrap;
+}
+
+.gasto-share-col b {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.gasto-share {
+  display: inline-block;
+  width: 64px;
+  height: 6px;
+  margin-right: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--brand-soft);
+  vertical-align: middle;
+}
+
+.gasto-share > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+}
+
+.data-table tr.gasto-total-row td {
+  border-top: 2px solid #cbd5e1;
+  color: var(--ink);
+  background: #f8fafc;
+  font-weight: 800;
+}
+
+.status-pill.new {
+  color: var(--brand-text);
+  background: var(--brand-soft);
+}
+
+.gasto-strong {
+  color: var(--ink) !important;
+  font-weight: 700;
+}
+
+/* Cuadro de cada campana: dentro del panel de distribucion, separados por una linea fina.
+   minmax(0, 1fr): sin el, las tablas ensancharian la columna y la pagina. */
+.gasto-camp-blocks {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.gasto-camp-blocks:empty {
+  display: none;
+}
+
+.gasto-camp-block {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+
+.gasto-camp-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin-bottom: 14px;
+}
+
+.gasto-camp-heading {
+  min-width: 0;
+}
+
+.gasto-camp-heading .panel-sub {
+  overflow-wrap: anywhere;
+}
+
+.gasto-camp-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  min-width: 0;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  overflow-wrap: anywhere;
+}
+
+.gasto-camp-title em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.gasto-camp-controls {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.gasto-camp-toggle {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: #526987;
+  background: #fff;
+  cursor: pointer;
+}
+
+.gasto-camp-toggle:hover {
+  border-color: #7dd3fc;
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.gasto-camp-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, .25);
+}
+
+.gasto-camp-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .15s ease;
+}
+
+.gasto-camp-block.is-collapsed .gasto-camp-toggle svg {
+  transform: rotate(180deg);
+}
+
+/* Minimizado quedan el titulo y los KPIs */
+.gasto-camp-block.is-collapsed .gasto-camp-body,
+.gasto-camp-block.is-collapsed [data-camp-modes] {
+  display: none;
+}
+
+.gasto-camp-block.is-collapsed .gasto-camp-kpis {
+  margin-bottom: 0;
+}
+
+.gasto-camp-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 32px;
+  margin: 0 0 16px;
+}
+
+.gasto-camp-kpis dt {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.gasto-camp-kpis dd {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.gasto-camp-kpis dd .gasto-delta {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Chips: vista del grafico (radio) e indicadores (casillas) */
+.gasto-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gasto-camp-metrics {
+  margin: -4px 0 14px;
+}
+
+.gasto-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 999px;
+  color: var(--muted);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.gasto-chip:hover {
+  border-color: #7dd3fc;
+}
+
+.gasto-chip input {
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--brand);
+}
+
+.gasto-chip.active {
+  border-color: var(--brand);
+  color: var(--brand-text);
+  background: var(--brand-soft);
+}
+
+.gasto-chip:focus-within {
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, .2);
+}
+
+.gasto-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.gasto-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.gasto-legend b {
+  color: #475569;
+  font-weight: 600;
+}
+
+.gasto-legend-dashed {
+  background: repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 9px) !important;
+}
+
+/* Palabras clave de cada campana */
+.gasto-kw-block-head {
+  margin: 18px 0 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.gasto-kw-table {
+  min-width: 820px;
+}
+
+.gasto-kw-table th {
+  white-space: normal;
+  vertical-align: bottom;
+}
+
+.gasto-kw-table td {
+  padding: 9px 12px;
+}
+
+.gasto-kw-table .gasto-share {
+  width: 44px;
+}
+
+.gasto-kw-name {
+  min-width: 180px;
+}
+
+.gasto-kw-name span,
+.gasto-rank-keyword span {
+  display: block;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.gasto-kw-name small,
+.gasto-rank-keyword small {
+  display: block;
+  margin-top: 3px;
+  color: #7890b5;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+/* Ranking: cabecera fija, Campana y Palabra clave ancladas, compacto y pantalla completa */
+.gasto-kw-head {
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+.gasto-table-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.gasto-tool-btn,
+.gasto-tool-select select {
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #475569;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.gasto-tool-select select {
+  max-width: 220px;
+}
+
+.gasto-tool-btn:hover,
+.gasto-tool-btn[aria-pressed="true"] {
+  border-color: var(--brand);
+  color: var(--brand-text);
+  background: var(--brand-soft);
+}
+
+.gasto-tool-btn:focus-visible,
+.gasto-tool-select select:focus-visible,
+.gasto-tool-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, .25);
+}
+
+.gasto-tool-link {
+  height: 34px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--brand);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.gasto-tool-link:hover {
+  color: var(--brand-text);
+  text-decoration: underline;
+}
+
+.gasto-rank-scroll {
+  overflow: auto;
+  max-height: calc(100vh - 230px);
+  min-height: 260px;
+  overscroll-behavior-x: contain;
+}
+
+.gasto-rank-scroll:focus-visible {
+  outline: 2px solid #bfdbfe;
+  outline-offset: 2px;
+}
+
+.gasto-rank-table {
+  min-width: 1240px;
+}
+
+.gasto-rank-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  border-bottom: 0;
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+
+.gasto-rank-table .gasto-rank-campaign,
+.gasto-rank-table .gasto-rank-keyword {
+  position: sticky;
+  z-index: 2;
+  background: #fff;
+}
+
+.gasto-rank-table thead th:nth-child(-n+2) {
+  z-index: 4;
+}
+
+.gasto-rank-table .gasto-rank-campaign,
+.gasto-rank-table thead th:nth-child(1) {
+  left: 0;
+  width: 170px;
+  min-width: 170px;
+  max-width: 170px;
+}
+
+.gasto-rank-table .gasto-rank-keyword,
+.gasto-rank-table thead th:nth-child(2) {
+  left: 170px;
+  width: 250px;
+  min-width: 250px;
+  max-width: 250px;
+}
+
+/* Borde derecho del bloque anclado + sombra que indica que hay mas columnas */
+.gasto-rank-table .gasto-rank-keyword {
+  box-shadow: 1px 0 0 var(--border), 9px 0 11px -8px rgba(15, 23, 42, .35);
+}
+
+.gasto-rank-table thead th:nth-child(2) {
+  box-shadow: 1px 0 0 var(--border), 9px 0 11px -8px rgba(15, 23, 42, .35), inset 0 -1px 0 var(--border);
+}
+
+.gasto-rank-campaign span {
+  display: block;
+  overflow: hidden;
+  color: #334155;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gasto-rank-keyword span,
+.gasto-rank-keyword small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gasto-rank-table tbody tr:hover > td {
+  background: #f8fbff;
+}
+
+.gasto-leader {
+  color: #d97706;
+}
+
+/* Sin periodo de comparacion (Anual, primer mes o informes que no cubren los mismos dias): fuera Mes anterior y Variacion */
+.gasto-kw-panel.no-compare .gasto-rank-table :is(th, td):is(:nth-child(4), :nth-child(5)) {
+  display: none;
+}
+
+.gasto-kw-panel.no-compare .gasto-rank-table {
+  min-width: 1080px;
+}
+
+.gasto-kw-panel.is-compact .gasto-rank-table td {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.gasto-kw-panel.is-compact .gasto-rank-table th {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.gasto-kw-panel.is-compact .gasto-rank-keyword small {
+  display: inline;
+  margin: 0 0 0 6px;
+}
+
+.gasto-kw-panel.is-compact .gasto-rank-keyword span {
+  display: inline;
+}
+
+/* Pantalla completa: el panel toma la ventana y las pestanas de mes se mueven aqui dentro (objectives.js) */
+.gasto-kw-panel.is-fullscreen {
+  position: fixed;
+  z-index: 160;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 16px 20px 12px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.gasto-kw-panel.is-fullscreen .gasto-rank-scroll {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+
+.gasto-kw-panel.is-fullscreen .month-tabs {
+  flex: none;
+  margin: 0 0 14px;
+}
+
+body.gasto-table-fullscreen {
+  overflow: hidden;
+}
+
+@media (max-width: 760px) {
+  /* La leyenda del grafico de la cuenta baja de linea en lugar de ensanchar la pagina. */
+  .chart-controls {
+    flex-wrap: wrap;
+    gap: 10px 20px;
+  }
+
+  .chart-legend span {
+    flex-wrap: wrap;
+  }
+
+  .gasto-camp-head {
+    flex-direction: column;
+  }
+
+  .gasto-camp-controls {
+    justify-content: flex-start;
+  }
+
+  .gasto-camp-kpis {
+    gap: 10px 22px;
+  }
+
+  .gasto-rank-scroll {
+    max-height: calc(100vh - 170px);
+  }
+
+  /* En el celular las columnas ancladas taparian la tabla: se desplazan con el resto. */
+  .gasto-rank-table .gasto-rank-campaign,
+  .gasto-rank-table .gasto-rank-keyword {
+    position: static;
+  }
+
+  .gasto-rank-table thead th:nth-child(-n+2) {
+    left: auto;
+  }
+}
+
+/* Ocho KPIs: de a cuatro en pantallas medianas y de a dos en el celular */
+@media (max-width: 1180px) {
+  .kpi-strip.gasto-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .kpi-strip.gasto-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* ===== 02 - Proyecciones ===== */
 
 .chart-series-toggles {
