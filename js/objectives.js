@@ -257,15 +257,56 @@
 
   // ── Sincronizacion: pildora de la barra superior con su detalle y el boton Sincronizar ──
   // drive-sync.js maneja el boton (#sync-now) y escribe su avance en #sync-status, dentro del detalle.
-  // La sincronizacion diaria (.github/workflows/sync-drive.yml) corre a las 11:20 UTC, 06:20 en Lima.
-  const DAILY_SYNC_UTC = { hour: 11, minute: 20 };
+  // El barrido diario corre en GitHub Actions (.github/workflows/sync-drive.yml): lo lanza a las 10:00 de Lima
+  // (15:00 UTC) un activador de Google Apps Script (scripts/apps-script/sincronizar-aquarius.gs). El tablero lee
+  // su ultima ejecucion de la API publica de GitHub: sin credenciales, 60 consultas por hora y por IP.
+  const DAILY_SYNC_UTC = { hour: 15, minute: 0 };
+  const SYNC_RUNS_URL = 'https://api.github.com/repos/jorgeluis666/objetivos-Aquarius/actions/workflows/sync-drive.yml/runs?per_page=1';
+  // Sin barrido en mas de un dia y algo, la pildora pasa a ambar.
+  const STALE_SWEEP_HOURS = 30;
+  const sweep = { run: null, status: 'idle', checkedAt: 0 };
   const safeUrl = url => (/^https:\/\//i.test(String(url || '')) ? String(url) : null);
 
   function nextSyncLabel() {
     const now = new Date();
     const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), DAILY_SYNC_UTC.hour, DAILY_SYNC_UTC.minute));
     if (next <= now) next.setUTCDate(next.getUTCDate() + 1);
-    return `${stampLabel(next, false)} aprox. · todos los días`;
+    return `${stampLabel(next, false)} · todos los días`;
+  }
+
+  // Ultima ejecucion del barrido. Se consulta al cargar y al abrir el detalle (como mucho cada 10 minutos).
+  async function loadLastSweep(force = false) {
+    if (sweep.status === 'loading' || (!force && Date.now() - sweep.checkedAt < 10 * 60000)) return;
+    sweep.status = 'loading';
+    try {
+      const response = await fetch(SYNC_RUNS_URL, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`GitHub respondio ${response.status}`);
+      const payload = await response.json();
+      sweep.run = (payload.workflow_runs || [])[0] || null;
+      sweep.status = 'ok';
+    } catch (error) {
+      sweep.status = 'error';
+      console.warn('[gasto] no se pudo leer el ultimo barrido', error);
+    }
+    sweep.checkedAt = Date.now();
+    renderStatusCard();
+    updateSourceLabels();
+  }
+
+  function sweepInfo() {
+    const run = sweep.run;
+    if (!run) return null;
+    const at = run.run_started_at || run.created_at;
+    const done = run.status === 'completed';
+    const hours = (Date.now() - new Date(at).getTime()) / 3600000;
+    return {
+      at,
+      running: !done,
+      ok: done && run.conclusion === 'success',
+      failed: done && run.conclusion !== 'success',
+      stale: hours > STALE_SWEEP_HOURS,
+      url: safeUrl(run.html_url)
+    };
   }
 
   function folderHtml(label, url) {
@@ -275,12 +316,15 @@
 
   const latestGastoMonth = () => gastoMonthByKey(gasto.latestKey);
 
-  // Texto de la pildora en Gasto Publicitario: hasta que dia llegan los datos y cuando se sincronizaron.
+  // Texto de la pildora en Gasto Publicitario: hasta que dia llegan los datos y el ultimo barrido. Si GitHub no
+  // responde, la fecha de la ultima vez que cambiaron los datos.
   function syncPillLabel() {
     const latest = latestGastoMonth();
     if (!latest) return 'Sin informes de campaña';
-    const last = stampLabel(state.data && state.data.drive && state.data.drive.lastSync, false);
-    return `Datos al ${latest.lastDay} de ${latest.name.toLowerCase()}${last ? ` | sincronizado ${last}` : ''}`;
+    const info = sweepInfo();
+    const changed = stampLabel(state.data && state.data.drive && state.data.drive.lastSync, false);
+    const tail = info ? ` | barrido ${stampLabel(info.at, false)}${info.failed ? ' (falló)' : ''}` : changed ? ` | actualizado ${changed}` : '';
+    return `Datos al ${latest.lastDay} de ${latest.name.toLowerCase()}${tail}`;
   }
 
   function renderStatusCard() {
@@ -293,10 +337,20 @@
     const count = gasto.months.filter(month => month.hasData).length;
     const drive = (state.data && state.data.drive) || {};
     const last = stampLabel(drive.lastSync);
+    const info = sweepInfo();
     set('status-data', latest ? escapeHtml(`${dayRange(latest, latest.firstDay, latest.lastDay)} ${latest.year}`) : 'Sin informes');
     set('status-months', `${count} ${count === 1 ? 'mes' : 'meses'} con informe de campaña`);
-    set('status-last', last ? escapeHtml(`${last}${/^navegador/.test(drive.discovery || '') ? ' · desde el tablero' : ''}`) : 'Sin sincronizar');
+    let sweepHtml = sweep.status === 'error' ? 'No se pudo consultar GitHub' : 'Consultando...';
+    if (info) {
+      const result = info.running ? 'en curso' : info.ok ? 'correcto' : 'falló';
+      sweepHtml = `${escapeHtml(`${stampLabel(info.at)} · ${result}`)}${info.url ? ` · <a href="${escapeHtml(info.url)}" target="_blank" rel="noopener noreferrer">Ver</a>` : ''}`;
+    }
+    set('status-sweep', sweepHtml);
+    set('status-last', last ? escapeHtml(`${last}${/^navegador/.test(drive.discovery || '') ? ' · desde el tablero' : ''}`) : 'Sin datos de Drive');
     set('status-next', escapeHtml(nextSyncLabel()));
+    // Un barrido fallido o atrasado tine la pildora de ambar en todas las vistas.
+    const pill = document.getElementById('data-status-btn');
+    if (pill && info) pill.classList.toggle('warn', info.failed || info.stale);
     set('status-folder', folderHtml(folderName(), config.folderUrl));
     const kwLatest = gasto.kwMonths.get([...gasto.kwMonths.keys()].sort().pop());
     const kwLast = stampLabel(gasto.kwSync, false);
@@ -307,6 +361,8 @@
     set('status-kw-folder', folderHtml(kwFolderName(), config.keywords && config.keywords.folderUrl));
     // Aviso fijo del detalle: mes en curso y meses sin informe. Los mensajes del boton van aparte (#sync-status).
     const notes = [];
+    if (info && info.failed) notes.push('El último barrido falló: revisa la ejecución en GitHub > Actions.');
+    else if (info && info.stale) notes.push('No hay barrido desde hace más de un día: revisa el activador de Google Apps Script.');
     if (latest && !latest.complete) notes.push(`${latest.name} está en curso: el informe llega hasta el ${latest.lastDay} de ${latest.name.toLowerCase()}.`);
     const missing = missingMonths();
     if (missing.length) notes.push(`Falta el informe de campaña de ${missing.map(monthLabel).join(', ')}.`);
@@ -324,8 +380,11 @@
     button.addEventListener('click', event => {
       event.stopPropagation();
       const open = card.hidden;
-      // La proxima sincronizacion depende de la hora: se recalcula al abrir el detalle.
-      if (open) renderStatusCard();
+      // La proxima sincronizacion depende de la hora: se recalcula al abrir el detalle, junto con el ultimo barrido.
+      if (open) {
+        renderStatusCard();
+        loadLastSweep();
+      }
       card.hidden = !open;
       button.setAttribute('aria-expanded', String(open));
     });
@@ -1816,6 +1875,7 @@
       selectMonth(initialMonth, false);
       state.chartView = normalizeView(readStoredView());
       renderAll();
+      loadLastSweep(true);
       window.dispatchEvent(new CustomEvent('aquarius:data-ready', { detail: state.data }));
     } catch (error) {
       renderError(error.message);

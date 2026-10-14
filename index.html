@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/dashboard.css?v=1.14.0">
+<link rel="stylesheet" href="css/dashboard.css?v=1.14.1">
 <style>
   .reservations-total-row td { height: auto !important; padding: 10px 12px !important; border-top: 2px solid #cbd5e1 !important; color: #0f172a !important; background: #f8fafc; font-size: 13px; font-weight: 800; vertical-align: middle; }
   .reservations-total-row .total-label { text-align: right; }
@@ -31,7 +31,7 @@
 <body>
 <div class="shell">
   <aside class="sidebar" id="aquarius-sidebar">
-    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.14.0</span></div></div>
+    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.14.1</span></div></div>
     <div class="s-group-lbl">Modulos activos</div>
     <button class="s-item active" type="button" data-view-target="view-obj">
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
@@ -70,8 +70,9 @@
             <div class="data-status-head">Sincronización con Drive</div>
             <div class="data-status-row"><span>Datos</span><strong id="status-data">-</strong></div>
             <div class="data-status-row"><span>Meses cargados</span><strong id="status-months">-</strong></div>
-            <div class="data-status-row"><span>Última sincronización</span><strong id="status-last">-</strong></div>
-            <div class="data-status-row"><span>Próxima automática</span><strong id="status-next">-</strong></div>
+            <div class="data-status-row"><span>Último barrido</span><strong id="status-sweep">-</strong></div>
+            <div class="data-status-row"><span>Próximo barrido</span><strong id="status-next">-</strong></div>
+            <div class="data-status-row"><span>Datos actualizados</span><strong id="status-last">-</strong></div>
             <div class="data-status-row"><span>Carpeta de campañas</span><strong id="status-folder">-</strong></div>
             <div class="data-status-row"><span>Palabras clave</span><strong id="status-keywords">-</strong></div>
             <div class="data-status-row"><span>Carpeta de palabras clave</span><strong id="status-kw-folder">-</strong></div>
@@ -258,14 +259,14 @@
     </div>
   </main>
 </div>
-<script src="js/objectives.js?v=1.14.0"></script>
-<script src="js/drive-sync.js?v=1.14.0"></script>
-<script src="js/reservation-goals.js?v=1.14.0"></script>
-<script src="js/projections.js?v=1.14.0"></script>
-<script src="js/keywords.js?v=1.14.0"></script>
-<script src="js/usuarios.js?v=1.14.0"></script>
-<script src="js/navigation.js?v=1.14.0"></script>
-<script src="js/sidebar.js?v=1.14.0"></script>
+<script src="js/objectives.js?v=1.14.1"></script>
+<script src="js/drive-sync.js?v=1.14.1"></script>
+<script src="js/reservation-goals.js?v=1.14.1"></script>
+<script src="js/projections.js?v=1.14.1"></script>
+<script src="js/keywords.js?v=1.14.1"></script>
+<script src="js/usuarios.js?v=1.14.1"></script>
+<script src="js/navigation.js?v=1.14.1"></script>
+<script src="js/sidebar.js?v=1.14.1"></script>
 <!-- El acceso lo pone el build: con AQ_PAGE_PASSWORD cifra el tablero dentro de deploy/pages-gate.html. -->
 </body>
 </html>

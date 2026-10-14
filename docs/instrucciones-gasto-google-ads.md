@@ -41,7 +41,8 @@ español. Estado de la data al 14 de octubre de 2026 (el tablero avisa los hueco
 
 ### 3.0 Sincronización (barra superior derecha)
 Todo lo de la sincronización va en la píldora de la barra superior derecha, que abre el detalle: datos (rango del
-último mes), meses cargados, última y próxima sincronización, carpetas de Drive de campañas y de palabras clave (con
+último mes), meses cargados, último barrido (de la API pública de GitHub) y el próximo a las 10:00 de Lima, cuándo
+cambiaron los datos, carpetas de Drive de campañas y de palabras clave (con
 enlace) y lo que falta subir. A su lado, el botón **Sincronizar** (`#sync-now`, lo maneja `js/drive-sync.js`; sus
 mensajes van en `#sync-status` dentro del detalle y un error pone la píldora en ámbar). La vista no tiene otra franja
 de sincronización.
