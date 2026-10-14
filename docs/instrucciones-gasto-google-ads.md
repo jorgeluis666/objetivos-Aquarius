@@ -38,6 +38,13 @@ Huecos de la data al 14 de octubre de 2026 (el tablero los avisa, no los inventa
 
 ## 3. Estructura (en este orden, dentro de `view-obj`)
 
+### 3.0 Sincronización (barra superior derecha)
+Todo lo de la sincronización va en la píldora de la barra superior derecha, que abre el detalle: datos (rango del
+último mes), meses cargados, última y próxima sincronización, carpetas de Drive de campañas y de palabras clave (con
+enlace) y lo que falta subir. A su lado, el botón **Sincronizar** (`#sync-now`, lo maneja `js/drive-sync.js`; sus
+mensajes van en `#sync-status` dentro del detalle y un error pone la píldora en ámbar). La vista no tiene otra franja
+de sincronización.
+
 ### 3.1 Pestañas de mes y Anual
 Enero a Diciembre más **Anual**, con `.month-tab`. Mes sin informe = deshabilitado; punto en el último mes con datos.
 El mes elegido se guarda en `aquarius_selected_month` (el valor `anual` incluido). Si falta el informe de un mes entre

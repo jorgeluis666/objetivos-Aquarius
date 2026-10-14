@@ -235,17 +235,14 @@
     return state.months.find(month => month.id === state.monthId) || null;
   }
 
-  // Fecha de la ultima sincronizacion, venga de la fuente publicada o del
-  // navegador (drive-sync.js la actualiza al terminar).
-  function lastSyncLabel() {
-    const drive = (state.data && state.data.drive) || {};
-    const stamp = drive.lastSync;
-    if (!stamp) return 'Sin sincronizar con Drive';
+  // Fecha y hora local de una sincronizacion: "1 oct 2026, 17:48" (sin el ano con withYear = false).
+  function stampLabel(stamp, withYear = true) {
+    if (!stamp) return null;
     const date = new Date(stamp);
-    if (Number.isNaN(date.getTime())) return `Datos actualizados: ${stamp}`;
-    const fecha = date.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
-    const hora = date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
-    return `Datos actualizados: ${fecha}, ${hora}`;
+    if (Number.isNaN(date.getTime())) return String(stamp);
+    const pad = value => String(value).padStart(2, '0');
+    const fecha = `${date.getDate()} ${MONTH_NAMES[date.getMonth()].slice(0, 3).toLowerCase()}${withYear ? ` ${date.getFullYear()}` : ''}`;
+    return `${fecha}, ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
   // Los archivos de Drive pueden traer el mes cruzado en el nombre (el mes sale del rango
@@ -255,28 +252,84 @@
     return config.folderName || 'Aquarius Campanas';
   }
 
-  function renderFilters() {
-    const host = document.getElementById('retail-filters');
-    if (!host) return;
+  // ── Sincronizacion: pildora de la barra superior con su detalle y el boton Sincronizar ──
+  // drive-sync.js maneja el boton (#sync-now) y escribe su avance en #sync-status, dentro del detalle.
+  // La sincronizacion diaria (.github/workflows/sync-drive.yml) corre a las 11:20 UTC, 06:20 en Lima.
+  const DAILY_SYNC_UTC = { hour: 11, minute: 20 };
+  const safeUrl = url => (/^https:\/\//i.test(String(url || '')) ? String(url) : null);
+
+  function nextSyncLabel() {
+    const now = new Date();
+    const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), DAILY_SYNC_UTC.hour, DAILY_SYNC_UTC.minute));
+    if (next <= now) next.setUTCDate(next.getUTCDate() + 1);
+    return `${stampLabel(next, false)} aprox. · todos los días`;
+  }
+
+  function folderHtml(label, url) {
+    const href = safeUrl(url);
+    return `${escapeHtml(label)}${href ? ` · <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Abrir</a>` : ''}`;
+  }
+
+  const latestGastoMonth = () => gastoMonthByKey(gasto.latestKey);
+
+  // Texto de la pildora en Gasto Publicitario: hasta que dia llegan los datos y cuando se sincronizaron.
+  function syncPillLabel() {
+    const latest = latestGastoMonth();
+    if (!latest) return 'Sin informes de campaña';
+    const last = stampLabel(state.data && state.data.drive && state.data.drive.lastSync, false);
+    return `Datos al ${latest.lastDay} de ${latest.name.toLowerCase()}${last ? ` | sincronizado ${last}` : ''}`;
+  }
+
+  function renderStatusCard() {
+    const set = (id, html) => {
+      const node = document.getElementById(id);
+      if (node) node.innerHTML = html;
+    };
+    const config = window.AQUARIUS_DRIVE_CONFIG || gasto.config || {};
+    const latest = latestGastoMonth();
     const count = gasto.months.filter(month => month.hasData).length;
-    host.innerHTML = `
-      <div class="retail-filter filter-hint">
-        <span>Fuente</span>
-        <p>Informe de campaña de Google Ads, carpeta de Drive <b>${escapeHtml(folderName())}</b>.</p>
-      </div>
-      <div class="retail-filter filter-hint">
-        <span>Periodos cargados</span>
-        <p>${count} ${count === 1 ? 'mes' : 'meses'} con informe de campaña. Cada CSV nuevo en Drive suma su mes a las pestañas.</p>
-      </div>
-      <div class="retail-filter filter-sync">
-        <span>Sincronizacion</span>
-        <button class="sync-btn" id="sync-now" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-          <b>Sincronizar</b>
-        </button>
-        <small id="sync-status">${escapeHtml(lastSyncLabel())}</small>
-      </div>
-    `;
+    const drive = (state.data && state.data.drive) || {};
+    const last = stampLabel(drive.lastSync);
+    set('status-data', latest ? escapeHtml(`${dayRange(latest, latest.firstDay, latest.lastDay)} ${latest.year}`) : 'Sin informes');
+    set('status-months', `${count} ${count === 1 ? 'mes' : 'meses'} con informe de campaña`);
+    set('status-last', last ? escapeHtml(`${last}${/^navegador/.test(drive.discovery || '') ? ' · desde el tablero' : ''}`) : 'Sin sincronizar');
+    set('status-next', escapeHtml(nextSyncLabel()));
+    set('status-folder', folderHtml(folderName(), config.folderUrl));
+    const kwLatest = gasto.kwMonths.get([...gasto.kwMonths.keys()].sort().pop());
+    const kwLast = stampLabel(gasto.kwSync, false);
+    const kwText = gasto.kwStatus === 'loading' ? 'Cargando...'
+      : gasto.kwStatus === 'error' ? 'No se pudo leer'
+      : kwLatest ? `Hasta ${kwLatest.name} ${kwLatest.year}${kwLast ? ` · ${kwLast}` : ''}` : 'Sin informes';
+    set('status-keywords', escapeHtml(kwText));
+    set('status-kw-folder', folderHtml(kwFolderName(), config.keywords && config.keywords.folderUrl));
+    // Aviso fijo del detalle: mes en curso y meses sin informe. Los mensajes del boton van aparte (#sync-status).
+    const notes = [];
+    if (latest && !latest.complete) notes.push(`${latest.name} está en curso: el informe llega hasta el ${latest.lastDay} de ${latest.name.toLowerCase()}.`);
+    const missing = missingMonths();
+    if (missing.length) notes.push(`Falta el informe de campaña de ${missing.map(monthLabel).join(', ')}.`);
+    set('status-note', escapeHtml(notes.join(' ')));
+  }
+
+  function wireStatusCard() {
+    const button = document.getElementById('data-status-btn');
+    const card = document.getElementById('data-status-card');
+    if (!button || !card) return;
+    const close = () => {
+      card.hidden = true;
+      button.setAttribute('aria-expanded', 'false');
+    };
+    button.addEventListener('click', event => {
+      event.stopPropagation();
+      const open = card.hidden;
+      // La proxima sincronizacion depende de la hora: se recalcula al abrir el detalle.
+      if (open) renderStatusCard();
+      card.hidden = !open;
+      button.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', event => {
+      if (!card.hidden && !card.contains(event.target) && !button.contains(event.target)) close();
+    });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
   }
 
   // Grafico principal: lineas en el tiempo con un punto por mes cargado.
@@ -695,6 +748,7 @@
     kwStatus: 'loading',
     kwMonths: new Map(),
     config: null,
+    kwSync: null,
     kwFilter: 'all',
     compact: readSetting(KW_COMPACT_KEY) === 'true',
     fullscreen: false,
@@ -1027,29 +1081,34 @@
   }
 
   // Huecos de la carpeta: meses sin informe de campana entre el primero y el ultimo con datos.
+  function missingMonths() {
+    const withData = gasto.months.filter(month => month.hasData);
+    const missing = [];
+    if (withData.length < 2) return missing;
+    const first = withData[0];
+    const last = withData[withData.length - 1];
+    for (let date = new Date(first.year, first.month - 1, 1); ; date.setMonth(date.getMonth() + 1)) {
+      const key = monthKeyOf(date.getFullYear(), date.getMonth() + 1);
+      if (key >= last.key) break;
+      const month = gastoMonthByKey(key);
+      if (!month || !month.hasData) missing.push(key);
+    }
+    return missing;
+  }
+
   function renderAlerts() {
     const host = document.getElementById('gasto-alerts');
     if (!host) return;
-    const withData = gasto.months.filter(month => month.hasData);
-    const notes = [];
-    if (withData.length > 1) {
-      const first = withData[0];
-      const last = withData[withData.length - 1];
-      for (let date = new Date(first.year, first.month - 1, 1); ; date.setMonth(date.getMonth() + 1)) {
-        const key = monthKeyOf(date.getFullYear(), date.getMonth() + 1);
-        if (key >= last.key) break;
-        const month = gastoMonthByKey(key);
-        if (month && month.hasData) continue;
-        const next = new Date(date.getFullYear(), date.getMonth() + 1, 1);
-        const nextMonth = gastoMonthByKey(monthKeyOf(next.getFullYear(), next.getMonth() + 1));
-        const parts = [`<b>Pendiente:</b> ${escapeHtml(monthLabel(key))} no tiene informe de campaña en la carpeta ${escapeHtml(folderName())}`];
-        if (gasto.kwMonths.has(key)) parts.push(' (sí tiene informe de palabras clave)');
-        parts.push('. ');
-        if (nextMonth && nextMonth.hasData) parts.push(`${escapeHtml(nextMonth.name)} queda sin mes anterior para comparar. `);
-        parts.push('Sube el CSV del mes a la carpeta y pulsa Sincronizar.');
-        notes.push(parts.join(''));
-      }
-    }
+    const notes = missingMonths().map(key => {
+      const [year, number] = key.split('-').map(Number);
+      const nextMonth = gastoMonthByKey(monthKeyOf(number === 12 ? year + 1 : year, number === 12 ? 1 : number + 1));
+      const parts = [`<b>Pendiente:</b> ${escapeHtml(monthLabel(key))} no tiene informe de campaña en la carpeta ${escapeHtml(folderName())}`];
+      if (gasto.kwMonths.has(key)) parts.push(' (sí tiene informe de palabras clave)');
+      parts.push('. ');
+      if (nextMonth && nextMonth.hasData) parts.push(`${escapeHtml(nextMonth.name)} queda sin mes anterior para comparar. `);
+      parts.push('Sube el CSV del mes a la carpeta y pulsa Sincronizar, arriba a la derecha.');
+      return parts.join('');
+    });
     host.innerHTML = notes.map(note => `<p>${note}</p>`).join('');
     host.hidden = !notes.length;
   }
@@ -1638,15 +1697,14 @@
       ]);
       gasto.config = config || {};
       gasto.kwMonths = buildKeywordMonths(data, gasto.config);
+      gasto.kwSync = (data && data.drive && data.drive.lastSync) || null;
       gasto.kwStatus = 'ok';
     } catch (error) {
       gasto.kwStatus = 'error';
       console.error('[gasto] palabras clave', error);
     }
-    if (state.data && gasto.months.length) {
-      renderFilters();
-      renderGasto();
-    }
+    renderStatusCard();
+    if (state.data && gasto.months.length) renderGasto();
   }
 
   function updateSourceLabels() {
@@ -1659,14 +1717,14 @@
     const source = document.getElementById('footer-source');
     const footerStatus = document.getElementById('footer-status');
     const caption = document.getElementById('topbar-caption');
-    if (status) status.textContent = label ? `${label} | ${count} ${count === 1 ? 'campaña' : 'campañas'}` : 'Sin data cargada';
+    if (status) status.textContent = syncPillLabel();
     if (source) source.textContent = `Fuente: ${DATA_URL} (Drive: ${folderName()})`;
-    if (footerStatus) footerStatus.textContent = label ? `Periodo ${label}` : 'Resultados de pauta digital';
+    if (footerStatus) footerStatus.textContent = label ? `Periodo ${label} | ${count} ${count === 1 ? 'campaña' : 'campañas'}` : 'Resultados de pauta digital';
     if (caption) caption.textContent = label ? `Branding y ventas | ${label}` : 'Branding y ventas';
   }
 
   function renderAll() {
-    renderFilters();
+    renderStatusCard();
     renderGasto();
     renderChart();
     updateSourceLabels();
@@ -1727,6 +1785,7 @@
 
   async function init() {
     try {
+      wireStatusCard();
       wireEvents();
       loadKeywords();
       state.data = window.AQUARIUS_RETAIL_DATA;

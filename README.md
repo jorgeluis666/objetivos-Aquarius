@@ -13,6 +13,8 @@ Dashboard de gasto publicitario para Aquarius.
 
 - Titulo: `Gasto Publicitario`
 - Subtitulo: `Branding y ventas`
+- La sincronizacion (boton Sincronizar, ultima y proxima, carpetas de Drive) esta en la pildora de la barra
+  superior derecha (ver Sincronizacion > Manual, desde el tablero).
 - Logica en `js/objectives.js`. Sale del informe de campana de Google Ads (un total por mes,
   `data/aquarius-lima-retail-2026.json`) y del informe de palabras clave
   (`data/aquarius-palabras-clave-2026.json`, tal como lo publica el build).
@@ -299,8 +301,13 @@ enlace) y, como ultimo recurso, `data/drive-manifest.json`.
 
 ### Manual, desde el tablero
 
-El filtro tiene un boton **Sincronizar** con la fecha de los datos que se estan
-viendo. Su comportamiento depende de `data/drive-config.json`:
+La sincronizacion vive en la barra superior derecha. La pildora dice hasta que dia
+llegan los datos y cuando se sincronizaron; al pulsarla abre el detalle: datos,
+meses cargados, ultima y proxima sincronizacion, las dos carpetas de Drive (con
+enlace) y lo que falta subir. A su lado va el boton **Sincronizar** (en Gasto
+Publicitario y Proyecciones; Palabras Clave tiene su propio boton Actualizar). Si
+la sincronizacion falla, la pildora se pone ambar y el detalle dice por que. Su
+comportamiento depende de `data/drive-config.json`:
 
 - **Con `apiKey`**: el navegador lee la carpeta y los CSV directo de Drive,
   actualiza el tablero sin recargar y guarda el resultado en `localStorage`.

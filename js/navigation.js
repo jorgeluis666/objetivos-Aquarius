@@ -64,6 +64,8 @@
     document.getElementById('topbar-status').textContent = meta.status;
     document.getElementById('footer-source').textContent = meta.source;
     document.getElementById('footer-status').textContent = meta.footer;
+    // La barra superior adapta lo que muestra a la vista (el boton Sincronizar no va en todas).
+    document.body.dataset.view = viewId;
     saveView(viewId);
 
     if (viewId === 'view-projections') window.AquariusProjections?.init();

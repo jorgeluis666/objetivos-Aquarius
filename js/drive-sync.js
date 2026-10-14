@@ -297,6 +297,9 @@
   let running = false;
 
   function setStatus(text, tone) {
+    // Un error tine de ambar la pildora de la barra superior: el mensaje queda en su detalle.
+    const pill = document.getElementById('data-status-btn');
+    if (pill) pill.classList.toggle('warn', tone === 'is-error');
     const node = document.getElementById('sync-status');
     if (!node) return;
     node.textContent = text;
