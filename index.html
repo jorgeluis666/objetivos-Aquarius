@@ -4,10 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aquarius | Dashboard Lima Retail 2026</title>
+<link rel="icon" href="assets/aquarius-isotipo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/dashboard.css?v=1.14.1">
+<link rel="stylesheet" href="css/dashboard.css?v=1.15.0">
 <style>
   .reservations-total-row td { height: auto !important; padding: 10px 12px !important; border-top: 2px solid #cbd5e1 !important; color: #0f172a !important; background: #f8fafc; font-size: 13px; font-weight: 800; vertical-align: middle; }
   .reservations-total-row .total-label { text-align: right; }
@@ -31,7 +32,7 @@
 <body>
 <div class="shell">
   <aside class="sidebar" id="aquarius-sidebar">
-    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.14.1</span></div></div>
+    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.15.0</span></div></div>
     <div class="s-group-lbl">Modulos activos</div>
     <button class="s-item active" type="button" data-view-target="view-obj">
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
@@ -45,12 +46,13 @@
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
       <div class="s-text"><div class="s-title-nav">Palabras Clave</div><div class="s-desc-nav">Análisis por campaña</div></div>
     </button>
-    <button class="s-item s-item-bottom" type="button" data-view-target="view-users">
-      <div class="s-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-      <div class="s-text"><div class="s-title-nav">Usuarios y Claves</div><div class="s-desc-nav">Accesos y alertas</div></div>
-    </button>
-    <div class="s-modulo-activo"><div class="s-ma-label">CUENTA</div><div class="s-ma-name">Aquarius</div><div class="s-ma-desc">Branding y ventas</div></div>
-  </aside>
+    <div class="s-modulo-activo">
+      <div class="s-ma-label">CUENTA</div>
+      <div class="s-ma-name">Aquarius</div>
+      <a class="s-wa" href="https://wa.me/51937409733" target="_blank" rel="noopener" title="Escríbenos por WhatsApp a Agencia Lima Retail"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.04 2.01a9.9 9.9 0 0 0-8.56 14.85L2.05 22l5.3-1.39a9.9 9.9 0 1 0 4.69-18.6m0 1.8a8.1 8.1 0 1 1-4.1 15.08l-.3-.18-3.14.82.84-3.06-.2-.32A8.1 8.1 0 0 1 12.04 3.8m-3.3 4.3c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.98.42 1.74.68 2.34.87.98.31 1.88.27 2.58.16.79-.12 1.43-.59 1.63-1.15.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28-.24-.12-1.43-.71-1.65-.79-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.19-.46-.39-.4-.54-.41z"/></svg>+51 937 409 733</a>
+      <a class="s-web" href="https://www.limaretail.com" target="_blank" rel="noopener">www.limaretail.com</a>
+    </div>
+</aside>
   <main class="main">
     <div class="topbar">
       <div class="topbar-left">
@@ -218,55 +220,17 @@
         <p class="projection-note kw-foot" id="kw-foot"></p>
       </section>
 
-      <section class="view" id="view-users">
-        <h1 class="section-title">Usuarios y Claves</h1>
-        <p class="section-desc">Directorio de quién tiene la clave del tablero. El acceso es una sola clave compartida que nunca se guarda aquí: esta lista registra a quién se le entregó y avisa cuando hay que cambiarla. Se edita como borrador en este navegador hasta exportar el archivo para publicarlo, que sale cifrado: en el repo público nadie puede leer los nombres.</p>
-        <div class="kpi-strip" id="users-kpis" aria-label="Resumen de accesos"></div>
-        <div class="data-notice users-alert" id="users-alert" role="status" hidden></div>
-        <div class="panel users-panel" id="users-panel">
-          <form class="users-form" id="users-form" autocomplete="off">
-            <input class="users-field" type="text" name="name" placeholder="Nombre de la persona" aria-label="Nombre">
-            <select class="users-field" name="role" aria-label="Rol"><option value="cliente">Cliente</option><option value="equipo">Equipo Lima Retail</option><option value="admin">Administrador</option></select>
-            <button class="messages-btn primary" type="submit">Agregar</button>
-          </form>
-          <div class="users-toolbar">
-            <div class="chart-series-toggles users-filter" id="users-filter" role="group" aria-label="Filtrar usuarios">
-              <label class="series-toggle active" data-series="all"><input type="radio" name="users-status" value="all" checked>Todos</label>
-              <label class="series-toggle" data-series="activo"><input type="radio" name="users-status" value="activo">Activos</label>
-              <label class="series-toggle" data-series="suspendido"><input type="radio" name="users-status" value="suspendido">Suspendidos</label>
-            </div>
-            <div class="users-actions">
-              <label class="users-key" for="users-key-date">Último cambio de clave<input class="users-field" id="users-key-date" type="date"></label>
-              <button class="messages-btn secondary" type="button" id="users-discard" hidden>Descartar borrador</button>
-              <button class="messages-btn secondary" type="button" id="users-export">Exportar</button>
-            </div>
-          </div>
-          <div class="users-status" id="users-status"></div>
-          <div class="users-list" id="users-list"></div>
-        </div>
-        <div class="panel users-guide">
-          <div class="panel-title">Cómo dar o quitar acceso</div>
-          <ol>
-            <li><b>Dar acceso:</b> agrega a la persona, pulsa Exportar y reemplaza <code>data/aquarius-usuarios-2026.json</code> por el archivo descargado, que ya sale cifrado (commit y push a <code>main</code>). Envía el enlace y la clave por canales privados distintos, nunca en el mismo mensaje.</li>
-            <li><b>Quitar acceso:</b> marca a la persona como Suspendida. La clave es una sola para todos, así que hay que cambiarla: en GitHub &gt; Settings &gt; Secrets and variables &gt; Actions, edita <code>AQ_PAGE_PASSWORD</code> con una clave nueva, larga y aleatoria (16 o más caracteres).</li>
-            <li>Pon la fecha en <b>Último cambio de clave</b>, exporta y publica el archivo: el push vuelve a publicar el tablero con la clave nueva y la anterior deja de abrirlo.</li>
-            <li>Envía la clave nueva solo a las personas activas de esta lista.</li>
-          </ol>
-        </div>
-      </section>
-
-      <div class="site-footer"><span id="footer-source">Fuente: data/aquarius-lima-retail-2026.json</span><span id="footer-status">Resultados de pauta digital</span></div>
+<div class="site-footer"><span id="footer-source">Fuente: data/aquarius-lima-retail-2026.json</span><span id="footer-status">Resultados de pauta digital</span></div>
     </div>
   </main>
 </div>
-<script src="js/objectives.js?v=1.14.1"></script>
-<script src="js/drive-sync.js?v=1.14.1"></script>
-<script src="js/reservation-goals.js?v=1.14.1"></script>
-<script src="js/projections.js?v=1.14.1"></script>
-<script src="js/keywords.js?v=1.14.1"></script>
-<script src="js/usuarios.js?v=1.14.1"></script>
-<script src="js/navigation.js?v=1.14.1"></script>
-<script src="js/sidebar.js?v=1.14.1"></script>
+<script src="js/objectives.js?v=1.15.0"></script>
+<script src="js/drive-sync.js?v=1.15.0"></script>
+<script src="js/reservation-goals.js?v=1.15.0"></script>
+<script src="js/projections.js?v=1.15.0"></script>
+<script src="js/keywords.js?v=1.15.0"></script>
+<script src="js/navigation.js?v=1.15.0"></script>
+<script src="js/sidebar.js?v=1.15.0"></script>
 <!-- El acceso lo pone el build: con AQ_PAGE_PASSWORD cifra el tablero dentro de deploy/pages-gate.html. -->
 </body>
 </html>

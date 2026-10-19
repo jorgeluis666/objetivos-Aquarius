@@ -1,13 +1,17 @@
 {
   "name": "objetivos-aquarius",
-  "version": "1.14.1",
+  "version": "1.15.0",
   "private": true,
   "description": "Dashboard BI retail Lima 2026 de Aquarius",
   "scripts": {
     "dev": "live-server --port=3000 --open=index.html --no-browser",
     "build": "node scripts/build.js"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {},
-  "devDependencies": { "live-server": "^1.2.2" }
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
 }
