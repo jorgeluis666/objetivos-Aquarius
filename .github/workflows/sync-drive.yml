@@ -2,7 +2,7 @@ name: Sincronizar Drive
 
 # Trae los informes mensuales de Google Ads desde Drive, actualiza data/ y
 # republica el tablero si algo cambio:
-# - carpeta "Google files - Aquarius": una hoja (o CSV) por mes con el informe de campana
+# - carpeta "02 Google Ads": una hoja (o CSV) por mes con el informe de campana
 #   (Gasto Publicitario y Proyecciones);
 # - carpeta "Google Ads Aquarius Keywords": una hoja por mes con el informe de
 #   palabras clave (Analisis de Palabras Clave).

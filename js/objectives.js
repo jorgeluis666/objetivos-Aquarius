@@ -252,7 +252,7 @@
   // del informe): la fuente se nombra por la carpeta, nunca por el archivo.
   function folderName() {
     const config = window.AQUARIUS_DRIVE_CONFIG || gasto.config || {};
-    return config.folderName || 'Google files - Aquarius';
+    return config.folderName || '02 Google Ads';
   }
 
   // ── Sincronizacion: pildora de la barra superior con su detalle y el boton Sincronizar ──

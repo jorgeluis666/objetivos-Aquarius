@@ -282,7 +282,7 @@ actualizar `AQ_CRM_TOKEN`. Si se edita el script, hay que publicar una version n
 
 ## Fuente de datos
 
-El tablero se arma desde la carpeta de Google Drive **Google files - Aquarius**:
+El tablero se arma desde la carpeta de Google Drive **02 Google Ads**:
 
 <https://drive.google.com/drive/folders/1MBCTlit_mxS6wOXyGsXZL3HcS5SPTEIk>
 

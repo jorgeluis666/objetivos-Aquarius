@@ -27,7 +27,7 @@ decisiones salen de la data de Aquarius. Implementado en la versión 1.13.0.
 | Serie diaria **solo de impresiones y a nivel cuenta** (`months[].daily.rows`); informe de palabras clave **por mes** (`data/aquarius-palabras-clave-2026.json`); no hay datos de anuncios | Los cuadros por campaña muestran el gráfico **Por mes**. En SKAG el grupo de anuncios es la campaña: el detalle de cada cuadro son sus **palabras clave**, y el ranking del periodo es de **palabras clave**. |
 | Cada campaña trae `status` y `dailyBudget` | Estado y presupuesto diario en la distribución y en cada cuadro. |
 
-Los informes de campaña están en la carpeta de Drive **Google files - Aquarius** (`folderId` en
+Los informes de campaña están en la carpeta de Drive **02 Google Ads** (`folderId` en
 `data/drive-config.json`), una hoja de cálculo por mes (`Aquarius GA - <mes> <año>`) con los números en formato
 español. Estado de la data al 14 de octubre de 2026 (el tablero avisa los huecos, no los inventa):
 

@@ -12,7 +12,7 @@
       title: 'Proyecciones',
       caption: 'Cierre de mes y simulador de objetivo',
       status: 'Proyección sobre datos reales',
-      source: 'Fuente: Gasto Publicitario / carpeta Google files - Aquarius',
+      source: 'Fuente: Gasto Publicitario / carpeta 02 Google Ads',
       footer: 'Proyección lineal según el ritmo del mes',
     },
     'view-keywords': {
