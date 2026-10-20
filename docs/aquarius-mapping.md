@@ -55,11 +55,28 @@ o como CSV; los numeros se leen en formato espanol (`99,46`, `1.894`) o ingles (
 CTR, CPC, tasa y costo por conversion no se guardan: se calculan de las sumas. Las filas `Total: ...` se ignoran.
 Gasto Publicitario lee este JSON tal como lo publica el build, sin las campanas de `keywords.excludeCampaigns`.
 
+## Leads (CRM de feedback, hoja privada)
+
+| Columna de la hoja | Uso |
+| --- | --- |
+| `id` | Identidad del lead (la crea el tablero o el Web App) |
+| `fecha` | Mes del lead (AAAA-MM-DD) |
+| `plataforma` / `campana` | Google Ads, Meta Ads u Otro; nombre tecnico de la campana del informe |
+| `canal` | Formulario web, WhatsApp, Llamada, Correo, Otro |
+| `estado` | Nuevo, Contactado, Calificado, Cotizado, Venta, Perdido, No valido |
+| `monto` | Monto vendido (solo en Venta) |
+| `referencia` / `nota` | Texto corto, sin telefonos ni correos |
+| `creado` / `actualizado` | Marcas de tiempo del Web App |
+
+Los leads no se guardan en `data/`: viven en la hoja privada (`scripts/apps-script/crm-leads.gs`).
+
 ## Archivos clave
 
 - `js/objectives.js`: Gasto Publicitario: pestanas de mes y Anual, periodo con KPIs, grafico de la cuenta,
   distribucion y cuadro por campana y ranking de palabras clave; expone `AquariusDashboard` (`snapshot()`).
 - `js/projections.js`: proyeccion al cierre y simulador de objetivo; lee `AquariusDashboard.snapshot()`.
+- `js/leads.js`: CRM de feedback del cliente (pestana Leads) e indicadores de leads reales por campana.
+- `scripts/apps-script/crm-leads.gs`: Web App de la hoja privada donde se guardan los leads.
 - `js/keywords.js`: analisis de palabras clave y boton Actualizar (lee las hojas de Drive desde el navegador).
 - `data/aquarius-lima-retail-2026.json`: fuente normalizada.
 - `data/aquarius-palabras-clave-2026.json`: informe de palabras clave normalizado (`scripts/sync-keywords.py`).

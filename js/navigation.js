@@ -22,6 +22,13 @@
       source: 'Fuente: data/aquarius-palabras-clave-2026.json (Drive: Google Ads Aquarius Keywords)',
       footer: 'Sincronización diaria con Drive y botón Actualizar',
     },
+    'view-leads': {
+      title: 'Leads',
+      caption: 'CRM de feedback del cliente',
+      status: 'Leads reales frente a las plataformas',
+      source: 'Fuente: hoja privada del CRM y Gasto Publicitario',
+      footer: 'Los leads se guardan en la hoja de Google de la agencia, no en el repositorio',
+    },
   };
 
   function storedView() {
@@ -63,6 +70,7 @@
 
     if (viewId === 'view-projections') window.AquariusProjections?.init();
     if (viewId === 'view-keywords') window.AquariusKeywords?.init();
+    if (viewId === 'view-leads') window.AquariusLeads?.init();
     // Vuelve a poner el mes en la barra superior, que la vista anterior reemplazo.
     if (viewId === 'view-obj' && window.AquariusDashboard?.getData()) window.AquariusDashboard.render();
     window.setTimeout(() => window.dispatchEvent(new Event('resize')), 0);

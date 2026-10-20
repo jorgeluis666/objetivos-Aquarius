@@ -61,9 +61,16 @@ function main() {
   driveConfig.apiKey = process.env.AQ_DRIVE_API_KEY || driveConfig.apiKey || '';
   const driveJson = JSON.stringify(driveConfig).replace(/</g, '\\u003c');
   if (driveConfig.apiKey) console.log('[build] sincronizacion desde el navegador habilitada');
-  else console.warn('[build] sin AQ_DRIVE_API_KEY: el boton Sincronizar trae la ultima publicacion');
+  else console.warn('[build] sin AQ_DRIVE_API_KEY: el boton Sincronizar lee las hojas del ultimo barrido (no lista la carpeta)');
 
-  html = html.replace('</head>', () => `<script>window.AQUARIUS_RETAIL_DATA = ${data};window.AQUARIUS_KEYWORDS_DATA = ${keywords};window.AQUARIUS_DRIVE_CONFIG = ${driveJson};</script></head>`);
+  // CRM de leads: el Web App de la hoja privada (scripts/apps-script/crm-leads.gs). URL y token no viven en el
+  // repo: llegan por AQ_CRM_URL y AQ_CRM_TOKEN y solo quedan dentro del HTML cifrado.
+  const crmConfig = { url: process.env.AQ_CRM_URL || '', token: process.env.AQ_CRM_TOKEN || '' };
+  const crmJson = JSON.stringify(crmConfig).replace(/</g, '\\u003c');
+  if (crmConfig.url && crmConfig.token) console.log('[build] CRM de leads conectado a la hoja privada');
+  else console.warn('[build] sin AQ_CRM_URL/AQ_CRM_TOKEN: el modulo Leads guarda solo en el navegador');
+
+  html = html.replace('</head>', () => `<script>window.AQUARIUS_RETAIL_DATA = ${data};window.AQUARIUS_KEYWORDS_DATA = ${keywords};window.AQUARIUS_DRIVE_CONFIG = ${driveJson};window.AQUARIUS_CRM = ${crmJson};</script></head>`);
 
   try {
     fs.rmSync(DIST_DIR, { recursive: true, force: true });
