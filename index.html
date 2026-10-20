@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/dashboard.css?v=1.16.0">
+<link rel="stylesheet" href="css/dashboard.css?v=1.16.1">
 <style>
   .reservations-total-row td { height: auto !important; padding: 10px 12px !important; border-top: 2px solid #cbd5e1 !important; color: #0f172a !important; background: #f8fafc; font-size: 13px; font-weight: 800; vertical-align: middle; }
   .reservations-total-row .total-label { text-align: right; }
@@ -32,7 +32,7 @@
 <body>
 <div class="shell">
   <aside class="sidebar" id="aquarius-sidebar">
-    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.16.0</span></div></div>
+    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.16.1</span></div></div>
     <div class="s-group-lbl">Modulos activos</div>
     <button title="Gasto Publicitario" class="s-item active" type="button" data-view-target="view-obj">
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
@@ -227,40 +227,25 @@
 
       <section class="view" id="view-leads">
         <h1 class="section-title">Leads</h1>
-        <p class="section-desc">CRM de feedback: el cliente registra los leads reales que recibió de cada campaña y el tablero calcula lo que las plataformas no ven, como leads válidos, calificados, ventas, costo por venta y ROAS. La inversión y los leads que reporta cada plataforma se cargan solos.</p>
+        <p class="section-desc">CRM de feedback: la inversión y los leads que reporta cada plataforma se cargan solos; el cliente completa en las columnas resaltadas lo que de verdad recibió de cada campaña y el tablero calcula lo que las plataformas no ven, como costo por lead real, costo por venta y ROAS.</p>
         <div class="data-notice crm-mode" id="crm-mode" role="status" hidden></div>
         <div class="retail-filters crm-filters" id="crm-filters"></div>
         <div class="kpi-strip crm-kpis" id="crm-kpis" aria-label="Resumen de leads"></div>
         <div class="panel crm-summary-panel">
           <div class="panel-head"><div>
-            <div class="panel-title" id="crm-summary-title">Indicadores por campaña</div>
+            <div class="panel-title" id="crm-summary-title">Leads por campaña</div>
             <div class="panel-sub" id="crm-summary-sub"></div>
           </div></div>
           <div class="table-scroll">
             <table class="data-table crm-summary-table">
-              <thead><tr><th>Campaña</th><th>Plataforma</th><th>Objetivo</th><th class="num">Inversión</th><th class="num">Leads plataforma</th><th class="num">Leads reales</th><th class="num">Coincidencia</th><th class="num">Calificados</th><th class="num">Ventas</th><th class="num">Monto vendido</th><th class="num">CPL plataforma</th><th class="num">CPL real</th><th class="num">Costo por calificado</th><th class="num">Costo por venta</th><th class="num">ROAS</th></tr></thead>
+              <thead>
+                <tr class="crm-group-row"><th colspan="5"></th><th class="crm-client crm-client-group" colspan="4">Lo completa el cliente</th><th colspan="7"></th></tr>
+                <tr><th>Campaña</th><th>Plataforma</th><th>Objetivo</th><th class="num">Inversión</th><th class="num">Leads plataforma</th><th class="num crm-client">Leads reales</th><th class="num crm-client">Calificados</th><th class="num crm-client">Ventas</th><th class="num crm-client">Monto vendido (S/)</th><th class="num">Coincidencia</th><th class="num">CPL plataforma</th><th class="num">CPL real</th><th class="num">Costo por calificado</th><th class="num">Costo por venta</th><th class="num">ROAS</th><th aria-label="Guardado"></th></tr>
+              </thead>
               <tbody id="crm-summary-body"></tbody>
             </table>
           </div>
           <p class="projection-note" id="crm-summary-foot"></p>
-        </div>
-        <div class="panel crm-leads-panel">
-          <div class="panel-head crm-leads-head">
-            <div>
-              <div class="panel-title">Leads registrados</div>
-              <div class="panel-sub" id="crm-leads-sub"></div>
-            </div>
-            <div class="gasto-table-tools">
-              <button type="button" class="messages-btn primary" id="crm-add" disabled>+ Agregar lead</button>
-              <button type="button" class="gasto-tool-btn" id="crm-refresh">Actualizar</button>
-            </div>
-          </div>
-          <div class="table-scroll">
-            <table class="data-table crm-leads-table">
-              <thead><tr><th>Fecha</th><th>Campaña</th><th>Canal</th><th>Estado</th><th class="num">Monto (S/)</th><th>Referencia</th><th>Nota</th><th></th></tr></thead>
-              <tbody id="crm-leads-body"></tbody>
-            </table>
-          </div>
         </div>
       </section>
 
@@ -268,14 +253,14 @@
     </div>
   </main>
 </div>
-<script src="js/objectives.js?v=1.16.0"></script>
-<script src="js/drive-sync.js?v=1.16.0"></script>
-<script src="js/reservation-goals.js?v=1.16.0"></script>
-<script src="js/projections.js?v=1.16.0"></script>
-<script src="js/keywords.js?v=1.16.0"></script>
-<script src="js/leads.js?v=1.16.0"></script>
-<script src="js/navigation.js?v=1.16.0"></script>
-<script src="js/sidebar.js?v=1.16.0"></script>
+<script src="js/objectives.js?v=1.16.1"></script>
+<script src="js/drive-sync.js?v=1.16.1"></script>
+<script src="js/reservation-goals.js?v=1.16.1"></script>
+<script src="js/projections.js?v=1.16.1"></script>
+<script src="js/keywords.js?v=1.16.1"></script>
+<script src="js/leads.js?v=1.16.1"></script>
+<script src="js/navigation.js?v=1.16.1"></script>
+<script src="js/sidebar.js?v=1.16.1"></script>
 <!-- El acceso lo pone el build: con AQ_PAGE_PASSWORD cifra el tablero dentro de deploy/pages-gate.html. -->
 </body>
 </html>

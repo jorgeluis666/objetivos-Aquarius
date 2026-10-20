@@ -243,8 +243,9 @@ Contenido descifrado:
 
 ## Leads (CRM de feedback del cliente)
 
-Pestana **Leads** del panel lateral (`js/leads.js`). El cliente registra lead por lead lo que de verdad
-recibio de cada campana y el tablero calcula los indicadores que las plataformas no ven.
+Pestana **Leads** del panel lateral (`js/leads.js`). Una tabla por campana y mes: la plataforma se carga sola y
+el cliente completa en las columnas resaltadas lo que de verdad recibio; el tablero calcula los indicadores que
+las plataformas no ven.
 
 - **Se habilita solo con campanas de leads o WhatsApp** (`detectObjective`): en Google Ads, Busqueda,
   Maximo rendimiento y Demand Gen (no Shopping, Display ni Video); en Meta Ads, el objetivo Clientes potenciales
@@ -253,23 +254,24 @@ recibio de cada campana y el tablero calcula los indicadores que las plataformas
 - **Se cargan solos**, del modulo Gasto Publicitario (`AquariusDashboard.snapshot()`): la inversion y los leads
   que reporta la plataforma. En Google Ads son sus conversiones (contactos); en Meta Ads serian los formularios o
   las conversaciones de WhatsApp, cuando la marca tenga esa data (`platformMonths` es el punto para sumarla).
-- **Tabla de leads**, editable y con guardado automatico: fecha, campana, canal (formulario web, WhatsApp,
-  llamada, correo, otro), estado (Nuevo, Contactado, Calificado, Cotizado, Venta, Perdido, No valido), monto
-  (solo en ventas), referencia y nota. Sin telefonos ni correos: el tablero y la hoja los rechazan.
-- **Indicadores por campana y en total**, del mes o de todo el ano: leads de la plataforma, leads reales (sin
-  los No valido), coincidencia (reales / plataforma), calificados (Calificado, Cotizado o Venta) y su tasa,
-  ventas y tasa de cierre, monto vendido y ticket, costo por lead de la plataforma y real, costo por calificado,
-  costo por venta y ROAS (monto vendido / inversion).
-- **Guardado**: en una hoja de Google privada de la agencia, a traves del Web App de
-  `scripts/apps-script/crm-leads.gs`. Los leads nunca pasan por el repositorio publico. Sin el Web App
-  conectado, el modulo guarda solo en el navegador y lo avisa ("Modo de prueba").
+- **Lo completa el cliente** (columnas resaltadas, con guardado automatico): leads reales, calificados, ventas y
+  monto vendido de cada campana en el mes. Vacio = sin dato. Se valida que sean enteros desde 0 y que no haya mas
+  calificados que leads ni mas ventas que calificados. En "Todo el ano" la tabla suma los meses y queda de solo
+  lectura. La columna Campana queda fija al desplazarse.
+- **Indicadores por campana y en total**: coincidencia (leads reales / de la plataforma), costo por lead de la
+  plataforma y real, tasa de calificacion y de cierre, costo por calificado, costo por venta y ROAS (monto
+  vendido / inversion). Cada cociente usa solo las campanas y meses que tienen ese dato completo, asi la tabla a
+  medio llenar no infla los costos; los KPIs dicen cuantas campanas estan completadas.
+- **Guardado**: en una hoja de Google privada de la agencia (pestana "Leads por campana", una fila por mes y
+  campana), a traves del Web App de `scripts/apps-script/crm-leads.gs`. Nunca pasa por el repositorio publico.
+  Sin el Web App conectado, el modulo guarda solo en el navegador y lo avisa ("Modo de prueba").
 
 ### Conectar la hoja privada (una sola vez)
 
 1. Crear una hoja de calculo de Google (por ejemplo "Aquarius - CRM de leads") en la cuenta de la agencia.
 2. En la hoja: Extensiones > Apps Script, pegar `scripts/apps-script/crm-leads.gs` y guardar.
-3. Ejecutar `crearToken` una vez (aceptar los permisos): crea la pestana Leads y deja el token en el registro
-   de ejecucion.
+3. Ejecutar `crearToken` una vez (aceptar los permisos): crea la pestana "Leads por campana" y deja el token en
+   el registro de ejecucion.
 4. Implementar > Nueva implementacion > Aplicacion web: ejecutar como **Yo**, acceso **Cualquier usuario**.
    Copiar la URL que termina en `/exec`.
 5. En GitHub > Settings > Secrets and variables > Actions, crear `AQ_CRM_URL` (la URL) y `AQ_CRM_TOKEN` (el

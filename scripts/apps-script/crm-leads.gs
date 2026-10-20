@@ -1,42 +1,35 @@
 /**
- * CRM de leads de Aquarius: guarda en una hoja de Google privada los leads reales que el cliente registra en el
- * tablero (modulo Leads). Los datos nunca pasan por el repositorio publico.
+ * CRM de leads de Aquarius: guarda en una hoja de Google privada lo que el cliente completa en el tablero
+ * (modulo Leads) para cada campana y mes: leads reales, calificados, ventas y monto vendido. Los datos nunca
+ * pasan por el repositorio publico.
  *
  * Instalacion (una sola vez, ver README > Leads):
- * 1. Crear una hoja de calculo de Google (por ejemplo "Aquarius - CRM de leads") en la cuenta de la agencia.
+ * 1. Crear una hoja de calculo de Google (por ejemplo "Aquarius - CRM de leads") en una carpeta privada.
  * 2. En la hoja: Extensiones > Apps Script, pegar este archivo y guardar.
- * 3. Ejecutar crearToken() una vez: crea la pestana Leads y deja el token en el registro de ejecucion.
+ * 3. Ejecutar crearToken() una vez: crea la pestana y deja el token en el registro de ejecucion.
  * 4. Implementar > Nueva implementacion > Aplicacion web: ejecutar como "Yo", acceso "Cualquier usuario".
  *    Copiar la URL /exec.
  * 5. En GitHub > Settings > Secrets and variables > Actions: AQ_CRM_URL = la URL y AQ_CRM_TOKEN = el token.
- *    El siguiente deploy incrusta los dos dentro del HTML cifrado del tablero.
+ * Si se cambia este codigo: Implementar > Gestionar implementaciones > editar > Version: Nueva version.
+ * La URL y el token no cambian.
  *
  * Contrato (POST con cuerpo JSON en text/plain, asi el navegador no hace preflight de CORS):
- *   { token, action: 'list' }                 -> { ok, leads: [...], updatedAt }
- *   { token, action: 'save', lead: {...} }    -> { ok, lead }      (crea o actualiza por id)
- *   { token, action: 'delete', id }           -> { ok }
+ *   { token, action: 'list' }               -> { ok, rows: [...], updatedAt }
+ *   { token, action: 'save', row: {...} }   -> { ok, row }   (una fila por mes y campana; vacia = se borra)
  * Un error responde { ok: false, error }.
- *
- * No se guardan telefonos ni correos: el tablero los rechaza y este script tambien.
  */
 
-const SHEET_NAME = 'Leads';
-const COLUMNS = ['id', 'fecha', 'plataforma', 'campana', 'canal', 'estado', 'monto', 'referencia', 'nota', 'creado', 'actualizado'];
+const SHEET_NAME = 'Leads por campana';
+const COLUMNS = ['mes', 'plataforma', 'campana', 'leads', 'calificados', 'ventas', 'monto', 'actualizado'];
+const COUNTS = ['leads', 'calificados', 'ventas'];
 const PLATAFORMAS = ['Google Ads', 'Meta Ads', 'Otro'];
-const CANALES = ['Formulario web', 'WhatsApp', 'Llamada', 'Correo', 'Otro'];
-const ESTADOS = ['Nuevo', 'Contactado', 'Calificado', 'Cotizado', 'Venta', 'Perdido', 'No valido'];
-const MAX_TEXT = 160;
 
 function doPost(e) {
   return respond(() => {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
     authorize(body.token);
-    if (body.action === 'list') return { leads: readLeads(), updatedAt: new Date().toISOString() };
-    if (body.action === 'save') return { lead: withLock(() => saveLead(body.lead || {})) };
-    if (body.action === 'delete') {
-      withLock(() => deleteLead(String(body.id || '')));
-      return {};
-    }
+    if (body.action === 'list') return { rows: readRows(), updatedAt: new Date().toISOString() };
+    if (body.action === 'save') return { row: withLock(() => saveRow(body.row || {})) };
     throw new Error('Accion no valida');
   });
 }
@@ -78,94 +71,86 @@ function sheet() {
     tab = book.insertSheet(SHEET_NAME);
     tab.appendRow(COLUMNS);
     tab.setFrozenRows(1);
+    // El mes como texto: si no, la hoja lo convierte en fecha.
+    tab.getRange('A:A').setNumberFormat('@');
   }
   return tab;
 }
 
-function readLeads() {
-  const values = sheet().getDataRange().getValues();
-  return values.slice(1).filter(row => row[0]).map(row => {
-    const lead = {};
-    COLUMNS.forEach((column, index) => { lead[column] = row[index]; });
-    lead.fecha = lead.fecha instanceof Date ? Utilities.formatDate(lead.fecha, 'America/Lima', 'yyyy-MM-dd') : String(lead.fecha);
-    lead.monto = lead.monto === '' ? null : Number(lead.monto);
-    ['creado', 'actualizado'].forEach(field => {
-      if (lead[field] instanceof Date) lead[field] = lead[field].toISOString();
-    });
-    // getValues() devuelve el texto sin el apostrofo que lo protege de leerse como formula.
-    ['referencia', 'nota', 'campana'].forEach(field => { lead[field] = String(lead[field] == null ? '' : lead[field]); });
-    return lead;
+const keyOf = row => `${row.mes}|${normalize(row.campana)}`;
+
+function normalize(text) {
+  return String(text == null ? '' : text).normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function readRows() {
+  return sheet().getDataRange().getValues().slice(1).filter(values => values[0] && values[2]).map(values => {
+    const row = {};
+    COLUMNS.forEach((column, index) => { row[column] = values[index]; });
+    row.mes = row.mes instanceof Date ? Utilities.formatDate(row.mes, 'America/Lima', 'yyyy-MM') : String(row.mes);
+    row.campana = String(row.campana);
+    COUNTS.concat('monto').forEach(field => { row[field] = row[field] === '' || row[field] === null ? null : Number(row[field]); });
+    if (row.actualizado instanceof Date) row.actualizado = row.actualizado.toISOString();
+    return row;
   });
 }
 
-function saveLead(input) {
-  const lead = clean(input);
+// Crea, actualiza o (si llega vacia) borra la fila del mes y la campana.
+function saveRow(input) {
+  const row = clean(input);
   const tab = sheet();
-  const ids = tab.getRange(1, 1, Math.max(tab.getLastRow(), 1), 1).getValues().map(row => String(row[0]));
-  const now = new Date().toISOString();
-  const index = lead.id ? ids.indexOf(lead.id) : -1;
-  if (index > 0) {
-    const created = tab.getRange(index + 1, COLUMNS.indexOf('creado') + 1).getValue();
-    lead.creado = created instanceof Date ? created.toISOString() : String(created || now);
-  } else {
-    lead.id = lead.id || Utilities.getUuid();
-    lead.creado = now;
+  const values = tab.getDataRange().getValues();
+  const index = values.findIndex((existing, position) => position > 0
+    && keyOf({ mes: existing[0] instanceof Date ? Utilities.formatDate(existing[0], 'America/Lima', 'yyyy-MM') : String(existing[0]), campana: existing[2] }) === keyOf(row));
+  const empty = COUNTS.concat('monto').every(field => row[field] === null);
+  if (empty) {
+    if (index > 0) tab.deleteRow(index + 1);
+    return row;
   }
-  lead.actualizado = now;
-  const row = COLUMNS.map(column => cellValue(column, lead[column]));
-  if (index > 0) tab.getRange(index + 1, 1, 1, COLUMNS.length).setValues([row]);
-  else tab.appendRow(row);
-  return lead;
+  row.actualizado = new Date().toISOString();
+  const line = COLUMNS.map(column => cellValue(column, row[column]));
+  if (index > 0) tab.getRange(index + 1, 1, 1, COLUMNS.length).setValues([line]);
+  else tab.appendRow(line);
+  return row;
 }
 
-function deleteLead(id) {
-  if (!id) throw new Error('Falta el id');
-  const tab = sheet();
-  const ids = tab.getRange(1, 1, Math.max(tab.getLastRow(), 1), 1).getValues().map(row => String(row[0]));
-  const index = ids.indexOf(id);
-  if (index > 0) tab.deleteRow(index + 1);
-}
-
-// Valida y normaliza un lead: valores de las listas, fecha AAAA-MM-DD, monto solo en ventas y textos cortos.
+// Mes AAAA-MM, campana obligatoria, conteos enteros no negativos y monto con dos decimales. Vacio = sin dato.
 function clean(input) {
-  const pick = (value, allowed, fallback) => (allowed.indexOf(value) >= 0 ? value : fallback);
-  const fecha = String(input.fecha || '');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) throw new Error('Fecha no valida');
-  const estado = pick(input.estado, ESTADOS, 'Nuevo');
-  const monto = estado === 'Venta' && input.monto !== null && input.monto !== '' && isFinite(Number(input.monto))
-    ? Math.max(0, Math.round(Number(input.monto) * 100) / 100)
-    : null;
-  const text = value => {
-    const plain = String(value == null ? '' : value).replace(/\s+/g, ' ').trim().slice(0, MAX_TEXT);
-    if (hasContact(plain)) throw new Error('No guardes telefonos ni correos en el CRM');
-    return plain;
+  const mes = String(input.mes || '');
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) throw new Error('Mes no valido');
+  const campana = String(input.campana || '').trim().slice(0, 120);
+  if (!campana) throw new Error('Falta la campana');
+  const count = value => {
+    if (value === null || value === undefined || value === '') return null;
+    const number = Number(value);
+    if (!isFinite(number) || number < 0 || Math.floor(number) !== number) throw new Error('Los conteos son numeros enteros desde 0');
+    return number;
   };
-  return {
-    id: /^[\w-]{8,64}$/.test(String(input.id || '')) ? String(input.id) : '',
-    fecha,
-    plataforma: pick(input.plataforma, PLATAFORMAS, 'Otro'),
-    campana: String(input.campana || '').slice(0, 120),
-    canal: pick(input.canal, CANALES, 'Otro'),
-    estado,
-    monto,
-    referencia: text(input.referencia),
-    nota: text(input.nota)
+  const row = {
+    mes,
+    plataforma: PLATAFORMAS.indexOf(input.plataforma) >= 0 ? input.plataforma : 'Otro',
+    campana,
+    leads: count(input.leads),
+    calificados: count(input.calificados),
+    ventas: count(input.ventas),
+    monto: null
   };
-}
-
-// Correos y celulares peruanos (9 digitos que empiezan con 9, con o sin +51). Fechas y RUC pasan.
-function hasContact(text) {
-  return /[^\s@]+@[^\s@]+\.[a-z]{2,}/i.test(text) || /(?:^|\D)(?:\+?51[\s.-]?)?9\d{2}[\s.-]?\d{3}[\s.-]?\d{3}(?!\d)/.test(text);
+  if (input.monto !== null && input.monto !== undefined && input.monto !== '') {
+    const monto = Number(input.monto);
+    if (!isFinite(monto) || monto < 0) throw new Error('El monto es un numero desde 0');
+    row.monto = Math.round(monto * 100) / 100;
+  }
+  return row;
 }
 
 // Un texto que empieza con =, +, - o @ se guardaria como formula: va con un apostrofo delante.
 function cellValue(column, value) {
   if (value === null || value === undefined) return '';
-  if ((column === 'referencia' || column === 'nota' || column === 'campana') && /^[=+\-@]/.test(String(value))) return `'${value}`;
+  if (column === 'campana' && /^[=+\-@]/.test(String(value))) return `'${value}`;
   return value;
 }
 
-// Crea (o cambia) el token y la pestana Leads. El token queda en el registro de ejecucion para copiarlo a GitHub.
+// Crea (o cambia) el token y la pestana. El token queda en el registro de ejecucion para copiarlo a GitHub.
 function crearToken() {
   const token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
   PropertiesService.getScriptProperties().setProperty('CRM_TOKEN', token);

@@ -1,56 +1,49 @@
 /**
  * leads.js - Leads: CRM de feedback del cliente.
  *
- * El cliente registra lead por lead lo que de verdad recibio de cada campana (fecha, campana, canal, estado y,
- * si cerro, el monto). Con eso el tablero calcula lo que las plataformas no ven: leads validos, calificados,
- * ventas, costo por lead real, costo por venta y ROAS. La inversion y los leads que reporta cada plataforma
- * (conversiones de Google Ads; leads o conversaciones de WhatsApp en Meta Ads) se cargan solos del modulo Gasto
- * Publicitario (AquariusDashboard.snapshot()).
+ * Una tabla por campana y mes: la inversion y los leads que reporta cada plataforma (conversiones de Google Ads;
+ * formularios o conversaciones de WhatsApp en Meta Ads) se cargan solos del modulo Gasto Publicitario
+ * (AquariusDashboard.snapshot()), y el cliente completa en las columnas resaltadas lo que de verdad recibio:
+ * leads reales, calificados, ventas y monto vendido. Con eso el tablero calcula lo que las plataformas no ven:
+ * coincidencia, costo por lead real, costo por calificado, costo por venta y ROAS.
  *
  * Solo entran las campanas cuyo objetivo es captar leads o conversaciones de WhatsApp (detectObjective). Si la
  * marca no tiene ninguna, el modulo no aparece en el panel lateral.
  *
- * Los leads se guardan en una hoja de Google privada de la agencia, a traves del Web App de
+ * Lo que completa el cliente se guarda en una hoja de Google privada de la agencia, a traves del Web App de
  * scripts/apps-script/crm-leads.gs (URL y token llegan del build: AQ_CRM_URL y AQ_CRM_TOKEN, dentro del HTML
- * cifrado). Nunca pasan por el repositorio publico. Sin ese Web App configurado, el modulo guarda en este
- * navegador y lo avisa.
+ * cifrado). Nunca pasa por el repositorio publico. Sin ese Web App configurado, se guarda en este navegador y
+ * el modulo lo avisa.
  */
 (function () {
   'use strict';
 
-  const LOCAL_KEY = 'aquarius_crm_leads_local';
+  const LOCAL_KEY = 'aquarius_crm_results_local';
   const PREFS_KEY = 'aquarius_crm_prefs';
   const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-  // Mismas listas que valida crm-leads.gs.
-  const ESTADOS = [
-    { key: 'Nuevo', tone: 'muted' },
-    { key: 'Contactado', tone: 'new' },
-    { key: 'Calificado', tone: 'amber' },
-    { key: 'Cotizado', tone: 'amber' },
-    { key: 'Venta', tone: 'green' },
-    { key: 'Perdido', tone: 'red' },
-    { key: 'No valido', label: 'No válido', tone: 'muted' }
+  // Lo que completa el cliente: conteos enteros y el monto en soles.
+  const CLIENT_FIELDS = [
+    { key: 'leads', label: 'Leads reales', kind: 'count' },
+    { key: 'calificados', label: 'Calificados', kind: 'count' },
+    { key: 'ventas', label: 'Ventas', kind: 'count' },
+    { key: 'monto', label: 'Monto vendido', kind: 'money' }
   ];
-  // Un lead calificado es el que avanzo: calificado, cotizado o vendido. "No valido" (spam, duplicado) no cuenta como lead.
-  const QUALIFIED = ['Calificado', 'Cotizado', 'Venta'];
-  const CANALES = ['Formulario web', 'WhatsApp', 'Llamada', 'Correo', 'Otro'];
   const OBJECTIVES = {
     leads: { label: 'Leads', tone: 'new' },
     whatsapp: { label: 'WhatsApp', tone: 'green' }
   };
   const SAVE_DELAY = 700;
+  const CRM_TIMEOUT = 20000;
   const YEAR_SCOPE = 'year';
 
   const state = {
     ready: false,
     loading: null,
     snapshot: null,
-    leads: [],
+    results: [],
     status: 'loading',
     error: null,
     scope: null,
-    campaign: 'all',
-    estado: 'all',
     rowStatus: new Map(),
     timers: new Map()
   };
@@ -61,13 +54,11 @@
   const fmtDecimal = value => (isNum(value) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 2 }) : '-');
   const fmtPercent = value => (isNum(value) ? `${(Number(value) * 100).toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%` : '-');
   const fmtRoas = value => (isNum(value) ? `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}x` : '-');
-  const ratio = (a, b) => (isNum(a) && isNum(b) && Number(b) !== 0 ? Number(a) / Number(b) : null);
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const normalize = text => String(text ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
   const limaToday = () => new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
   const monthLabel = id => (/^\d{4}-\d{2}$/.test(id) ? `${MONTH_NAMES[Number(id.slice(5, 7)) - 1]} ${id.slice(0, 4)}` : id);
-  const leadCount = (suffix = '') => `${state.leads.length} ${state.leads.length === 1 ? 'lead' : 'leads'}${suffix ? ` ${state.leads.length === 1 ? suffix.replace(/s$/, '') : suffix}` : ''}`;
-  const estadoInfo = key => ESTADOS.find(item => item.key === key) || ESTADOS[0];
+  const resultKey = (month, campaign) => `${month}|${normalize(campaign)}`;
 
   // --- Objetivo de cada campana ---
 
@@ -87,16 +78,13 @@
   function platformMonths(snapshot) {
     return (snapshot && Array.isArray(snapshot.months) ? snapshot.months : []).map(month => ({
       id: month.id,
-      period: month.period || null,
       campaigns: (month.campaigns || []).map(record => {
         const campaign = {
           platform: 'Google Ads',
           name: record.campaign,
           label: record.label || record.campaign,
           type: record.type || '',
-          status: record.status || '',
           cost: Number(record.cost) || 0,
-          clicks: Number(record.clicks) || 0,
           leads: Number(record.conversions) || 0
         };
         campaign.objective = detectObjective(campaign);
@@ -106,21 +94,12 @@
     }));
   }
 
-  // Campanas de leads de todo el ano (para el selector de la tabla), de la mas reciente a la mas vieja.
-  function leadCampaigns() {
-    const byKey = new Map();
-    platformMonths(state.snapshot).slice().reverse().forEach(month => month.campaigns.forEach(campaign => {
-      if (!byKey.has(campaign.key)) byKey.set(campaign.key, campaign);
-    }));
-    return [...byKey.values()].sort((a, b) => a.label.localeCompare(b.label, 'es'));
-  }
+  const hasLeadCampaigns = () => platformMonths(state.snapshot).some(month => month.campaigns.length);
 
   // --- Guardado: Web App de la hoja privada o, sin el, este navegador ---
 
   const crmConfig = () => window.AQUARIUS_CRM || {};
   const isRemote = () => Boolean(crmConfig().url && crmConfig().token);
-
-  const CRM_TIMEOUT = 20000;
 
   async function callCrm(action, extra) {
     const controller = new AbortController();
@@ -148,143 +127,135 @@
 
   function readLocal() {
     try {
-      const leads = JSON.parse(window.localStorage.getItem(LOCAL_KEY) || '[]');
-      return Array.isArray(leads) ? leads : [];
+      const rows = JSON.parse(window.localStorage.getItem(LOCAL_KEY) || '[]');
+      return Array.isArray(rows) ? rows : [];
     } catch (error) {
       return [];
     }
   }
 
-  function writeLocal(leads) {
+  function writeLocal(rows) {
     try {
-      window.localStorage.setItem(LOCAL_KEY, JSON.stringify(leads));
+      window.localStorage.setItem(LOCAL_KEY, JSON.stringify(rows));
     } catch (error) {
       throw new Error('el navegador no tiene espacio para guardar');
     }
   }
 
-  const newId = () => (window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : `lead-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+  const isEmpty = row => CLIENT_FIELDS.every(field => !isNum(row[field.key]));
 
   const store = {
     async list() {
-      if (isRemote()) return (await callCrm('list')).leads || [];
+      if (isRemote()) return (await callCrm('list')).rows || [];
       return readLocal();
     },
-    async save(lead) {
-      if (isRemote()) return (await callCrm('save', { lead })).lead;
-      const leads = readLocal();
-      const now = new Date().toISOString();
-      const saved = Object.assign({}, lead, { id: lead.id || newId(), actualizado: now, creado: lead.creado || now });
-      const index = leads.findIndex(item => item.id === saved.id);
-      if (index >= 0) leads[index] = saved; else leads.push(saved);
-      writeLocal(leads);
+    // Una fila por mes y campana; sin ningun dato se borra (igual que en crm-leads.gs).
+    async save(row) {
+      if (isRemote()) return (await callCrm('save', { row })).row;
+      const key = resultKey(row.mes, row.campana);
+      const rows = readLocal().filter(item => resultKey(item.mes, item.campana) !== key);
+      const saved = Object.assign({}, row, { actualizado: new Date().toISOString() });
+      if (!isEmpty(saved)) rows.push(saved);
+      writeLocal(rows);
       return saved;
-    },
-    async remove(id) {
-      if (isRemote()) { await callCrm('delete', { id }); return; }
-      writeLocal(readLocal().filter(item => item.id !== id));
     }
   };
 
-  // --- Validacion (la misma de crm-leads.gs) ---
-
-  // Correos y celulares peruanos (9 digitos que empiezan con 9, con o sin +51). Fechas y RUC pasan.
-  const hasContact = text => /[^\s@]+@[^\s@]+\.[a-z]{2,}/i.test(text) || /(?:^|\D)(?:\+?51[\s.-]?)?9\d{2}[\s.-]?\d{3}[\s.-]?\d{3}(?!\d)/.test(text);
-
-  function validate(lead) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(lead.fecha || ''))) return 'Falta la fecha';
-    if (lead.fecha > limaToday()) return 'La fecha no puede ser futura';
-    if (hasContact(`${lead.referencia || ''} ${lead.nota || ''}`)) return 'Sin teléfonos ni correos: usa una referencia interna';
-    if (lead.estado === 'Venta' && isNum(lead.monto) && Number(lead.monto) < 0) return 'El monto no puede ser negativo';
-    return null;
-  }
-
   // --- Indicadores ---
 
-  const monthOf = lead => String(lead.fecha || '').slice(0, 7);
-  const inScope = (monthId, scope) => (scope === YEAR_SCOPE ? monthId.slice(0, 4) === yearOfScope() : monthId === scope);
-  const yearOfScope = () => {
-    const months = availableMonths();
-    return (months[0] || limaToday()).slice(0, 4);
-  };
-
-  function crmTotals(leads) {
-    const valid = leads.filter(lead => lead.estado !== 'No valido');
-    const qualified = valid.filter(lead => QUALIFIED.includes(lead.estado));
-    const sales = valid.filter(lead => lead.estado === 'Venta');
-    return {
-      real: valid.length,
-      invalid: leads.length - valid.length,
-      qualified: qualified.length,
-      sales: sales.length,
-      revenue: sales.reduce((total, lead) => total + (Number(lead.monto) || 0), 0)
-    };
+  function resultFor(month, campaign) {
+    const key = resultKey(month, campaign);
+    return state.results.find(row => resultKey(row.mes, row.campana) === key) || null;
   }
 
-  function indicators(row) {
-    return Object.assign(row, {
-      match: ratio(row.real, row.platformLeads),
-      cplPlatform: ratio(row.cost, row.platformLeads),
-      cplReal: ratio(row.cost, row.real),
-      qualifyRate: ratio(row.qualified, row.real),
-      costPerQualified: ratio(row.cost, row.qualified),
-      closeRate: ratio(row.sales, row.real),
-      costPerSale: ratio(row.cost, row.sales),
-      ticket: ratio(row.revenue, row.sales),
-      roas: ratio(row.revenue, row.cost)
-    });
-  }
-
-  // Filas por campana del alcance (mes o ano): lo que reporta la plataforma junto a lo que registro el cliente.
-  function summaryRows(scope) {
-    const rows = new Map();
-    const rowFor = (key, base) => {
-      if (!rows.has(key)) rows.set(key, Object.assign({ key, cost: 0, platformLeads: 0, leads: [], reported: false }, base));
-      return rows.get(key);
-    };
+  // Una unidad por campana y mes: lo que reporta la plataforma junto a lo que completo el cliente.
+  function unitsOf(scope) {
+    const units = [];
+    const seen = new Set();
     platformMonths(state.snapshot).filter(month => inScope(month.id, scope)).forEach(month => month.campaigns.forEach(campaign => {
-      const row = rowFor(campaign.key, { name: campaign.name, label: campaign.label, platform: campaign.platform, objective: campaign.objective });
-      row.cost += campaign.cost;
-      row.platformLeads += campaign.leads;
-      row.reported = true;
+      const result = resultFor(month.id, campaign.name) || {};
+      seen.add(resultKey(month.id, campaign.name));
+      units.push({
+        month: month.id, key: campaign.key, name: campaign.name, label: campaign.label, platform: campaign.platform, objective: campaign.objective,
+        cost: campaign.cost, platformLeads: campaign.leads,
+        leads: result.leads ?? null, calificados: result.calificados ?? null, ventas: result.ventas ?? null, monto: result.monto ?? null
+      });
     }));
-    const catalog = new Map(leadCampaigns().map(campaign => [campaign.key, campaign]));
-    state.leads.filter(lead => inScope(monthOf(lead), scope)).forEach(lead => {
-      const key = normalize(lead.campana);
-      const known = catalog.get(key);
-      const row = key
-        ? rowFor(key, { name: lead.campana, label: known ? known.label : lead.campana, platform: lead.plataforma || (known && known.platform) || 'Otro', objective: known ? known.objective : null })
-        : rowFor('', { name: '', label: 'Sin campaña identificada', platform: lead.plataforma || 'Otro', objective: null });
-      row.leads.push(lead);
+    // Lo que el cliente completo para una campana que ya no esta en el informe del mes se sigue viendo.
+    state.results.filter(row => inScope(String(row.mes), scope) && !seen.has(resultKey(row.mes, row.campana))).forEach(row => {
+      units.push({
+        month: row.mes, key: normalize(row.campana), name: row.campana, label: row.campana, platform: row.plataforma || 'Otro', objective: null,
+        cost: null, platformLeads: null, leads: row.leads ?? null, calificados: row.calificados ?? null, ventas: row.ventas ?? null, monto: row.monto ?? null
+      });
     });
-    return [...rows.values()]
-      .map(row => indicators(Object.assign(row, crmTotals(row.leads), { cost: row.reported ? row.cost : null, platformLeads: row.reported ? row.platformLeads : null })))
-      .sort((a, b) => (b.cost || 0) - (a.cost || 0) || b.real - a.real || a.label.localeCompare(b.label, 'es'));
+    return units;
   }
 
-  function totalsOf(rows) {
-    const sum = field => rows.reduce((total, row) => total + (Number(row[field]) || 0), 0);
-    const reported = rows.some(row => row.cost !== null);
-    return indicators({
-      cost: reported ? sum('cost') : null,
-      platformLeads: reported ? sum('platformLeads') : null,
-      real: sum('real'), invalid: sum('invalid'), qualified: sum('qualified'), sales: sum('sales'), revenue: sum('revenue')
+  // Cada cociente usa solo las campanas y meses que tienen los dos datos: con la tabla a medio llenar, el costo
+  // de las campanas sin completar no infla el costo por lead real.
+  function aggregate(units) {
+    const sumOf = (field, list = units) => (list.some(unit => isNum(unit[field]))
+      ? list.reduce((total, unit) => total + (isNum(unit[field]) ? Number(unit[field]) : 0), 0)
+      : null);
+    const pair = (num, den) => {
+      const list = units.filter(unit => isNum(unit[num]) && isNum(unit[den]));
+      const denominator = sumOf(den, list);
+      return list.length && denominator ? sumOf(num, list) / denominator : null;
+    };
+    return {
+      cost: sumOf('cost'),
+      platformLeads: sumOf('platformLeads'),
+      leads: sumOf('leads'),
+      calificados: sumOf('calificados'),
+      ventas: sumOf('ventas'),
+      monto: sumOf('monto'),
+      match: pair('leads', 'platformLeads'),
+      cplPlatform: pair('cost', 'platformLeads'),
+      cplReal: pair('cost', 'leads'),
+      qualifyRate: pair('calificados', 'leads'),
+      costPerQualified: pair('cost', 'calificados'),
+      closeRate: pair('ventas', 'leads'),
+      costPerSale: pair('cost', 'ventas'),
+      ticket: pair('monto', 'ventas'),
+      roas: pair('monto', 'cost'),
+      filled: units.filter(unit => isNum(unit.leads)).length,
+      count: units.length
+    };
+  }
+
+  // Filas de la tabla: en un mes, una por campana (editable); en el ano, la suma de sus meses (solo lectura).
+  function tableRows(scope) {
+    const groups = new Map();
+    unitsOf(scope).forEach(unit => {
+      if (!groups.has(unit.key)) groups.set(unit.key, { key: unit.key, name: unit.name, label: unit.label, platform: unit.platform, objective: unit.objective, units: [] });
+      const group = groups.get(unit.key);
+      if (unit.objective) Object.assign(group, { label: unit.label, objective: unit.objective, platform: unit.platform });
+      group.units.push(unit);
     });
+    return [...groups.values()]
+      .map(group => Object.assign(group, aggregate(group.units)))
+      .sort((a, b) => (b.cost || 0) - (a.cost || 0) || a.label.localeCompare(b.label, 'es'));
   }
 
   // --- Meses ---
 
+  const inScope = (monthId, scope) => (scope === YEAR_SCOPE ? String(monthId).slice(0, 4) === yearOfScope() : monthId === scope);
+
   function availableMonths() {
     const ids = new Set(platformMonths(state.snapshot).filter(month => month.campaigns.length).map(month => month.id));
-    state.leads.forEach(lead => { if (/^\d{4}-\d{2}$/.test(monthOf(lead))) ids.add(monthOf(lead)); });
+    state.results.forEach(row => { if (/^\d{4}-\d{2}$/.test(String(row.mes))) ids.add(String(row.mes)); });
     return [...ids].sort().reverse();
   }
+
+  const yearOfScope = () => (availableMonths()[0] || limaToday()).slice(0, 4);
 
   function defaultScope() {
     const cutoff = state.snapshot && state.snapshot.cutoff ? state.snapshot.cutoff.slice(0, 7) : null;
     const months = availableMonths();
     return months.includes(cutoff) ? cutoff : (months[0] || limaToday().slice(0, 7));
   }
+
+  const editable = () => state.scope !== YEAR_SCOPE && state.status === 'ok';
 
   // --- Render ---
 
@@ -296,7 +267,7 @@
       const reason = String(state.error || '');
       html = `<strong>No se pudo leer el CRM.</strong>${escapeHtml(reason.charAt(0).toUpperCase() + reason.slice(1))}. Los cambios no se guardan hasta que vuelva la conexión: pulsa Actualizar para reintentar.`;
     } else if (!isRemote()) {
-      html = '<strong>Modo de prueba: los leads se guardan solo en este navegador.</strong>Para que el cliente y la agencia vean lo mismo desde cualquier equipo hay que conectar la hoja privada del CRM (README > Leads).';
+      html = '<strong>Modo de prueba: lo que se completa queda solo en este navegador.</strong>Para que el cliente y la agencia vean lo mismo desde cualquier equipo hay que conectar la hoja privada del CRM (README > Leads).';
     }
     host.innerHTML = html;
     host.hidden = !html;
@@ -307,283 +278,218 @@
     const host = document.getElementById('crm-filters');
     if (!host) return;
     const months = availableMonths();
-    const year = yearOfScope();
-    const monthOptions = months.map(id => `<option value="${id}"${id === state.scope ? ' selected' : ''}>${escapeHtml(monthLabel(id))}</option>`).join('')
-      + `<option value="${YEAR_SCOPE}"${state.scope === YEAR_SCOPE ? ' selected' : ''}>Todo ${escapeHtml(year)}</option>`;
-    const campaigns = leadCampaigns();
-    const campaignOptions = ['<option value="all">Todas las campañas</option>']
-      .concat(campaigns.map(campaign => `<option value="${escapeHtml(campaign.key)}"${campaign.key === state.campaign ? ' selected' : ''}>${escapeHtml(campaign.label)}</option>`))
-      .concat(`<option value=""${state.campaign === '' ? ' selected' : ''}>Sin campaña identificada</option>`).join('');
-    const estadoOptions = ['<option value="all">Todos los estados</option>']
-      .concat(ESTADOS.map(item => `<option value="${item.key}"${item.key === state.estado ? ' selected' : ''}>${item.label || item.key}</option>`)).join('');
+    const options = months.map(id => `<option value="${id}"${id === state.scope ? ' selected' : ''}>${escapeHtml(monthLabel(id))}</option>`).join('')
+      + `<option value="${YEAR_SCOPE}"${state.scope === YEAR_SCOPE ? ' selected' : ''}>Todo ${escapeHtml(yearOfScope())}</option>`;
     const where = isRemote() ? 'Hoja privada del CRM' : 'Solo este navegador';
+    const status = state.status === 'loading' ? 'Cargando...' : state.status === 'error' ? 'Sin conexión' : 'Cada cambio se guarda solo';
     host.innerHTML = `
-      <label class="retail-filter" for="crm-filter-month"><span>Periodo</span><select id="crm-filter-month">${monthOptions}</select><small>Mes de la fecha de cada lead</small></label>
-      <label class="retail-filter" for="crm-filter-campaign"><span>Campaña</span><select id="crm-filter-campaign">${campaignOptions}</select><small>${campaigns.length} ${campaigns.length === 1 ? 'campaña' : 'campañas'} de leads o WhatsApp</small></label>
-      <label class="retail-filter" for="crm-filter-estado"><span>Estado</span><select id="crm-filter-estado">${estadoOptions}</select><small>Filtra la tabla de leads</small></label>
-      <div class="retail-filter"><span>Guardado</span><p class="crm-where">${escapeHtml(where)}</p><small id="crm-sync">${state.status === 'loading' ? 'Cargando...' : leadCount('registrados')}</small></div>`;
+      <label class="retail-filter" for="crm-filter-month"><span>Periodo</span><select id="crm-filter-month">${options}</select><small>Elige un mes para completar los datos</small></label>
+      <div class="retail-filter"><span>Guardado</span><p class="crm-where">${escapeHtml(where)}</p><small id="crm-sync">${status}</small></div>
+      <div class="retail-filter crm-actions-filter"><span>Datos</span><button type="button" class="gasto-tool-btn" id="crm-refresh">Actualizar</button><small>Vuelve a leer la hoja</small></div>`;
   }
 
   function renderKpis(totals) {
     const host = document.getElementById('crm-kpis');
     if (!host) return;
+    const coverage = totals.count ? `${totals.filled} de ${totals.count} campañas completadas` : 'Sin campañas';
     const cards = [
       ['Leads de la plataforma', fmtDecimal(totals.platformLeads), 'Conversiones y conversaciones reportadas'],
-      ['Leads reales', fmtCount(totals.real), totals.platformLeads ? `${fmtPercent(totals.match)} de lo reportado` : 'Registrados por el cliente'],
-      ['Calificados', fmtCount(totals.qualified), `Tasa ${fmtPercent(totals.qualifyRate)}`],
-      ['Ventas', fmtCount(totals.sales), `Cierre ${fmtPercent(totals.closeRate)}`],
-      ['Monto vendido', fmtMoney(totals.revenue), `Ticket ${fmtMoney(totals.ticket)}`],
+      ['Leads reales', fmtCount(totals.leads), coverage],
+      ['Coincidencia', fmtPercent(totals.match), 'Leads reales / de la plataforma'],
+      ['Calificados', fmtCount(totals.calificados), `Tasa ${fmtPercent(totals.qualifyRate)}`],
+      ['Ventas', fmtCount(totals.ventas), `Cierre ${fmtPercent(totals.closeRate)}`],
       ['Costo por lead real', fmtMoney(totals.cplReal), `Plataforma ${fmtMoney(totals.cplPlatform)}`],
       ['Costo por venta', fmtMoney(totals.costPerSale), `Por calificado ${fmtMoney(totals.costPerQualified)}`],
-      ['ROAS', fmtRoas(totals.roas), 'Monto vendido / inversión']
+      ['ROAS', fmtRoas(totals.roas), `Monto vendido ${fmtMoney(totals.monto)}`]
     ];
     host.innerHTML = cards.map(([label, value, meta]) => `<div class="kpi-pill"><span>${label}</span><strong>${value}</strong><small>${meta}</small></div>`).join('');
   }
 
   function objectivePill(objective) {
     const info = OBJECTIVES[objective];
-    return info ? `<span class="status-pill ${info.tone}">${info.label}</span>` : '<span class="no-data">-</span>';
+    return info ? `<span class="status-pill ${info.tone}">${info.label}</span>` : '<span class="no-data">Sin informe</span>';
   }
 
-  // Valor con su tasa debajo (calificados y ventas).
-  const withRate = (count, rate) => `${fmtCount(count)}${isNum(rate) ? `<small>${fmtPercent(rate)}</small>` : ''}`;
+  // Celdas calculadas de una fila (se repintan sin tocar los campos que se estan escribiendo).
+  const DERIVED = [
+    ['match', row => fmtPercent(row.match)],
+    ['cplPlatform', row => fmtMoney(row.cplPlatform)],
+    ['cplReal', row => fmtMoney(row.cplReal)],
+    ['costPerQualified', row => fmtMoney(row.costPerQualified)],
+    ['costPerSale', row => fmtMoney(row.costPerSale)],
+    ['roas', row => fmtRoas(row.roas)]
+  ];
+  // Tasa debajo de calificados y ventas.
+  const RATES = { calificados: row => row.qualifyRate, ventas: row => row.closeRate };
 
-  function renderSummary(rows, totals) {
-    const body = document.getElementById('crm-summary-body');
-    if (!body) return;
-    const scopeLabel = state.scope === YEAR_SCOPE ? `Todo ${yearOfScope()}` : monthLabel(state.scope);
-    document.getElementById('crm-summary-title').textContent = `Indicadores por campaña | ${scopeLabel}`;
-    document.getElementById('crm-summary-sub').textContent = `Inversión y leads de la plataforma se cargan solos; leads reales, calificados y ventas salen de lo que registra el cliente.`;
-    const cell = row => `
-        <td class="num">${row.cost === null ? '<span class="no-data">Sin informe</span>' : fmtMoney(row.cost)}</td>
-        <td class="num">${row.platformLeads === null ? '<span class="no-data">-</span>' : fmtDecimal(row.platformLeads)}</td>
-        <td class="num crm-strong">${fmtCount(row.real)}${row.invalid ? `<small>${row.invalid} no válidos</small>` : ''}</td>
-        <td class="num">${fmtPercent(row.match)}</td>
-        <td class="num">${withRate(row.qualified, row.qualifyRate)}</td>
-        <td class="num">${withRate(row.sales, row.closeRate)}</td>
-        <td class="num">${fmtMoney(row.revenue)}</td>
-        <td class="num">${fmtMoney(row.cplPlatform)}</td>
-        <td class="num crm-strong">${fmtMoney(row.cplReal)}</td>
-        <td class="num">${fmtMoney(row.costPerQualified)}</td>
-        <td class="num crm-strong">${fmtMoney(row.costPerSale)}</td>
-        <td class="num">${fmtRoas(row.roas)}</td>`;
-    body.innerHTML = rows.map(row => `
-      <tr>
-        <td class="campaign-name"><span>${escapeHtml(row.label)}</span>${row.name && row.name !== row.label ? `<small>${escapeHtml(row.name)}</small>` : ''}</td>
-        <td>${escapeHtml(row.platform)}</td>
-        <td>${objectivePill(row.objective)}</td>${cell(row)}
-      </tr>`).join('') + (rows.length ? `
-      <tr class="gasto-total-row"><td>Total</td><td></td><td></td>${cell(totals)}</tr>` : '<tr><td class="table-empty" colspan="15">Sin campañas de leads ni leads registrados en el periodo.</td></tr>');
-    const foot = document.getElementById('crm-summary-foot');
-    if (foot) {
-      foot.textContent = 'Leads reales = leads registrados menos los "No válido" (spam, duplicados). Calificados = Calificado, Cotizado o Venta. '
-        + 'Coincidencia = leads reales / leads de la plataforma. Costo por lead real, por calificado y por venta = inversión del periodo dividida entre cada conteo; ROAS = monto vendido / inversión. '
-        + 'Google Ads reporta como leads sus conversiones (contactos); en Meta Ads serían los formularios o las conversaciones de WhatsApp.';
+  function clientCell(row, field) {
+    const rate = RATES[field.key] ? `<small data-rate="${field.key}">${isNum(RATES[field.key](row)) ? fmtPercent(RATES[field.key](row)) : ''}</small>` : '';
+    if (!editable() || !row.units || row.units.length !== 1) {
+      const value = field.kind === 'money' ? fmtMoney(row[field.key]) : fmtCount(row[field.key]);
+      return `<td class="num crm-client">${value}${rate}</td>`;
     }
+    const value = isNum(row[field.key]) ? row[field.key] : '';
+    const step = field.kind === 'money' ? '0.01' : '1';
+    return `<td class="num crm-client"><input class="crm-cell" type="number" min="0" step="${step}" inputmode="${field.kind === 'money' ? 'decimal' : 'numeric'}" data-field="${field.key}" value="${escapeHtml(value)}" placeholder="-" aria-label="${escapeHtml(`${field.label} de ${row.label}`)}">${rate}</td>`;
   }
 
-  function campaignOptions(lead) {
-    const campaigns = leadCampaigns();
-    const key = normalize(lead.campana);
-    const options = campaigns.map(campaign => `<option value="${escapeHtml(campaign.name)}"${campaign.key === key ? ' selected' : ''}>${escapeHtml(campaign.label)}</option>`);
-    // Una campana que ya no esta en el informe se conserva tal cual en el lead.
-    if (key && !campaigns.some(campaign => campaign.key === key)) options.push(`<option value="${escapeHtml(lead.campana)}" selected>${escapeHtml(lead.campana)}</option>`);
-    options.push(`<option value=""${key ? '' : ' selected'}>Sin campaña identificada</option>`);
-    return options.join('');
-  }
-
-  const selectOptions = (items, value) => items.map(item => {
-    const key = typeof item === 'string' ? item : item.key;
-    const label = typeof item === 'string' ? item : item.label || item.key;
-    return `<option value="${escapeHtml(key)}"${key === value ? ' selected' : ''}>${escapeHtml(label)}</option>`;
-  }).join('');
-
-  function rowStatusHtml(id) {
-    const status = state.rowStatus.get(id);
+  function rowStatusHtml(key) {
+    const status = state.rowStatus.get(key);
     if (!status) return '';
     if (status.kind === 'saving') return '<span class="crm-row-status">Guardando...</span>';
     if (status.kind === 'saved') return '<span class="crm-row-status ok">Guardado</span>';
     return `<span class="crm-row-status error" title="${escapeHtml(status.message)}">${escapeHtml(status.message)}</span>`;
   }
 
-  function visibleLeads() {
-    return state.leads
-      .filter(lead => inScope(monthOf(lead), state.scope))
-      .filter(lead => state.campaign === 'all' || normalize(lead.campana) === state.campaign)
-      .filter(lead => state.estado === 'all' || lead.estado === state.estado)
-      .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)) || String(b.creado || '').localeCompare(String(a.creado || '')));
-  }
-
-  function renderLeads() {
-    const body = document.getElementById('crm-leads-body');
-    if (!body) return;
-    const leads = visibleLeads();
-    const sub = document.getElementById('crm-leads-sub');
-    if (sub) sub.textContent = `${leads.length} ${leads.length === 1 ? 'lead' : 'leads'} en la vista. Cada cambio se guarda solo. Sin teléfonos ni correos: usa una referencia interna (por ejemplo, el número de ticket o la empresa).`;
-    const add = document.getElementById('crm-add');
-    if (add) add.disabled = state.status !== 'ok';
-    if (state.status === 'loading') { body.innerHTML = '<tr><td class="table-empty" colspan="8">Cargando leads...</td></tr>'; return; }
-    if (state.status === 'error') { body.innerHTML = '<tr><td class="table-empty" colspan="8">No se pudieron leer los leads de la hoja. Pulsa Actualizar para reintentar.</td></tr>'; return; }
-    if (!leads.length) { body.innerHTML = '<tr><td class="table-empty" colspan="8">Sin leads en esta vista. Pulsa "Agregar lead" para registrar el primero.</td></tr>'; return; }
-    body.innerHTML = leads.map(lead => {
-      const tone = estadoInfo(lead.estado).tone;
-      const sale = lead.estado === 'Venta';
-      return `
-      <tr data-lead="${escapeHtml(lead.id)}">
-        <td><input class="crm-input crm-date" type="date" data-field="fecha" value="${escapeHtml(lead.fecha)}" max="${limaToday()}" aria-label="Fecha del lead"></td>
-        <td><select class="crm-input crm-campaign" data-field="campana" aria-label="Campaña">${campaignOptions(lead)}</select></td>
-        <td><select class="crm-input" data-field="canal" aria-label="Canal">${selectOptions(CANALES, lead.canal)}</select></td>
-        <td><select class="crm-input crm-estado tone-${tone}" data-field="estado" aria-label="Estado">${selectOptions(ESTADOS, lead.estado)}</select></td>
-        <td><input class="crm-input crm-money" type="number" min="0" step="0.01" inputmode="decimal" data-field="monto" value="${sale && isNum(lead.monto) ? escapeHtml(lead.monto) : ''}" placeholder="${sale ? 'S/ 0.00' : '-'}"${sale ? '' : ' disabled'} aria-label="Monto de la venta"></td>
-        <td><input class="crm-input" type="text" maxlength="160" data-field="referencia" value="${escapeHtml(lead.referencia || '')}" placeholder="Ticket, empresa..." aria-label="Referencia"></td>
-        <td><input class="crm-input crm-note" type="text" maxlength="160" data-field="nota" value="${escapeHtml(lead.nota || '')}" placeholder="Nota" aria-label="Nota"></td>
-        <td class="crm-actions">${rowStatusHtml(lead.id)}<button class="crm-delete" type="button" data-delete="${escapeHtml(lead.id)}" title="Eliminar lead" aria-label="Eliminar lead">×</button></td>
+  function rowHtml(row, total = false) {
+    const derived = DERIVED.map(([name, value]) => `<td class="num${name === 'cplReal' || name === 'costPerSale' ? ' crm-strong' : ''}" data-cell="${name}">${value(row)}</td>`).join('');
+    if (total) {
+      return `<tr class="gasto-total-row" data-total>
+        <td>Total</td><td></td><td></td>
+        <td class="num">${fmtMoney(row.cost)}</td><td class="num">${fmtDecimal(row.platformLeads)}</td>
+        ${CLIENT_FIELDS.map(field => `<td class="num crm-client" data-sum="${field.key}">${field.kind === 'money' ? fmtMoney(row[field.key]) : fmtCount(row[field.key])}</td>`).join('')}
+        ${derived}<td></td>
       </tr>`;
-    }).join('');
+    }
+    const key = row.units.length === 1 ? resultKey(row.units[0].month, row.name) : row.key;
+    return `<tr data-row="${escapeHtml(key)}">
+        <td class="campaign-name"><span>${escapeHtml(row.label)}</span>${row.name && row.name !== row.label ? `<small>${escapeHtml(row.name)}</small>` : ''}</td>
+        <td>${escapeHtml(row.platform)}</td>
+        <td>${objectivePill(row.objective)}</td>
+        <td class="num">${row.cost === null ? '<span class="no-data">-</span>' : fmtMoney(row.cost)}</td>
+        <td class="num">${row.platformLeads === null ? '<span class="no-data">-</span>' : fmtDecimal(row.platformLeads)}</td>
+        ${CLIENT_FIELDS.map(field => clientCell(row, field)).join('')}
+        ${derived}
+        <td class="crm-actions" data-status>${rowStatusHtml(key)}</td>
+      </tr>`;
   }
 
-  function renderNumbers() {
-    const rows = summaryRows(state.scope);
-    const totals = totalsOf(rows);
+  function renderTable() {
+    const body = document.getElementById('crm-summary-body');
+    if (!body) return;
+    const scopeLabel = state.scope === YEAR_SCOPE ? `Todo ${yearOfScope()}` : monthLabel(state.scope);
+    document.getElementById('crm-summary-title').textContent = `Leads por campaña | ${scopeLabel}`;
+    const sub = document.getElementById('crm-summary-sub');
+    if (sub) {
+      sub.textContent = state.scope === YEAR_SCOPE
+        ? 'Suma de los meses del año. Para completar o corregir los datos, elige un mes.'
+        : 'La inversión y los leads de la plataforma se cargan solos. Completa en las columnas resaltadas lo que de verdad llegó de cada campaña: cada cambio se guarda solo.';
+    }
+    if (state.status === 'loading') { body.innerHTML = '<tr><td class="table-empty" colspan="16">Cargando...</td></tr>'; return; }
+    const rows = tableRows(state.scope);
+    if (!rows.length) { body.innerHTML = '<tr><td class="table-empty" colspan="16">Sin campañas de leads en el periodo.</td></tr>'; return; }
+    body.innerHTML = rows.map(row => rowHtml(row)).join('') + rowHtml(aggregate(rows.flatMap(row => row.units)), true);
+    const foot = document.getElementById('crm-summary-foot');
+    if (foot) {
+      foot.textContent = 'Leads reales, calificados, ventas y monto vendido los completa el cliente; vacío = sin dato. Coincidencia = leads reales / leads de la plataforma. '
+        + 'Costo por lead real, por calificado y por venta = inversión dividida entre cada conteo; ROAS = monto vendido / inversión. '
+        + 'Cada indicador usa solo las campañas que tienen ese dato completo. Google Ads reporta como leads sus conversiones (contactos); en Meta Ads serían los formularios o las conversaciones de WhatsApp.';
+    }
+  }
+
+  // Repinta las celdas calculadas, los totales y los KPIs tras un cambio, sin tocar los campos.
+  function refreshNumbers() {
+    const rows = tableRows(state.scope);
+    const totals = aggregate(rows.flatMap(row => row.units));
     renderKpis(totals);
-    renderSummary(rows, totals);
-    const counter = document.getElementById('crm-sync');
-    if (counter && state.status === 'ok') counter.textContent = leadCount('registrados');
+    const body = document.getElementById('crm-summary-body');
+    if (!body) return;
+    rows.forEach(row => {
+      const key = row.units.length === 1 ? resultKey(row.units[0].month, row.name) : row.key;
+      const tr = body.querySelector(`tr[data-row="${CSS.escape(key)}"]`);
+      if (!tr) return;
+      DERIVED.forEach(([name, value]) => { const cell = tr.querySelector(`[data-cell="${name}"]`); if (cell) cell.innerHTML = value(row); });
+      Object.keys(RATES).forEach(field => { const small = tr.querySelector(`[data-rate="${field}"]`); if (small) small.textContent = isNum(RATES[field](row)) ? fmtPercent(RATES[field](row)) : ''; });
+    });
+    const total = body.querySelector('tr[data-total]');
+    if (total) {
+      DERIVED.forEach(([name, value]) => { const cell = total.querySelector(`[data-cell="${name}"]`); if (cell) cell.innerHTML = value(totals); });
+      CLIENT_FIELDS.forEach(field => { const cell = total.querySelector(`[data-sum="${field.key}"]`); if (cell) cell.textContent = field.kind === 'money' ? fmtMoney(totals[field.key]) : fmtCount(totals[field.key]); });
+    }
   }
 
   function updateTopbar() {
     const view = document.getElementById('view-leads');
     if (!view || !view.classList.contains('visible')) return;
     const status = document.getElementById('topbar-status');
-    if (status) status.textContent = `${isRemote() ? 'CRM en la hoja privada' : 'CRM en este navegador'} | ${leadCount()}`;
+    if (status) status.textContent = `${isRemote() ? 'CRM en la hoja privada' : 'CRM en este navegador'} | ${state.scope === YEAR_SCOPE ? `Todo ${yearOfScope()}` : monthLabel(state.scope)}`;
   }
 
   // El modulo aparece en el panel lateral solo si la marca tiene campanas de leads o WhatsApp.
   function updateNavItem() {
     const item = document.querySelector('.s-item[data-view-target="view-leads"]');
-    if (item && state.snapshot) item.hidden = !leadCampaigns().length;
+    if (item && state.snapshot) item.hidden = !hasLeadCampaigns();
   }
 
   function render() {
-    if (!state.scope || (state.scope !== YEAR_SCOPE && !availableMonths().includes(state.scope) && availableMonths().length)) state.scope = defaultScope();
+    const months = availableMonths();
+    if (!state.scope || (state.scope !== YEAR_SCOPE && months.length && !months.includes(state.scope))) state.scope = defaultScope();
     renderMode();
     renderFilters();
-    renderNumbers();
-    renderLeads();
+    renderKpis(aggregate(unitsOf(state.scope)));
+    renderTable();
     updateTopbar();
   }
 
   // --- Edicion ---
 
-  const leadById = id => state.leads.find(lead => lead.id === id) || null;
-
-  function setRowStatus(id, kind, message) {
-    state.rowStatus.set(id, { kind, message });
-    const row = document.querySelector(`#crm-leads-body tr[data-lead="${CSS.escape(id)}"] .crm-actions`);
-    if (row) {
-      const current = row.querySelector('.crm-row-status');
-      if (current) current.remove();
-      row.insertAdjacentHTML('afterbegin', rowStatusHtml(id));
-    }
+  function setRowStatus(key, kind, message) {
+    state.rowStatus.set(key, { kind, message });
+    const cell = document.querySelector(`#crm-summary-body tr[data-row="${CSS.escape(key)}"] [data-status]`);
+    if (cell) cell.innerHTML = rowStatusHtml(key);
   }
 
-  async function persist(lead) {
-    // Solo una venta lleva monto (igual que en crm-leads.gs).
-    if (lead.estado !== 'Venta') lead.monto = null;
-    const problem = validate(lead);
-    if (problem) { setRowStatus(lead.id, 'error', problem); return; }
-    setRowStatus(lead.id, 'saving');
+  // Enteros desde 0, calificados hasta los leads y ventas hasta los calificados.
+  function validate(row) {
+    for (const field of CLIENT_FIELDS) {
+      const value = row[field.key];
+      if (!isNum(value)) continue;
+      if (Number(value) < 0) return `${field.label}: desde 0`;
+      if (field.kind === 'count' && !Number.isInteger(Number(value))) return `${field.label}: número entero`;
+    }
+    if (isNum(row.leads) && isNum(row.calificados) && Number(row.calificados) > Number(row.leads)) return 'Hay más calificados que leads';
+    if (isNum(row.calificados) && isNum(row.ventas) && Number(row.ventas) > Number(row.calificados)) return 'Hay más ventas que calificados';
+    if (isNum(row.leads) && isNum(row.ventas) && Number(row.ventas) > Number(row.leads)) return 'Hay más ventas que leads';
+    return null;
+  }
+
+  async function persist(key, row) {
+    const problem = validate(row);
+    if (problem) { setRowStatus(key, 'error', problem); return; }
+    setRowStatus(key, 'saving');
     try {
-      const saved = await store.save(lead);
-      const current = leadById(lead.id);
-      if (current && saved) Object.assign(current, { creado: saved.creado, actualizado: saved.actualizado });
-      setRowStatus(lead.id, 'saved');
+      const saved = await store.save(row);
+      if (saved && saved.actualizado) row.actualizado = saved.actualizado;
+      setRowStatus(key, 'saved');
     } catch (error) {
-      setRowStatus(lead.id, 'error', `No se guardó: ${error.message}`);
+      setRowStatus(key, 'error', `No se guardó: ${error.message}`);
     }
   }
 
-  function scheduleSave(lead) {
-    clearTimeout(state.timers.get(lead.id));
-    state.timers.set(lead.id, setTimeout(() => persist(lead), SAVE_DELAY));
-  }
-
-  function onFieldChange(input) {
-    const row = input.closest('tr[data-lead]');
-    const lead = row && leadById(row.dataset.lead);
-    if (!lead) return;
+  function onCellInput(input) {
+    const tr = input.closest('tr[data-row]');
+    if (!tr || !editable()) return;
+    const key = tr.dataset.row;
+    const unit = unitsOf(state.scope).find(item => resultKey(item.month, item.name) === key);
+    if (!unit) return;
+    let row = resultFor(unit.month, unit.name);
+    if (!row) {
+      row = { mes: unit.month, plataforma: unit.platform, campana: unit.name, leads: null, calificados: null, ventas: null, monto: null };
+      state.results.push(row);
+    }
     const field = input.dataset.field;
-    lead[field] = input.value;
-    if (field === 'campana') {
-      const campaign = leadCampaigns().find(item => item.name === input.value);
-      lead.plataforma = campaign ? campaign.platform : 'Otro';
-    }
-    if (field === 'monto') lead.monto = input.value === '' ? null : Number(input.value);
-    if (field === 'estado') {
-      if (lead.estado !== 'Venta') lead.monto = null;
-      // El monto solo se habilita en ventas y el color sigue al estado: se repinta la fila.
-      renderLeads();
-      const select = document.querySelector(`#crm-leads-body tr[data-lead="${CSS.escape(lead.id)}"] [data-field="estado"]`);
-      if (select) select.focus({ preventScroll: true });
-    }
-    renderNumbers();
-    scheduleSave(lead);
-  }
-
-  // Fecha por defecto: hoy si cae en el periodo elegido; si no, el ultimo dia de ese mes (o el primero, si es futuro).
-  function defaultDate() {
-    const today = limaToday();
-    if (state.scope === YEAR_SCOPE || today.slice(0, 7) === state.scope) return today;
-    if (state.scope > today.slice(0, 7)) return `${state.scope}-01`;
-    const [year, month] = state.scope.split('-').map(Number);
-    return `${state.scope}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
-  }
-
-  async function addLead() {
-    const campaigns = leadCampaigns();
-    const chosen = (state.campaign !== 'all' && campaigns.find(campaign => campaign.key === state.campaign))
-      || platformMonths(state.snapshot).filter(month => inScope(month.id, state.scope)).flatMap(month => month.campaigns).sort((a, b) => b.cost - a.cost)[0]
-      || campaigns[0] || null;
-    const lead = {
-      id: newId(),
-      fecha: defaultDate(),
-      plataforma: chosen ? chosen.platform : 'Otro',
-      campana: chosen ? chosen.name : '',
-      canal: chosen && chosen.objective === 'whatsapp' ? 'WhatsApp' : 'Formulario web',
-      estado: 'Nuevo',
-      monto: null,
-      referencia: '',
-      nota: '',
-      // Con fecha de creacion desde el inicio queda primero en la tabla y no salta de fila al guardarse.
-      creado: new Date().toISOString()
-    };
-    state.leads.push(lead);
-    state.estado = 'all';
-    render();
-    const input = document.querySelector(`#crm-leads-body tr[data-lead="${CSS.escape(lead.id)}"] [data-field="referencia"]`);
-    if (input) input.focus();
-    await persist(lead);
-  }
-
-  async function deleteLead(id) {
-    const lead = leadById(id);
-    if (!lead || !window.confirm('¿Eliminar este lead del CRM?')) return;
-    clearTimeout(state.timers.get(id));
-    try {
-      await store.remove(id);
-      state.leads = state.leads.filter(item => item.id !== id);
-      state.rowStatus.delete(id);
-      render();
-    } catch (error) {
-      setRowStatus(id, 'error', `No se eliminó: ${error.message}`);
-    }
+    row[field] = input.value === '' ? null : Number(input.value);
+    input.classList.toggle('is-filled', input.value !== '');
+    refreshNumbers();
+    clearTimeout(state.timers.get(key));
+    state.timers.set(key, setTimeout(() => persist(key, row), SAVE_DELAY));
   }
 
   async function reload() {
     state.status = 'loading';
     render();
     try {
-      state.leads = (await store.list()).filter(lead => lead && lead.id);
+      state.results = (await store.list()).filter(row => row && row.mes && row.campana).map(row => Object.assign({}, row, { mes: String(row.mes) }));
       state.status = 'ok';
       state.error = null;
     } catch (error) {
@@ -600,7 +506,6 @@
     try {
       const prefs = JSON.parse(window.localStorage.getItem(PREFS_KEY) || '{}');
       if (prefs.scope) state.scope = prefs.scope;
-      if (prefs.campaign !== undefined) state.campaign = prefs.campaign;
     } catch (error) {
       /* sin preferencias: valores por defecto */
     }
@@ -608,7 +513,7 @@
 
   function savePrefs() {
     try {
-      window.localStorage.setItem(PREFS_KEY, JSON.stringify({ scope: state.scope, campaign: state.campaign }));
+      window.localStorage.setItem(PREFS_KEY, JSON.stringify({ scope: state.scope }));
     } catch (error) {
       /* sin almacenamiento: la seleccion dura lo que la pestana */
     }
@@ -618,24 +523,15 @@
     const view = document.getElementById('view-leads');
     if (!view) return;
     view.addEventListener('change', event => {
-      const target = event.target;
-      if (target.id === 'crm-filter-month') state.scope = target.value;
-      else if (target.id === 'crm-filter-campaign') state.campaign = target.value;
-      else if (target.id === 'crm-filter-estado') state.estado = target.value;
-      else if (target.dataset && target.dataset.field) { onFieldChange(target); return; }
-      else return;
+      if (event.target.id !== 'crm-filter-month') return;
+      state.scope = event.target.value;
       savePrefs();
       render();
     });
-    // Los textos se guardan mientras se escriben (con una pausa), no solo al salir del campo.
     view.addEventListener('input', event => {
-      const target = event.target;
-      if (target.dataset && (target.dataset.field === 'referencia' || target.dataset.field === 'nota' || target.dataset.field === 'monto')) onFieldChange(target);
+      if (event.target.classList && event.target.classList.contains('crm-cell')) onCellInput(event.target);
     });
     view.addEventListener('click', event => {
-      const remove = event.target.closest('[data-delete]');
-      if (remove) { deleteLead(remove.dataset.delete); return; }
-      if (event.target.closest('#crm-add')) { addLead(); return; }
       if (event.target.closest('#crm-refresh')) reload();
     });
   }
@@ -645,7 +541,7 @@
     updateNavItem();
   }
 
-  // Se inicia al abrir la vista (navigation.js): la primera vez lee los leads.
+  // Se inicia al abrir la vista (navigation.js): la primera vez lee la hoja.
   function init() {
     if (!state.ready) {
       state.ready = true;
