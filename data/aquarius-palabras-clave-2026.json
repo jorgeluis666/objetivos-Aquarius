@@ -3,7 +3,7 @@
   "dashboard": "Analisis de Palabras Clave",
   "schemaVersion": 1,
   "status": "ok",
-  "defaultMonth": "2026-09",
+  "defaultMonth": "2026-10",
   "months": [
     {
       "id": "2026-01",
@@ -4641,12 +4641,343 @@
           "conversions": 1
         }
       ]
+    },
+    {
+      "id": "2026-10",
+      "label": "Octubre 2026",
+      "sourceFile": "Aquarius KW octubre 2026",
+      "driveFileId": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
+      "period": {
+        "start": "2026-10-01",
+        "end": "2026-10-18"
+      },
+      "keywords": [
+        {
+          "keyword": "Fotogrametría con drones",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "status": "Apto",
+          "impressions": 33,
+          "cost": 679,
+          "clicks": 5,
+          "conversions": 0
+        },
+        {
+          "keyword": "topografía con drones",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "status": "Apto",
+          "impressions": 53,
+          "cost": 1343,
+          "clicks": 7,
+          "conversions": 2
+        },
+        {
+          "keyword": "tasación de terrenos",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "status": "Apto",
+          "impressions": 6,
+          "cost": 0,
+          "clicks": 0,
+          "conversions": 0
+        },
+        {
+          "keyword": "supervisión de obras con drones",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "status": "Apto",
+          "impressions": 2,
+          "cost": 0,
+          "clicks": 0,
+          "conversions": 0
+        },
+        {
+          "keyword": "Drones para topografía",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "status": "Apto",
+          "impressions": 2,
+          "cost": 0,
+          "clicks": 0,
+          "conversions": 0
+        },
+        {
+          "keyword": "fotogrametría con drones",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "status": "Apto",
+          "impressions": 912,
+          "cost": 1553,
+          "clicks": 70,
+          "conversions": 11
+        },
+        {
+          "keyword": "levantamiento fotogramétrico",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
+          "status": "Apto",
+          "impressions": 49,
+          "cost": 1025,
+          "clicks": 4,
+          "conversions": 0
+        },
+        {
+          "keyword": "control de inventarios",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
+          "status": "Apto",
+          "impressions": 32,
+          "cost": 433,
+          "clicks": 4,
+          "conversions": 1
+        },
+        {
+          "keyword": "Logística empresarial",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
+          "status": "Apto",
+          "impressions": 211,
+          "cost": 3527,
+          "clicks": 18,
+          "conversions": 1
+        },
+        {
+          "keyword": "Servicios logísticos",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
+          "status": "Apto",
+          "impressions": 164,
+          "cost": 3679,
+          "clicks": 21,
+          "conversions": 3
+        },
+        {
+          "keyword": "Logística Perú",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
+          "status": "Apto",
+          "impressions": 8,
+          "cost": 0,
+          "clicks": 0,
+          "conversions": 0
+        },
+        {
+          "keyword": "Soluciones logísticas",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
+          "status": "Apto",
+          "impressions": 12,
+          "cost": 0,
+          "clicks": 0,
+          "conversions": 0
+        },
+        {
+          "keyword": "Innovación en TI",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
+          "status": "Apto",
+          "impressions": 8,
+          "cost": 1,
+          "clicks": 1,
+          "conversions": 0
+        },
+        {
+          "keyword": "Software de RRHH",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
+          "status": "Apto",
+          "impressions": 285,
+          "cost": 2799,
+          "clicks": 25,
+          "conversions": 0
+        },
+        {
+          "keyword": "Software de asistencia",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
+          "status": "Apto",
+          "impressions": 20,
+          "cost": 3,
+          "clicks": 2,
+          "conversions": 0
+        },
+        {
+          "keyword": "control patrimonial",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
+          "status": "Apto",
+          "impressions": 8,
+          "cost": 0,
+          "clicks": 0,
+          "conversions": 0
+        },
+        {
+          "keyword": "inventario de existencias",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
+          "status": "Apto",
+          "impressions": 40,
+          "cost": 573,
+          "clicks": 3,
+          "conversions": 0
+        },
+        {
+          "keyword": "inventario de activos fijos",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
+          "status": "Apto",
+          "impressions": 30,
+          "cost": 1956,
+          "clicks": 2,
+          "conversions": 0
+        },
+        {
+          "keyword": "gestion de activos",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
+          "status": "Apto",
+          "impressions": 45,
+          "cost": 2169,
+          "clicks": 7,
+          "conversions": 4
+        },
+        {
+          "keyword": "Almacenes en Perú",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
+          "status": "Apto",
+          "impressions": 24,
+          "cost": 378,
+          "clicks": 2,
+          "conversions": 0
+        },
+        {
+          "keyword": "Alquiler de almacenes",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
+          "status": "Apto",
+          "impressions": 92,
+          "cost": 1061,
+          "clicks": 8,
+          "conversions": 0
+        },
+        {
+          "keyword": "Gestión de almacenes",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
+          "status": "Apto",
+          "impressions": 56,
+          "cost": 1102,
+          "clicks": 6,
+          "conversions": 0
+        },
+        {
+          "keyword": "\"outsourcing de almacenes\"",
+          "matchType": "Concordancia de frase",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
+          "status": "Apto",
+          "impressions": 4,
+          "cost": 0,
+          "clicks": 0,
+          "conversions": 0
+        },
+        {
+          "keyword": "Servicios de almacenes",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
+          "status": "Apto",
+          "impressions": 76,
+          "cost": 751,
+          "clicks": 4,
+          "conversions": 0
+        },
+        {
+          "keyword": "alquiler de almacenes",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
+          "status": "Apto",
+          "impressions": 208,
+          "cost": 3636,
+          "clicks": 17,
+          "conversions": 1
+        },
+        {
+          "keyword": "Servicios logísticos",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
+          "status": "Apto",
+          "impressions": 265,
+          "cost": 6951,
+          "clicks": 25,
+          "conversions": 4
+        },
+        {
+          "keyword": "Almacenaje",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
+          "status": "Apto",
+          "impressions": 100,
+          "cost": 1887,
+          "clicks": 9,
+          "conversions": 5
+        },
+        {
+          "keyword": "almacenes en lurin",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
+          "status": "Apto",
+          "impressions": 12,
+          "cost": 189,
+          "clicks": 1,
+          "conversions": 0
+        },
+        {
+          "keyword": "archivo y custodia de documentos",
+          "matchType": "Concordancia amplia",
+          "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
+          "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
+          "status": "Apto",
+          "impressions": 6,
+          "cost": 383,
+          "clicks": 1,
+          "conversions": 0
+        }
+      ]
     }
   ],
   "drive": {
     "folderId": "1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO",
     "discovery": "publica",
-    "lastSync": "2026-10-16T15:24:34Z",
+    "lastSync": "2026-10-20T00:28:26Z",
     "files": [
       {
         "id": "17oCEc4yhZfWSY8y_km3IPYb0hmH2VKHBXOi60LvHd0w",
@@ -4686,6 +5017,11 @@
       {
         "id": "17vmhPS7a8f9XvWSSA9JmzsK3tA0GHbBcl8ehcSOq0DM",
         "name": "Aquarius KW mayo 2026",
+        "modifiedTime": null
+      },
+      {
+        "id": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
+        "name": "Aquarius KW octubre 2026",
         "modifiedTime": null
       },
       {
