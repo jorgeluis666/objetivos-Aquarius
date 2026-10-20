@@ -256,6 +256,14 @@ basta con subir su informe a esa carpeta: la sincronizacion lo detecta por el
 rango de fechas del archivo y lo suma a las pestanas de mes. La carpeta esta en
 `data/drive-config.json` (`folderId`, `folderName`, `folderUrl`).
 
+- **Subcarpetas** (Keywords, Segmentacion, Terminos de busqueda): la sincronizacion
+  las ignora. Un archivo que no se puede bajar no frena al resto: su mes queda como
+  estaba.
+- **Solo informes de campana** (un total por campana): un informe con columna Dia o
+  que repite campanas (por dia o por anuncio) se descarta y el mes queda como estaba.
+  Sin fila Total, los totales del mes son la suma de sus campanas. Si dos hojas traen
+  el mismo mes, gana la que llega mas lejos en el mes.
+
 - **Campanas excluidas**: `excludeCampaigns` en `data/drive-config.json` lista
   campanas del informe que no entran al tablero. Hoy: `Website traffic-Search-33`
   (S/ 4,320.20 en setiembre 2026), que no es una campana de Aquarius. No se guarda
@@ -344,12 +352,15 @@ Publicitario y Proyecciones; Palabras Clave tiene su propio boton Actualizar). S
 la sincronizacion falla, la pildora se pone ambar y el detalle dice por que. Su
 comportamiento depende de `data/drive-config.json`:
 
-- **Con `apiKey`**: el navegador lee la carpeta y los CSV directo de Drive,
-  actualiza el tablero sin recargar y guarda el resultado en `localStorage`.
-  Ademas se sincroniza solo cuando pasaron `autoSyncHours` horas (24 por
+- **Sin `apiKey`** (estado actual): el boton vuelve a leer desde el navegador las
+  hojas que encontro el ultimo barrido (la exportacion CSV de Google Sheets responde
+  con CORS abierto), actualiza el tablero sin recargar y guarda el resultado en
+  `localStorage`. Abre el detalle de la pildora para mostrar el avance y el
+  resultado. Una hoja nueva de la carpeta (otro mes o un archivo reemplazado)
+  aparece con el barrido diario siguiente.
+- **Con `apiKey`**: ademas lista la carpeta, asi que encuentra las hojas nuevas al
+  instante, y se sincroniza solo cuando pasaron `autoSyncHours` horas (24 por
   defecto) desde la ultima vez.
-- **Sin `apiKey`** (estado actual): el boton trae la ultima publicacion. La
-  carga diaria la sigue haciendo GitHub Actions.
 
 Para habilitar la sincronizacion desde el navegador hace falta una **clave de
 API de Google** (Google Cloud > APIs y servicios > Credenciales > Clave de API),

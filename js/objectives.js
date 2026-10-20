@@ -388,8 +388,10 @@
       card.hidden = !open;
       button.setAttribute('aria-expanded', String(open));
     });
+    // El boton Sincronizar abre el detalle para mostrar su avance: ese clic no lo cierra.
     document.addEventListener('click', event => {
-      if (!card.hidden && !card.contains(event.target) && !button.contains(event.target)) close();
+      const sync = event.target.closest && event.target.closest('#sync-now');
+      if (!card.hidden && !sync && !card.contains(event.target) && !button.contains(event.target)) close();
     });
     document.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
   }

@@ -218,18 +218,20 @@ def list_with_api(folder_id, key):
         "pageSize": "200",
     })
     payload = json.loads(fetch(f"https://www.googleapis.com/drive/v3/files?{query}"))
+    # Las subcarpetas (Keywords, Terminos de busqueda...) no son informes.
     return [
         {"id": item["id"], "name": item["name"], "modifiedTime": item.get("modifiedTime")}
         for item in payload.get("files", [])
+        if item.get("mimeType") != "application/vnd.google-apps.folder"
     ]
 
 
 def list_with_public_view(folder_id):
-    """Lee la vista publica de la carpeta. No necesita credenciales."""
+    """Lee la vista publica de la carpeta, sin las subcarpetas. No necesita credenciales."""
     html = fetch(f"https://drive.google.com/embeddedfolderview?id={folder_id}#list").decode("utf-8", "replace")
-    pattern = re.compile(r"id=\"entry-([-\w]{20,})\".*?flip-entry-title\">([^<]+)<", re.S)
-    return [{"id": found.group(1), "name": found.group(2).strip(), "modifiedTime": None}
-            for found in pattern.finditer(html)]
+    pattern = re.compile(r"id=\"entry-([-\w]{20,})\".*?href=\"([^\"]*)\".*?flip-entry-title\">([^<]+)<", re.S)
+    return [{"id": found.group(1), "name": found.group(3).strip(), "modifiedTime": None}
+            for found in pattern.finditer(html) if "/folders/" not in found.group(2)]
 
 
 def list_files(folder_id):
@@ -260,7 +262,7 @@ def is_report(item):
 
 
 def download(file_id, name):
-    """Baja el CSV o exporta la hoja de calculo como CSV."""
+    """Baja el CSV o exporta la hoja de calculo como CSV. Devuelve None si Drive no lo entrega."""
     key = api_key()
     urls = []
     if name.lower().endswith(".csv"):
@@ -278,7 +280,9 @@ def download(file_id, name):
             return fetch(url).decode("utf-8-sig", "replace")
         except urllib.error.URLError as error:
             last_error = error
-    raise SystemExit(f"[sync-drive] no se pudo descargar {name}: {last_error}")
+    # Un archivo que falla no frena al resto: su mes queda como estaba.
+    print(f"[sync-drive] no se pudo descargar {name}: {last_error}")
+    return None
 
 
 def excluded_campaigns():
@@ -300,6 +304,10 @@ def parse_campaign_report(text, name, exclude=frozenset()):
             header_index = index
             break
     if header_index is None:
+        return None, [], {}, {}
+    # Un informe por dia (o por anuncio) tambien trae Campana y Costo, pero repite cada campana una vez por fila.
+    if "dia" in (normalize(cell) for cell in rows[header_index]):
+        print(f"[sync-drive] {name}: trae la columna Dia; no es el informe de campana (un total por campana).")
         return None, [], {}, {}
 
     month_id = None
@@ -344,8 +352,23 @@ def parse_campaign_report(text, name, exclude=frozenset()):
         if entry.get("campaign"):
             add_budget(budgets, entry, row, budget_columns, comma)
             records.append(entry)
-    if excluded and totals:
-        # Los totales del informe incluyen las campanas excluidas: se descuentan y se recalculan los cocientes.
+    names = [normalize(record["campaign"]) for record in records]
+    if len(set(names)) < len(names):
+        print(f"[sync-drive] {name}: repite campanas ({len(names)} filas, {len(set(names))} campanas); "
+              "no es el informe de campana.")
+        return None, [], {}, {}
+    # Los totales del informe incluyen las campanas excluidas; la suma de las campanas guardadas, no.
+    report_totals = bool(totals)
+    if not totals and records:
+        # Sin fila Total en el informe, los totales del mes son la suma de sus campanas (nunca los de antes).
+        def total(field):
+            values = [record.get(field) for record in records]
+            return None if any(value is None for value in values) else round(sum(values), 2)
+        totals = {field: total(field) for field in ("cost", "impressions", "clicks", "conversions")}
+        totals["ctr"] = totals["clicks"] / totals["impressions"] if totals["impressions"] else None
+        totals["costPerConversion"] = round(totals["cost"] / totals["conversions"], 2) if totals["conversions"] else None
+    if excluded and report_totals:
+        # Se descuentan las campanas excluidas y se recalculan los cocientes.
         for field in ("cost", "impressions", "clicks", "conversions"):
             if totals.get(field) is not None:
                 totals[field] = round(totals[field] - sum(item.get(field) or 0 for item in excluded), 2)
@@ -496,16 +519,25 @@ def main():
     BACKUPS.mkdir(parents=True, exist_ok=True)
     exclude = excluded_campaigns()
 
+    loaded = {}
     for item in sorted(csv_files, key=lambda entry: entry["name"]):
         text = download(item["id"], item["name"])
+        if text is None:
+            continue
         month_id, records, totals, summary = parse_campaign_report(text, item["name"], exclude)
         if not month_id or not records:
             print(f"[sync-drive] omito {item['name']}: no parece un informe de campana.")
             continue
+        # Dos informes del mismo mes: gana el que llega mas lejos en el mes.
+        end = (summary.get("period") or {}).get("end") or ""
+        if month_id in loaded and loaded[month_id][0] >= end:
+            print(f"[sync-drive] omito {item['name']}: {month_label(month_id)} ya viene en {loaded[month_id][1]}.")
+            continue
+        loaded[month_id] = (end, item["name"])
         store_report(months, month_id, records, totals, summary, item["name"], item["id"])
-        # La copia cruda va como CSV aunque en Drive sea una hoja de calculo.
+        # La copia cruda va como CSV aunque en Drive sea una hoja de calculo (sin convertir los saltos de linea).
         backup = item["name"] if item["name"].lower().endswith(".csv") else f"{item['name']}.csv"
-        (BACKUPS / backup).write_text(text, encoding="utf-8")
+        (BACKUPS / backup).write_text(text, encoding="utf-8", newline="")
         print(f"[sync-drive] {month_label(month_id)}: {len(records)} campanas")
 
     finish_document(document, months)

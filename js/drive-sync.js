@@ -183,6 +183,8 @@
       }
     }
     if (headerIndex < 0) return null;
+    // Un informe por dia (o por anuncio) tambien trae Campana y Costo, pero repite cada campana una vez por fila.
+    if (rows[headerIndex].map(normalize).indexOf('dia') >= 0) return null;
 
     let monthId = null;
     let period = null;
@@ -236,8 +238,22 @@
         records.push(entry);
       }
     }
-    if (excluded.length && totals) {
-      // Los totales del informe incluyen las campanas excluidas: se descuentan y se recalculan los cocientes.
+    const names = records.map(record => normalize(record.campaign));
+    if (new Set(names).size < names.length) return null;
+    // Los totales del informe incluyen las campanas excluidas; la suma de las campanas guardadas, no.
+    const reportTotals = Boolean(totals);
+    if (!totals && records.length) {
+      // Sin fila Total en el informe, los totales del mes son la suma de sus campanas (nunca los de antes).
+      totals = {};
+      ['cost', 'impressions', 'clicks', 'conversions'].forEach(field => {
+        const values = records.map(record => record[field]);
+        totals[field] = values.some(value => value === null || value === undefined) ? null : Math.round(values.reduce((total, value) => total + value, 0) * 100) / 100;
+      });
+      totals.ctr = totals.impressions ? totals.clicks / totals.impressions : null;
+      totals.costPerConversion = totals.conversions ? Math.round(totals.cost / totals.conversions * 100) / 100 : null;
+    }
+    if (excluded.length && reportTotals) {
+      // Se descuentan las campanas excluidas y se recalculan los cocientes.
       ['cost', 'impressions', 'clicks', 'conversions'].forEach(field => {
         if (totals[field] === null) return;
         totals[field] = Math.round((totals[field] - excluded.reduce((total, item) => total + (item[field] || 0), 0)) * 100) / 100;
@@ -271,7 +287,9 @@
     });
   }
 
-  // --- Acceso a Drive (solo con clave publica; sin ella no hay CORS) ---
+  // --- Acceso a Drive ---
+  // Listar la carpeta pide la clave publica (la vista de la carpeta no tiene CORS). Sin ella se usan las hojas
+  // que dejo el ultimo barrido diario: la exportacion CSV de Google Sheets responde con CORS abierto.
 
   async function driveJson(url) {
     const response = await fetch(url, { cache: 'no-store' });
@@ -280,16 +298,21 @@
   }
 
   async function listFolder() {
+    if (!hasApiKey()) {
+      const known = ((window.AquariusDashboard.getData() || {}).drive || {}).files || [];
+      return known.filter(file => file && file.id && !/\.csv$/i.test(file.name || ''))
+        .map(file => Object.assign({ mimeType: SHEET_MIME }, file));
+    }
     const query = encodeURIComponent("'" + CONFIG.folderId + "' in parents and trashed = false");
     const url = 'https://www.googleapis.com/drive/v3/files?q=' + query
       + '&key=' + encodeURIComponent(CONFIG.apiKey)
       + '&fields=' + encodeURIComponent('files(id,name,modifiedTime,mimeType)')
       + '&pageSize=200';
     const payload = await driveJson(url);
+    // Las subcarpetas (Keywords, Terminos de busqueda...) quedan fuera: solo hojas y CSV.
     return (payload.files || []).filter(file => file.mimeType === SHEET_MIME || /\.csv$/i.test(file.name));
   }
 
-  // Las hojas de calculo se exportan como CSV (la exportacion de Sheets responde con CORS abierto).
   async function downloadFile(file) {
     const url = file.mimeType === SHEET_MIME
       ? 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(file.id) + '/export?format=csv'
@@ -337,9 +360,10 @@
   let running = false;
 
   function setStatus(text, tone) {
-    // Un error tine de ambar la pildora de la barra superior: el mensaje queda en su detalle.
+    // Un error tine de ambar la pildora de la barra superior: el mensaje queda en su detalle. Un resultado bueno no
+    // la limpia: el ambar del barrido diario fallido lo maneja objectives.js.
     const pill = document.getElementById('data-status-btn');
-    if (pill) pill.classList.toggle('warn', tone === 'is-error');
+    if (pill && tone === 'is-error') pill.classList.add('warn');
     const node = document.getElementById('sync-status');
     if (!node) return;
     node.textContent = text;
@@ -377,25 +401,34 @@
     if (running) return;
     running = true;
     setBusy(true);
-    if (!silent) setStatus('Sincronizando con Drive...', 'is-working');
+    if (!silent) setStatus('Leyendo los informes de Drive...', 'is-working');
     try {
       const files = await listFolder();
-      if (!files.length) throw new Error('La carpeta no tiene CSV');
-      const parsed = [];
-      for (const file of files) {
-        const text = await downloadFile(file);
-        const report = parseCampaignReport(text, file.name);
-        if (report) {
-          report.sourceFile = file.name;
-          report.fileId = file.id;
-          parsed.push(report);
-        }
-      }
-      if (!parsed.length) throw new Error('Ningun CSV tiene el informe de campana');
+      if (!files.length) throw new Error('no hay informes conocidos de la carpeta');
+      // Un archivo que falla no frena al resto: su mes queda como estaba.
+      const results = await Promise.allSettled(files.map(async file => {
+        const report = parseCampaignReport(await downloadFile(file), file.name);
+        return report ? Object.assign(report, { sourceFile: file.name, fileId: file.id }) : null;
+      }));
+      const failed = results.filter(result => result.status === 'rejected');
+      failed.forEach(result => console.error('[drive-sync]', result.reason));
+      // Dos informes del mismo mes: gana el que llega mas lejos en el mes.
+      const byMonth = {};
+      results.forEach(result => {
+        const report = result.status === 'fulfilled' ? result.value : null;
+        if (!report) return;
+        const end = (report.period && report.period.end) || '';
+        const current = byMonth[report.monthId];
+        if (!current || ((current.period && current.period.end) || '') < end) byMonth[report.monthId] = report;
+      });
+      const parsed = Object.keys(byMonth).map(id => byMonth[id]);
+      if (!parsed.length) throw new Error('ningun archivo trajo el informe de campana');
       const data = mergeIntoData(window.AquariusDashboard.getData(), parsed, files);
       window.AquariusDashboard.applyData(data);
       writeCache(data);
-      setStatus(parsed.length + ' meses sincronizados ahora', 'is-ok');
+      const latest = parsed.slice().sort((a, b) => String(a.monthId).localeCompare(String(b.monthId))).pop();
+      const until = latest.period && latest.period.end ? ', datos al ' + Number(latest.period.end.slice(8, 10)) + ' de ' + MONTH_NAMES[Number(latest.period.end.slice(5, 7)) - 1].toLowerCase() : '';
+      setStatus(parsed.length + ' meses leidos de Drive ahora' + until + (failed.length ? ' (' + failed.length + ' archivos con error)' : '') + '.', failed.length ? 'is-error' : 'is-ok');
       return data;
     } catch (error) {
       console.error('[drive-sync]', error);
@@ -409,8 +442,8 @@
 
   const hasApiKey = () => !!(CONFIG.apiKey && CONFIG.folderId);
 
-  // Sin clave publica el navegador no puede leer Drive (CORS): el boton trae la
-  // ultima publicacion, que es lo que deja la sincronizacion diaria del servidor.
+  // Sin informes conocidos (y sin clave para listar la carpeta) queda traer la ultima publicacion, que es lo
+  // que deja el barrido diario del servidor.
   function reloadPublished() {
     setStatus('Buscando la ultima publicacion...', 'is-working');
     setBusy(true);
@@ -419,8 +452,19 @@
     window.location.replace(url.toString());
   }
 
+  // El avance y el resultado se ven en el detalle de la pildora, que se abre al pulsar el boton.
+  function openStatusCard() {
+    const card = document.getElementById('data-status-card');
+    const pill = document.getElementById('data-status-btn');
+    if (!card || !pill) return;
+    card.hidden = false;
+    pill.setAttribute('aria-expanded', 'true');
+  }
+
   function onSyncClick() {
-    if (hasApiKey()) syncFromDrive(false);
+    openStatusCard();
+    const known = ((window.AquariusDashboard.getData() || {}).drive || {}).files || [];
+    if (hasApiKey() || known.some(file => file && file.id)) syncFromDrive(false);
     else reloadPublished();
   }
 
