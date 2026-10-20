@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/dashboard.css?v=1.16.1">
+<link rel="stylesheet" href="css/dashboard.css?v=1.17.0">
 <style>
   .reservations-total-row td { height: auto !important; padding: 10px 12px !important; border-top: 2px solid #cbd5e1 !important; color: #0f172a !important; background: #f8fafc; font-size: 13px; font-weight: 800; vertical-align: middle; }
   .reservations-total-row .total-label { text-align: right; }
@@ -32,7 +32,7 @@
 <body>
 <div class="shell">
   <aside class="sidebar" id="aquarius-sidebar">
-    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.16.1</span></div></div>
+    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.17.0</span></div></div>
     <div class="s-group-lbl">Modulos activos</div>
     <button title="Gasto Publicitario" class="s-item active" type="button" data-view-target="view-obj">
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
@@ -45,6 +45,10 @@
     <button title="Palabras Clave" class="s-item" type="button" data-view-target="view-keywords">
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
       <div class="s-text"><div class="s-title-nav">Palabras Clave</div><div class="s-desc-nav">Análisis por campaña</div></div>
+    </button>
+    <button title="Generación de Reporte" class="s-item" type="button" data-view-target="view-week">
+      <div class="s-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></div>
+      <div class="s-text"><div class="s-title-nav">Generación de Reporte</div><div class="s-desc-nav">Reporte de Publicidad en PDF</div></div>
     </button>
     <!-- leads.js lo muestra solo si la marca tiene campanas de leads o WhatsApp. -->
     <button title="Leads" class="s-item" type="button" data-view-target="view-leads" hidden>
@@ -225,6 +229,22 @@
         <p class="projection-note kw-foot" id="kw-foot"></p>
       </section>
 
+      <section class="view" id="view-week">
+        <h1 class="section-title">Generación de Reporte</h1>
+        <p class="section-desc">El Reporte de Publicidad con el diseño del modelo de Aquarius: portada, contenido, resumen del mes, rendimiento por campaña, palabras clave que convierten, conclusiones y cierre. Elige el mes; los textos del gráfico, los análisis, la clave y las conclusiones vienen propuestos y se editan con un clic sobre la página antes de descargar el PDF.</p>
+        <div class="panel week-toolbar">
+          <label class="gasto-tool-select" for="week-select">
+            <span class="sr-only">Mes del reporte</span>
+            <select id="week-select"><option value="">Cargando meses...</option></select>
+          </label>
+          <div class="week-toolbar-meta">
+            <button class="gasto-tool-btn" type="button" id="week-reset" title="Vuelve a los textos propuestos con los números del mes">Restablecer textos</button>
+            <button class="gasto-tool-btn" type="button" id="week-print" title="Abre el diálogo de impresión para guardar el reporte como PDF">Descargar PDF</button>
+          </div>
+        </div>
+        <div id="week-report"><div class="panel"><div class="empty-state"><strong>Cargando el reporte...</strong><span>Leyendo los informes de Google Ads.</span></div></div></div>
+      </section>
+
       <section class="view" id="view-leads">
         <h1 class="section-title">Leads</h1>
         <p class="section-desc">CRM de feedback: la inversión y los leads que reporta cada plataforma se cargan solos; el cliente completa en las columnas resaltadas lo que de verdad recibió de cada campaña y el tablero calcula lo que las plataformas no ven, como costo por lead real, costo por venta y ROAS.</p>
@@ -253,14 +273,15 @@
     </div>
   </main>
 </div>
-<script src="js/objectives.js?v=1.16.1"></script>
-<script src="js/drive-sync.js?v=1.16.1"></script>
-<script src="js/reservation-goals.js?v=1.16.1"></script>
-<script src="js/projections.js?v=1.16.1"></script>
-<script src="js/keywords.js?v=1.16.1"></script>
-<script src="js/leads.js?v=1.16.1"></script>
-<script src="js/navigation.js?v=1.16.1"></script>
-<script src="js/sidebar.js?v=1.16.1"></script>
+<script src="js/objectives.js?v=1.17.0"></script>
+<script src="js/drive-sync.js?v=1.17.0"></script>
+<script src="js/reservation-goals.js?v=1.17.0"></script>
+<script src="js/projections.js?v=1.17.0"></script>
+<script src="js/keywords.js?v=1.17.0"></script>
+<script src="js/leads.js?v=1.17.0"></script>
+<script src="js/report-week.js?v=1.17.0"></script>
+<script src="js/navigation.js?v=1.17.0"></script>
+<script src="js/sidebar.js?v=1.17.0"></script>
 <!-- El acceso lo pone el build: con AQ_PAGE_PASSWORD cifra el tablero dentro de deploy/pages-gate.html. -->
 </body>
 </html>

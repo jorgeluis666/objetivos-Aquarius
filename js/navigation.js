@@ -22,6 +22,13 @@
       source: 'Fuente: data/aquarius-palabras-clave-2026.json (Drive: Google Ads Aquarius Keywords)',
       footer: 'Sincronización diaria con Drive y botón Actualizar',
     },
+    'view-week': {
+      title: 'Generación de Reporte',
+      caption: 'Reporte de Publicidad en PDF',
+      status: 'Mes elegido de los informes de Google Ads',
+      source: 'Fuente: Gasto Publicitario y Palabras Clave (informes de Google Ads)',
+      footer: 'El mes elegido, listo para descargar en PDF',
+    },
     'view-leads': {
       title: 'Leads',
       caption: 'CRM de feedback del cliente',
@@ -71,6 +78,7 @@
     if (viewId === 'view-projections') window.AquariusProjections?.init();
     if (viewId === 'view-keywords') window.AquariusKeywords?.init();
     if (viewId === 'view-leads') window.AquariusLeads?.init();
+    if (viewId === 'view-week') window.AquariusReport?.init();
     // Vuelve a poner el mes en la barra superior, que la vista anterior reemplazo.
     if (viewId === 'view-obj' && window.AquariusDashboard?.getData()) window.AquariusDashboard.render();
     window.setTimeout(() => window.dispatchEvent(new Event('resize')), 0);

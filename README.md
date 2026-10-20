@@ -241,6 +241,39 @@ Contenido descifrado:
 - La fecha del ultimo cambio de `AQ_PAGE_PASSWORD` aparece en GitHub > Settings > Secrets and variables >
   Actions ("Updated ...").
 
+## Generacion de Reporte
+
+Pestana **Generacion de Reporte** del panel lateral: el "Reporte de Publicidad" del mes con el diseño del modelo
+de Aquarius (`Modelo Reporte Aquarius`), laminas 16:9 con fondo claro, tarjetas blancas de borde fino y acentos en
+azul. El modulo es `js/report-week.js`; sus estilos y los de impresion estan al final de `css/dashboard.css`. El
+template es propio de Aquarius: cada tablero de marca tiene el suyo, adaptado por la marca.
+
+| Pagina | Contenido |
+| --- | --- |
+| Portada | Logo de Lima Retail, "Reporte de Publicidad", cliente (Aquarius Consulting), periodo ("1 – 18 Octubre 2026 \| Google Ads · Search") y fecha de emision. |
+| Contenido | Resumen del mes, Campanas, Palabras clave y Conclusiones, con su numero de pagina. |
+| Resumen del mes | Inversion, conversiones, costo por conversion, clics, impresiones, CPC medio, CTR y tasa de conversion, con su variacion; clics y conversiones por dia. |
+| Rendimiento por campana | Hasta 6 campanas por inversion (coste, clics, conv., costo/conv., CTR), el total y el recuadro "Analisis". |
+| Palabras clave que convierten | Hasta 6 terminos por conversiones, recuadro "Clave" y tarjeta "Analisis". |
+| Conclusiones del periodo | Tres tarjetas (evolucion del mes, servicios que mandan y lo que no cierra) y, en un mes en curso, la nota de que las metricas se consolidan al cierre. |
+| Cierre | Logo y firma de Lima Retail. |
+
+- **De donde salen los numeros:** de Gasto Publicitario, que los expone en `window.AquariusGasto`
+  (`js/objectives.js`): el periodo del mes, sus totales, la variacion contra el mes anterior (prorrateado a los
+  mismos dias si el mes esta en curso, "vs período ant."), las campanas y las palabras clave del mes. Cada
+  sincronizacion lo actualiza solo; las palabras clave llegan despues (`aquarius:keywords-ready`).
+- **Palabras clave:** la misma palabra en varias campanas o con dos concordancias va en una sola fila. Si el costo
+  de las palabras no cuadra con el de las campanas (mas de 20% por encima), no se muestra y el pie de la tabla lo
+  avisa: hoy el informe de palabras clave trae el costo con los decimales corridos ("15,53" como 1553).
+- **Grafico por dia:** usa el informe por dia y campana del mes (`months[].detail`). Mientras no llegue, el grafico
+  avisa que falta subirlo.
+- **Textos:** la linea del grafico, los analisis, el recuadro "Clave" y las conclusiones vienen propuestos con lo
+  que dicen los numeros. Se editan con un clic sobre la lamina (`**texto**` va en negrita) y quedan guardados por
+  mes en el navegador (`aquarius_report_notes_v1`); no se publican con el tablero. "Restablecer textos" vuelve a
+  los propuestos, sin dialogo de confirmacion.
+- **Descargar PDF** abre el dialogo de impresion con las laminas solas, una por hoja de 13.33 x 7.5 in (el tamaño
+  del modelo), y el nombre del archivo ya armado. Activar "Graficos de fondo" si el navegador no lo hace solo.
+
 ## Leads (CRM de feedback del cliente)
 
 Pestana **Leads** del panel lateral (`js/leads.js`). Una tabla por campana y mes: la plataforma se carga sola y
