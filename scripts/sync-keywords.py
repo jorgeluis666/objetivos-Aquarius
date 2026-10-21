@@ -19,6 +19,11 @@ Uso:
     python scripts/sync-keywords.py            # sincroniza
     python scripts/sync-keywords.py --check    # solo informa si hay cambios
     python scripts/sync-keywords.py --file "Aquarius KW octubre 2026.csv"
+    python scripts/sync-keywords.py --file "...csv" --force   # importa aunque no cuadre
+
+Google Ads exporta con el formato del idioma de la cuenta ("6,79" o "6.79"): cada informe se
+lee segun el suyo. Si el costo de las palabras clave de un mes supera al de sus campanas, el
+informe no se importa (o, al sincronizar, no pisa lo que ya habia) y queda un aviso.
 """
 
 from __future__ import annotations
@@ -75,21 +80,48 @@ def parse_share(value):
     return None if text in {"", "--", "-"} else text
 
 
-def parse_count(value):
+def parse_count(value, comma=False):
     """Enteros con separador de miles.
 
-    Al pasar el CSV a hoja de calculo, Sheets leyo "1,290" como 1.29 y lo exporta "1,29":
-    se pierden los ceros finales. El grupo despues de la coma siempre tiene tres digitos,
-    asi que se completa con ceros ("1,29" -> 1290, "1,2" -> 1200).
+    En formato ingles, al pasar el CSV a hoja de calculo Sheets leyo "1,290" como 1.29 y lo
+    exporta "1,29": se pierden los ceros finales. El grupo despues de la coma siempre tiene
+    tres digitos, asi que se completa con ceros ("1,29" -> 1290, "1,2" -> 1200). En formato
+    espanol los miles van con punto ("1.290") y no hay nada que completar.
     """
     text = str(value or "").strip()
+    if comma:
+        return drive.parse_int(text, True)
     match = re.fullmatch(r"(\d{1,3}(?:,\d{3})*),(\d{1,2})", text)
     if match:
         text = f"{match.group(1)},{match.group(2).ljust(3, '0')}"
     return drive.parse_int(text)
 
 
-PARSERS = dict(drive.PARSERS, share=parse_share, count=parse_count)
+PARSERS = dict(drive.PARSERS, share=lambda value, comma=False: parse_share(value), count=parse_count)
+
+# Coste y porcentajes con decimales: "6,79" y "15,15%" (espanol) o "6.79" y "15.15%" (ingles).
+ES_DECIMAL = re.compile(r"^-?(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}%?$")
+EN_DECIMAL = re.compile(r"^-?(?:\d+|\d{1,3}(?:,\d{3})+)\.\d{1,2}%?$")
+
+
+def uses_decimal_comma(rows, cost_position):
+    """True si el informe viene en formato espanol (coma decimal).
+
+    Google Ads exporta con el formato del idioma de la cuenta y una hoja de Sheets con el de
+    su configuracion regional. Se decide por la columna Coste y las de porcentaje, que siempre
+    traen decimales: los conteos no sirven, porque en ingles Sheets los deja como "1,29".
+    """
+    es = en = 0
+    for row in rows:
+        for position, cell in enumerate(row):
+            text = cell.strip()
+            if position != cost_position and not text.endswith("%"):
+                continue
+            if ES_DECIMAL.match(text):
+                es += 1
+            elif EN_DECIMAL.match(text):
+                en += 1
+    return es > en
 
 
 def parse_keyword_report(text, name):
@@ -117,6 +149,7 @@ def parse_keyword_report(text, name):
         if mapped and mapped[0] not in columns:
             columns[mapped[0]] = (position, mapped[1])
 
+    comma = uses_decimal_comma(rows[header_index + 1:], columns.get("cost", (None,))[0])
     keywords = []
     for row in rows[header_index + 1:]:
         if not row or not any(cell.strip() for cell in row):
@@ -127,7 +160,7 @@ def parse_keyword_report(text, name):
         entry = {}
         for field, (position, kind) in columns.items():
             raw = row[position] if position < len(row) else None
-            value = str(raw or "").strip() if kind == "text" else PARSERS[kind](raw)
+            value = str(raw or "").strip() if kind == "text" else PARSERS[kind](raw, comma)
             if value not in (None, ""):
                 entry[field] = value
         if not entry.get("keyword") or not entry.get("campaign"):
@@ -136,6 +169,52 @@ def parse_keyword_report(text, name):
             entry.setdefault(field, 0)
         keywords.append(entry)
     return month_id, keywords, period
+
+
+def drop_excluded(keywords, name):
+    """Quita las campanas de keywords.excludeCampaigns (por ejemplo, una creada en un hackeo de la cuenta)."""
+    excluded = {drive.normalize(campaign) for campaign in
+                (drive.load_config().get("keywords") or {}).get("excludeCampaigns", [])}
+    kept = [entry for entry in keywords if drive.normalize(entry["campaign"]) not in excluded]
+    if len(kept) < len(keywords):
+        print(f"[sync-keywords] {name}: excluyo {len(keywords) - len(kept)} filas de campanas excluidas.")
+    return kept
+
+
+CAMPAIGNS = ROOT / "data" / "aquarius-lima-retail-2026.json"
+# Las palabras clave son parte del gasto de sus campanas: su costo no puede pasar del de las
+# campanas del mes. El margen cubre un informe de palabras clave que llega uno o dos dias mas lejos.
+MAX_COST_RATIO = 1.2
+
+
+def cost_mismatch(month_id, keywords, name):
+    """Texto del aviso si el costo de las palabras clave no cuadra con el de las campanas del mes.
+
+    Es el control del formato: un informe leido con los decimales corridos ("6,79" como 679)
+    multiplica el costo por cien. Sin informe de campanas de ese mes no hay contra que comparar.
+    """
+    if not CAMPAIGNS.exists():
+        return None
+    month = next((item for item in json.loads(CAMPAIGNS.read_text(encoding="utf-8")).get("months", [])
+                  if item.get("id") == month_id), None)
+    if not month:
+        return None
+    totals = month.get("totals") or {}
+    campaign_cost = totals.get("cost")
+    if not isinstance(campaign_cost, (int, float)):
+        campaign_cost = sum(float(record.get("cost") or 0) for record in month.get("records") or [])
+    keyword_cost = sum(float(entry.get("cost") or 0) for entry in keywords)
+    if campaign_cost <= 0 or keyword_cost <= campaign_cost * MAX_COST_RATIO:
+        return None
+    return (f"{name}: el costo de las palabras clave (S/ {keyword_cost:,.2f}) supera al de las campanas de "
+            f"{drive.month_label(month_id)} (S/ {campaign_cost:,.2f}). Revisa el formato de los numeros del "
+            "informe (coma o punto decimal) antes de importarlo.")
+
+
+def warn(message):
+    """Aviso en consola y, en GitHub Actions, como anotacion del workflow."""
+    print(f"[sync-keywords] AVISO: {message}")
+    print(f"::warning::{message}")
 
 
 def load_document():
@@ -231,12 +310,17 @@ def backup_name(name):
     return name if name.lower().endswith(".csv") else f"{name}.csv"
 
 
-def import_file(path, check):
+def import_file(path, check, force=False):
     """Carga un informe de palabras clave local; la proxima sincronizacion lo reemplaza si Drive trae el mes."""
     text = path.read_text(encoding="utf-8-sig")
     month_id, keywords, period = parse_keyword_report(text, path.name)
     if not month_id or not keywords:
         print(f"[sync-keywords] {path.name} no parece un informe de palabras clave.")
+        return 1
+    keywords = drop_excluded(keywords, path.name)
+    mismatch = cost_mismatch(month_id, keywords, path.name)
+    if mismatch and not force:
+        warn(f"{mismatch} No se importa; con --force se importa igual.")
         return 1
     document = load_document()
     before = drive.comparable(document)
@@ -259,10 +343,12 @@ def main():
     parser.add_argument("--check", action="store_true", help="Informa si hay cambios sin escribir el JSON")
     parser.add_argument("--folder", help="ID de la carpeta de Drive")
     parser.add_argument("--file", type=Path, help="Importa un informe de palabras clave local en vez de leer Drive")
+    parser.add_argument("--force", action="store_true",
+                        help="Importa aunque el costo de las palabras clave no cuadre con el de las campanas")
     args = parser.parse_args()
 
     if args.file:
-        return import_file(args.file, args.check)
+        return import_file(args.file, args.check, args.force)
 
     config = drive.load_config().get("keywords") or {}
     folder_id = args.folder or config.get("folderId")
@@ -290,6 +376,12 @@ def main():
         month_id, keywords, period = parse_keyword_report(text, item["name"])
         if not month_id or not keywords:
             print(f"[sync-keywords] omito {item['name']}: no parece un informe de palabras clave.")
+            continue
+        keywords = drop_excluded(keywords, item["name"])
+        # Un informe que no cuadra con el gasto de las campanas no pisa lo que ya habia de ese mes.
+        mismatch = cost_mismatch(month_id, keywords, item["name"])
+        if mismatch and not args.force:
+            warn(f"{mismatch} Se mantiene lo que ya habia de ese mes.")
             continue
         store_report(months, month_id, keywords, period, item["name"], item["id"])
         (BACKUPS / backup_name(item["name"])).write_text(text, encoding="utf-8")

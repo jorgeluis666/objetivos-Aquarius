@@ -112,22 +112,40 @@
 
   // --- Parser del informe de palabras clave ---
 
-  function parseNumber(value) {
+  // comma: el informe viene en formato espanol ("6,79" y "1.247"); si no, en ingles ("6.79" y "1,247").
+  function parseNumber(value, comma) {
     const text = String(value == null ? '' : value).trim();
     if (!text || text === '--' || text === '-' || text.charAt(0) === '<') return null;
-    const cleaned = text.replace(/[^\d,.\-]/g, '').replace(/,/g, '');
+    const digits = text.replace(/[^\d,.\-]/g, '');
+    const cleaned = comma ? digits.replace(/\./g, '').replace(',', '.') : digits.replace(/,/g, '');
     if (!cleaned || cleaned === '-' || cleaned === '.') return null;
     const number = Number(cleaned);
     return Number.isFinite(number) ? number : null;
   }
 
-  // Sheets leyo "1,290" como 1.29 y lo exporta "1,29": el grupo de miles siempre tiene tres digitos.
-  function parseCount(value) {
+  // En ingles Sheets leyo "1,290" como 1.29 y lo exporta "1,29": el grupo de miles siempre tiene tres
+  // digitos. En espanol los miles van con punto ("1.290") y no hay nada que completar.
+  function parseCount(value, comma) {
     let text = String(value == null ? '' : value).trim();
-    const match = /^(\d{1,3}(?:,\d{3})*),(\d{1,2})$/.exec(text);
+    const match = !comma && /^(\d{1,3}(?:,\d{3})*),(\d{1,2})$/.exec(text);
     if (match) text = `${match[1]},${match[2].padEnd(3, '0')}`;
-    const number = parseNumber(text);
+    const number = parseNumber(text, comma);
     return number === null ? null : Math.round(number);
+  }
+
+  // Google Ads exporta con el formato del idioma de la cuenta. Se decide por la columna Coste y las de
+  // porcentaje, que siempre traen decimales ("6,79" y "15,15%" o "6.79" y "15.15%"): los conteos no
+  // sirven, porque en ingles Sheets los deja como "1,29". Igual que scripts/sync-keywords.py.
+  function usesDecimalComma(rows, costPosition) {
+    let es = 0;
+    let en = 0;
+    rows.forEach(row => row.forEach((cell, position) => {
+      const text = String(cell == null ? '' : cell).trim();
+      if (position !== costPosition && !/%$/.test(text)) return;
+      if (/^-?(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}%?$/.test(text)) es += 1;
+      else if (/^-?(?:\d+|\d{1,3}(?:,\d{3})+)\.\d{1,2}%?$/.test(text)) en += 1;
+    }));
+    return es > en;
   }
 
   // Las cuotas de impresiones vienen acotadas ("< 10%", "> 90%"): se guardan tal cual.
@@ -213,6 +231,7 @@
       if (mapped && !columns[mapped[0]]) columns[mapped[0]] = { position, kind: mapped[1] };
     });
 
+    const comma = usesDecimalComma(rows.slice(headerIndex + 1), columns.cost ? columns.cost.position : -1);
     const keywords = [];
     rows.slice(headerIndex + 1).forEach(row => {
       if (!row.some(cell => String(cell).trim())) return;
@@ -222,7 +241,7 @@
       Object.keys(columns).forEach(field => {
         const column = columns[field];
         const raw = column.position < row.length ? row[column.position] : null;
-        const value = column.kind === 'text' ? String(raw == null ? '' : raw).trim() : PARSERS[column.kind](raw);
+        const value = column.kind === 'text' ? String(raw == null ? '' : raw).trim() : PARSERS[column.kind](raw, comma);
         if (value !== null && value !== '') entry[field] = value;
       });
       if (!entry.keyword || !entry.campaign) return;
@@ -234,6 +253,11 @@
 
   // --- Datos ---
 
+  // Campanas de keywords.excludeCampaigns (por ejemplo, una creada en un hackeo de la cuenta).
+  // Se filtran tambien al mostrar: una cache del navegador anterior a la exclusion no las devuelve.
+  const isExcluded = campaign => ((state.config && state.config.exclude) || []).indexOf(normalize(campaign)) >= 0;
+  const withoutExcluded = keywords => keywords.filter(row => !isExcluded(row.campaign));
+
   function normalizeMonths(data) {
     return (Array.isArray(data && data.months) ? data.months : [])
       .filter(month => /^\d{4}-\d{2}$/.test(String(month.id || '')))
@@ -242,7 +266,7 @@
         label: month.label || monthLabel(month.id),
         sourceFile: month.sourceFile || null,
         period: month.period || null,
-        keywords: Array.isArray(month.keywords) ? month.keywords : []
+        keywords: withoutExcluded(Array.isArray(month.keywords) ? month.keywords : [])
       }))
       .sort((a, b) => a.id.localeCompare(b.id));
   }
@@ -766,11 +790,17 @@
         /* sin configuracion: el boton usa la lista de hojas de la ultima sincronizacion */
       }
     }
-    config = config || {};
-    return { folderId: (config.keywords && config.keywords.folderId) || '', apiKey: config.apiKey || '' };
+    const keywords = (config && config.keywords) || {};
+    return {
+      folderId: keywords.folderId || '',
+      apiKey: (config && config.apiKey) || '',
+      exclude: (Array.isArray(keywords.excludeCampaigns) ? keywords.excludeCampaigns : []).map(normalize)
+    };
   }
 
   async function load() {
+    // La configuracion va primero: trae las campanas excluidas.
+    state.config = await loadConfig();
     let data = window.AQUARIUS_KEYWORDS_DATA;
     if (!data) {
       const response = await fetch(DATA_URL, { cache: 'no-store' });
@@ -781,7 +811,6 @@
     const cached = readCache();
     if (cached && Array.isArray(cached.months) && cached.months.length && syncStamp(cached) > syncStamp(data)) data = cached;
     setData(data);
-    state.config = await loadConfig();
   }
 
   // --- Boton Actualizar ---
@@ -886,7 +915,9 @@
       }
       const results = await Promise.allSettled(files.map(async file => {
         const report = parseKeywordReport(await downloadFile(file), file.name);
-        return report ? Object.assign(report, { sourceFile: file.name, fileId: file.id }) : null;
+        if (!report) return null;
+        report.keywords = withoutExcluded(report.keywords);
+        return Object.assign(report, { sourceFile: file.name, fileId: file.id });
       }));
       const reports = [];
       const keep = [];

@@ -172,11 +172,24 @@ carpeta de Drive **Google Ads Aquarius Keywords**, una hoja de calculo por mes (
   siguiente (o al correr el workflow a mano). Con `AQ_DRIVE_API_KEY` incrustada en el build, el boton tambien
   lista la carpeta y encuentra los meses nuevos al instante.
 - La carpeta y su ID estan en `data/drive-config.json` (`keywords.folderId`).
+- **Campanas excluidas**: `keywords.excludeCampaigns` en `data/drive-config.json` lista campanas que no se
+  muestran ni se guardan aunque vengan en el informe. Hoy: `Website traffic-Search-33` (palabra clave
+  "booking", S/ 4,320.20 en setiembre 2026), creada en un hackeo de la cuenta. Se filtra en la sincronizacion
+  diaria, en el boton Actualizar y al mostrar (asi una cache vieja del navegador tampoco la trae). La copia
+  cruda del informe en `data/csv-backups/keywords/` la conserva, tal como viene de Drive.
+- **Formato de los numeros**: Google Ads exporta con el formato del idioma de la cuenta ("6,79" y "1.247" en
+  espanol, "6.79" y "1,247" en ingles) y Sheets con el de su configuracion regional. El importador y el boton
+  Actualizar deciden cada informe por la columna Coste y las de porcentaje, que siempre traen decimales. Hasta
+  el 20-10-2026 se leian siempre en ingles y el informe de octubre 2026 (en espanol) quedo con el costo x100.
+- **Control del costo**: si el costo de las palabras clave de un mes supera en mas de 20% al de sus campanas
+  (`data/aquarius-lima-retail-2026.json`), el informe no se importa (`--force` lo importa igual) y, en la
+  sincronizacion diaria, no pisa lo que ya habia de ese mes; queda un aviso en Actions.
 
 ```bash
 python scripts/sync-keywords.py          # sincroniza
 python scripts/sync-keywords.py --check  # dice si hay cambios, sin escribir
 python scripts/sync-keywords.py --file "Aquarius KW octubre 2026.csv"  # importa un informe local
+python scripts/sync-keywords.py --file "...csv" --force  # importa aunque el costo no cuadre
 ```
 
 **Numeros dañados por Sheets.** Al convertir los CSV a hoja de calculo, Sheets leyo los miles como decimales y
