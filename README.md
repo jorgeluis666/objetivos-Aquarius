@@ -439,6 +439,12 @@ Publicitario y Proyecciones; Palabras Clave tiene su propio boton Actualizar). S
 la sincronizacion falla, la pildora se pone ambar y el detalle dice por que. Su
 comportamiento depende de `data/drive-config.json`:
 
+- **Con el Web App del barrido** (`AQ_SYNC_URL`, el que manda sobre los demas): el boton le pide a
+  `scripts/apps-script/sincronizar-aquarius.gs`, publicado como aplicacion web, el mismo barrido de las 10:00
+  (`sync-drive.yml`). Sigue la corrida por la API publica de GitHub: si Drive trajo cambios espera la
+  publicacion y recarga; si no, avisa que el tablero ya estaba al dia. Como mucho un barrido cada 4
+  minutos para todos los visitantes. La URL llega por el secret `AQ_SYNC_URL` y solo queda dentro
+  del HTML cifrado.
 - **Sin `apiKey`** (estado actual): el boton vuelve a leer desde el navegador las
   hojas que encontro el ultimo barrido (la exportacion CSV de Google Sheets responde
   con CORS abierto), actualiza el tablero sin recargar y guarda el resultado en

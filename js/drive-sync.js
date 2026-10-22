@@ -461,8 +461,77 @@
     pill.setAttribute('aria-expanded', 'true');
   }
 
+  // Boton conectado al barrido del servidor: con el Web App de scripts/apps-script/sincronizar-aquarius.gs (URL en
+  // CONFIG.syncUrl, incrustada en el build) el boton le pide a GitHub la sincronizacion con Drive, sigue la
+  // corrida por la API publica de GitHub y, si publico datos nuevos, espera la publicacion y recarga.
+  const SYNC_URL_RE = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{20,}\/exec$/;
+  const ACTIONS_API = 'https://api.github.com/repos/jorgeluis666/objetivos-Aquarius/actions';
+  const POLL_MS = 10000;
+  const MAX_WAIT_MS = 10 * 60 * 1000;
+  const hasSyncUrl = () => SYNC_URL_RE.test(String(CONFIG.syncUrl || ''));
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  async function actionsJson(path) {
+    const response = await fetch(`${ACTIONS_API}/${path}`, { cache: 'no-store', headers: { Accept: 'application/vnd.github+json' } });
+    if (!response.ok) throw new Error(`GitHub respondio ${response.status}`);
+    return response.json();
+  }
+
+  // La corrida mas reciente de un workflow que empezo despues de "since", cuando termina.
+  async function waitForRun(workflow, since, deadline) {
+    while (Date.now() < deadline) {
+      const { workflow_runs: runs = [] } = await actionsJson(`workflows/${workflow}/runs?per_page=5`);
+      const run = runs.find(item => Date.parse(item.created_at) >= since);
+      if (run && run.status === 'completed') return run;
+      await wait(POLL_MS);
+    }
+    throw new Error('la sincronizacion tarda mas de lo normal; el tablero se actualiza al terminar');
+  }
+
+  async function syncOnServer() {
+    if (running) return;
+    running = true;
+    setBusy(true);
+    setStatus('Pidiendo la sincronizacion con Drive...', 'is-working');
+    const asked = Date.now();
+    const deadline = asked + MAX_WAIT_MS;
+    try {
+      const response = await fetch(CONFIG.syncUrl, { method: 'POST', body: 'action=sync', redirect: 'follow' });
+      const result = await response.json().catch(() => ({}));
+      if (!result.ok) throw new Error(result.error || 'el servidor no acepto el pedido');
+      // Si alguien la pidio hace menos de 4 minutos, se espera esa misma corrida.
+      const since = asked - (result.pending ? 5 * 60000 : 60000);
+      setStatus(result.pending ? 'Ya hay una sincronizacion en curso: esperando que termine...' : 'Leyendo la carpeta de Drive...', 'is-working');
+      const run = await waitForRun('sync-drive.yml', since, deadline);
+      if (run.conclusion !== 'success') throw new Error('la lectura de Drive termino con error');
+      const { jobs = [] } = await actionsJson(`runs/${run.id}/jobs`);
+      const publish = jobs.flatMap(job => job.steps || []).find(step => step.name === 'Publicar el tablero');
+      if (!publish || publish.conclusion !== 'success') {
+        setStatus('Drive no tenia cambios: el tablero ya esta al dia.', 'is-ok');
+        return;
+      }
+      setStatus('Publicando los datos nuevos...', 'is-working');
+      const deploy = await waitForRun('deploy-pages.yml', Date.parse(run.created_at), deadline);
+      if (deploy.conclusion !== 'success') throw new Error('la publicacion termino con error');
+      setStatus('Datos nuevos publicados: recargando...', 'is-ok');
+      // GitHub Pages tarda unos segundos en servir la version nueva.
+      await wait(5000);
+      reloadPublished();
+    } catch (error) {
+      console.error('[drive-sync]', error);
+      setStatus('No se pudo sincronizar: ' + error.message, 'is-error');
+    } finally {
+      running = false;
+      setBusy(false);
+    }
+  }
+
   function onSyncClick() {
     openStatusCard();
+    if (hasSyncUrl()) {
+      syncOnServer();
+      return;
+    }
     const known = ((window.AquariusDashboard.getData() || {}).drive || {}).files || [];
     if (hasApiKey() || known.some(file => file && file.id)) syncFromDrive(false);
     else reloadPublished();
@@ -531,6 +600,7 @@
   window.AquariusDriveSync = {
     parseCampaignReport: parseCampaignReport,
     sync: () => syncFromDrive(false),
+    syncOnServer,
     isConfigured: hasApiKey
   };
 

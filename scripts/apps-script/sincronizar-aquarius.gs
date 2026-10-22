@@ -12,6 +12,8 @@
  *    solo para el repositorio objetivos-Aquarius, con el permiso Actions: lectura y escritura.
  * 4. Ejecutar instalarActivador() una vez y aceptar los permisos.
  * 5. Ejecutar sincronizarAquarius() para probar: en GitHub > Actions aparece la ejecucion.
+ * 6. Boton "Sincronizar" del tablero: Implementar > Nueva implementacion > Aplicacion web, ejecutar como
+ *    "Yo", acceso "Cualquier persona". La URL /exec va en el secret AQ_SYNC_URL del repositorio.
  *
  * El token nunca va en este archivo: vive solo en las Propiedades del script.
  */
@@ -55,4 +57,42 @@ function instalarActivador() {
     .inTimezone(ZONA)
     .create();
   console.log(`Activador diario creado: ${HORA}:00 (${ZONA}).`);
+}
+
+// ── Boton "Sincronizar" del tablero ─────────────────────────────────────────
+// Publicado como aplicacion web, el boton le pide aqui el mismo barrido de sincronizarAquarius(). Solo acepta
+// action=sync y como mucho un barrido cada 4 minutos para todos los visitantes (si alguien ya lo pidio, el
+// tablero espera esa corrida). Los errores quedan en Ejecuciones; al tablero solo le llega un mensaje generico.
+const BOTON_ESPERA_SEGUNDOS = 240;
+const BOTON_CACHE = 'aquarius_boton_ultima';
+
+function doPost(event) {
+  const accion = String((event && event.postData && event.postData.contents) || '').trim();
+  return accion === 'action=sync' ? sincronizarDesdeBoton_() : respuestaBoton_({ ok: false, error: 'Solicitud no valida.' });
+}
+
+function doGet(event) {
+  const params = (event && event.parameter) || {};
+  return params.action === 'sync' ? sincronizarDesdeBoton_() : respuestaBoton_({ ok: false, error: 'Solicitud no valida.' });
+}
+
+function sincronizarDesdeBoton_() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return respuestaBoton_({ ok: true, pending: true });
+  try {
+    const cache = CacheService.getScriptCache();
+    if (cache.get(BOTON_CACHE)) return respuestaBoton_({ ok: true, pending: true });
+    sincronizarAquarius();
+    cache.put(BOTON_CACHE, new Date().toISOString(), BOTON_ESPERA_SEGUNDOS);
+    return respuestaBoton_({ ok: true, pending: false });
+  } catch (error) {
+    console.error('boton', error);
+    return respuestaBoton_({ ok: false, error: 'No se pudo iniciar la sincronizacion.' });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function respuestaBoton_(body) {
+  return ContentService.createTextOutput(JSON.stringify(body)).setMimeType(ContentService.MimeType.JSON);
 }

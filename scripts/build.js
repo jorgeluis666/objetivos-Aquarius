@@ -59,6 +59,10 @@ function main() {
   // llega por AQ_DRIVE_API_KEY y solo queda dentro del HTML cifrado.
   const driveConfig = JSON.parse(readFile('data/drive-config.json'));
   driveConfig.apiKey = process.env.AQ_DRIVE_API_KEY || driveConfig.apiKey || '';
+  // Boton Sincronizar: el Web App del barrido (scripts/apps-script/sincronizar-aquarius.gs). La URL llega por
+  // AQ_SYNC_URL y, como la clave, solo queda dentro del HTML cifrado.
+  driveConfig.syncUrl = process.env.AQ_SYNC_URL || driveConfig.syncUrl || '';
+  if (driveConfig.syncUrl) console.log('[build] boton Sincronizar conectado al barrido de GitHub');
   const driveJson = JSON.stringify(driveConfig).replace(/</g, '\\u003c');
   if (driveConfig.apiKey) console.log('[build] sincronizacion desde el navegador habilitada');
   else console.warn('[build] sin AQ_DRIVE_API_KEY: el boton Sincronizar lee las hojas del ultimo barrido (no lista la carpeta)');
