@@ -27,8 +27,12 @@ Dashboard de gasto publicitario para Aquarius.
   clics). Los cocientes se recalculan sobre las sumas.
   - Mes cerrado: contra el mes anterior completo. Mes en curso: contra el mes anterior **prorrateado a los
     mismos dias** ("vs Agosto prorrateado a 13 dias"), porque el informe trae un total por mes; CTR, CPC,
-    costo y tasa no cambian al prorratear. Solo el mes calendario anterior: si falta, "Sin mes anterior para
-    comparar".
+    costo y tasa no cambian al prorratear. Cuando llegue el informe por dia y campana (`months[].detail`) y
+    cubra esos dias del mes anterior, inversion, clics y conversiones se comparan con el **mismo tramo real**
+    ("1-13 Agosto") y las impresiones (que ese informe no trae) siguen prorrateadas; un cociente sale del tramo
+    si sus dos sumas son reales (CPC, costo y tasa) y si no, es el del mes anterior completo (CTR). Cada KPI
+    dice contra que se compara y la bajada lo resume; cada campana usa su propio tramo. Solo el mes calendario
+    anterior: si falta, "Sin mes anterior para comparar".
   - Flecha y color segun si subir es bueno: inversion neutra; CPC y costo por conversion, bajar es bueno.
   - Anual: acumulado de los meses con informe; los KPIs sumables muestran el promedio mensual de los meses
     cerrados en lugar de la variacion.
@@ -51,15 +55,22 @@ Dashboard de gasto publicitario para Aquarius.
   - KPIs con variacion: inversion, clics, CTR, CPC, conversiones, costo por conversion y presupuesto diario.
     El subtitulo dice contra que se compara, "Nueva: no corria en ..." o, en Anual, en que meses corrio.
   - Grafico **por mes** del ano, con hueco donde la campana no corrio. Indicadores: inversion y conversiones
-    (por defecto), clics e impresiones; con varios, cada uno en su panel con su escala sobre el mismo eje.
-    Acumulado del mes y Por dia no se ofrecen (no hay serie diaria por campana): quedan listos para cuando
-    llegue un informe por dia y campana en `months[].detail`.
+    (por defecto), clics, impresiones y costo por conversion (inversion / conversiones del mes, el mismo del
+    KPI; un mes sin conversiones queda como hueco). Cada punto lleva su valor (arriba en un pico, abajo en un
+    valle; sin etiqueta en los ceros y, si dos chocan, una queda solo en el tooltip); los soles van sin
+    decimales salvo montos menores a S/ 10. Con varios indicadores, cada uno en su panel con su escala sobre
+    el mismo eje, o con el boton `Un solo cuadro` todos juntos, un color por indicador y cada uno con su escala
+    (sin eje: el valor va en el punto).
+  - Por dia no se ofrece (no hay serie diaria por campana): queda listo para cuando llegue un informe por dia
+    y campana en `months[].detail` (sin impresiones; costo por conversion de cada dia, hueco si no hubo
+    conversiones). No hay acumulado del mes: siempre sube y exagera el crecimiento (una vista guardada en
+    acumulado vuelve a Por dia).
   - **Palabras clave de la campana** del mes (en SKAG el grupo de anuncios es la campana): conversiones,
     conversiones del mes anterior y variacion ("Nuevo" si no estaba), costo por conversion, inversion y su %
     de la campana, impresiones, clics y CPC. Una palabra clave es su texto mas su concordancia, como en el
     modulo Palabras Clave. Solo se compara con el mes anterior si los dos informes son de mes completo o
     cubren los mismos dias; si no, las columnas de comparacion se ocultan.
-  - Se minimiza con la flecha. Indicadores, vista y minimizado se recuerdan por campana
+  - Se minimiza con la flecha. Indicadores, vista, `Un solo cuadro` y minimizado se recuerdan por campana
     (`aquarius_gasto_campaign_charts`).
 - **Ranking de palabras clave del periodo**: por conversiones dentro de cada campana, con la lider marcada
   con una estrella, conversiones del mes anterior y variacion. Cabecera fija, Campana y Palabra clave
@@ -273,7 +284,8 @@ template es propio de Aquarius: cada tablero de marca tiene el suyo, adaptado po
 
 - **De donde salen los numeros:** de Gasto Publicitario, que los expone en `window.AquariusGasto`
   (`js/objectives.js`): el periodo del mes, sus totales, la variacion contra el mes anterior (prorrateado a los
-  mismos dias si el mes esta en curso, "vs período ant."), las campanas y las palabras clave del mes. Cada
+  mismos dias si el mes esta en curso, o su tramo real cuando haya informe por dia; "vs período ant."), las
+  campanas y las palabras clave del mes. Cada
   sincronizacion lo actualiza solo; las palabras clave llegan despues (`aquarius:keywords-ready`).
 - **Palabras clave:** la misma palabra en varias campanas o con dos concordancias va en una sola fila. Si el costo
   de las palabras no cuadra con el de las campanas (mas de 20% por encima), no se muestra y el pie de la tabla lo
