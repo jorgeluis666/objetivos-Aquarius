@@ -1,4 +1,6 @@
 (function () {
+  // Fuente de los gráficos: Inter, como el resto del tablero (Chart.js usa Helvetica por defecto).
+  if (typeof Chart !== 'undefined') Chart.defaults.font.family = 'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
   const DATA_URL = 'data/aquarius-lima-retail-2026.json';
   const MONTH_STORAGE_KEY = 'aquarius_selected_month';
   const VIEW_STORAGE_KEY = 'aquarius_chart_view';
@@ -6,7 +8,7 @@
   const CHART_VIEWS = ['day', 'week', 'year'];
   // Series del grafico principal: un punto por mes, lineas en el tiempo.
   const MONTHLY = {
-    cost: { label: 'Inversion', unit: 'money', color: '#0284c7', fill: 'rgba(2,132,199,.12)', axis: 'y' },
+    cost: { label: 'Inversión', unit: 'money', color: '#2563eb', fill: 'rgba(37,99,235,.12)', axis: 'y' },
     conversions: { label: 'Resultados', unit: 'count', color: '#7c3aed', fill: 'rgba(124,58,237,.12)', axis: 'y1' },
     costPerConversion: { label: 'Costo x resultado', unit: 'money', color: '#0f766e', fill: 'rgba(15,118,110,.12)', axis: 'y2', dashed: true },
     impressions: { label: 'Impresiones', unit: 'count', color: '#f59e0b', fill: 'rgba(245,158,11,.12)', axis: 'y3' }
@@ -14,19 +16,19 @@
   const MONTHLY_ORDER = ['cost', 'conversions', 'costPerConversion', 'impressions'];
   // Series de la evolucion diaria dentro del mes.
   const DAILY = {
-    cost: { label: 'Inversion', unit: 'money', color: '#0284c7', axis: 'y' },
+    cost: { label: 'Inversión', unit: 'money', color: '#2563eb', axis: 'y' },
     conversions: { label: 'Resultados', unit: 'count', color: '#7c3aed', axis: 'y1' },
     costPerConversion: { label: 'Costo x resultado', unit: 'money', color: '#0f766e', axis: 'y2', dashed: true },
     impressions: { label: 'Impresiones', unit: 'count', color: '#f59e0b', axis: 'y3' }
   };
   const DAILY_ORDER = ['cost', 'conversions', 'costPerConversion', 'impressions'];
-  const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const CAMPAIGN_NAMES = {
-    DIGITALIZACIONDEDCOUMENTOS: 'Digitalizacion de documentos',
-    GESTIONLOGISTICA: 'Gestion logistica',
+    DIGITALIZACIONDEDCOUMENTOS: 'Digitalización de documentos',
+    GESTIONLOGISTICA: 'Gestión logística',
     VALUACIONESCOMERCIALES: 'Valuaciones comerciales',
-    FOTOGRAMETRIACONDRONES: 'Fotogrametria con drones',
-    FOTOGRAMETRÍACONDRONES: 'Fotogrametria con drones',
+    FOTOGRAMETRIACONDRONES: 'Fotogrametría con drones',
+    FOTOGRAMETRÍACONDRONES: 'Fotogrametría con drones',
     ALMACENAMIENTO: 'Almacenamiento',
     ACTIVOSFIJOS: 'Activos fijos',
     PRODUCTOSTI: 'Productos TI',
@@ -35,12 +37,12 @@
   // annual: la pestana Anual. monthId sigue siendo el mes del grafico de la cuenta y de snapshot().
   const state = { data: null, months: [], monthId: null, annual: false, daily: [], chartView: 'day', chart: null };
 
-  // Sin dato (null) es "-", no cero: un costo por conversion sin conversiones no vale S/ 0.00.
-  const fmtMoney = value => isNum(value) ? `S/ ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
-  const fmtCount = value => isNum(value) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 }) : '-';
+  // Sin dato (null) es "—", no cero: un costo por conversion sin conversiones no vale S/. 0.00.
+  const fmtMoney = value => isNum(value) ? `S/. ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—';
+  const fmtCount = value => isNum(value) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 }) : '—';
   // Google Ads reparte conversiones entre campanas: pueden venir con decimales (79.5).
-  const fmtDecimal = value => isNum(value) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 2 }) : '-';
-  const fmtPercent = value => isNum(value) ? `${(Number(value) * 100).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : '-';
+  const fmtDecimal = value => isNum(value) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 2 }) : '—';
+  const fmtPercent = value => isNum(value) ? `${(Number(value) * 100).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : '—';
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
   function sum(rows, field) {
@@ -61,7 +63,7 @@
 
   function formatValue(value, unit, short = false) {
     if (unit === 'money') {
-      if (short && Number.isFinite(Number(value)) && Math.abs(Number(value)) >= 1000) return `S/ ${(Number(value) / 1000).toFixed(1)}k`;
+      if (short && Number.isFinite(Number(value)) && Math.abs(Number(value)) >= 1000) return `S/. ${(Number(value) / 1000).toFixed(1)}k`;
       return fmtMoney(value);
     }
     if (unit === 'percent') return fmtPercent(value);
@@ -154,7 +156,7 @@
       return data.months
         .map(month => ({
           id: String(month.id || ''),
-          label: month.label || monthLabel(month.id),
+          label: /^\d{4}-\d{2}$/.test(String(month.id || '')) ? monthLabel(month.id) : (month.label || monthLabel(month.id)),
           sourceFile: month.sourceFile || null,
           records: Array.isArray(month.records) ? month.records : [],
           totals: month.totals || null,
@@ -172,7 +174,7 @@
       const id = data.month || 'historico';
       return [{
         id,
-        label: /^\d{4}-\d{2}$/.test(id) ? monthLabel(id) : 'Historico',
+        label: /^\d{4}-\d{2}$/.test(id) ? monthLabel(id) : 'Histórico',
         sourceFile: data.sourceFile || null,
         records: data.records,
         totals: null,
@@ -280,13 +282,13 @@
     sweep.status = 'loading';
     try {
       const response = await fetch(SYNC_RUNS_URL, { cache: 'no-store' });
-      if (!response.ok) throw new Error(`GitHub respondio ${response.status}`);
+      if (!response.ok) throw new Error(`GitHub respondió ${response.status}`);
       const payload = await response.json();
       sweep.run = (payload.workflow_runs || [])[0] || null;
       sweep.status = 'ok';
     } catch (error) {
       sweep.status = 'error';
-      console.warn('[gasto] no se pudo leer el ultimo barrido', error);
+      console.warn('[gasto] no se pudo leer el último barrido', error);
     }
     sweep.checkedAt = Date.now();
     renderStatusCard();
@@ -409,7 +411,7 @@
       const available = target === 'year' || hasDaily;
       const active = target === view;
       button.disabled = !available;
-      button.title = available ? '' : (state.annual ? 'En Anual el grafico muestra los meses del ano' : 'Este mes no tiene detalle por dia');
+      button.title = available ? '' : (state.annual ? 'En Anual el gráfico muestra los meses del año' : 'Este mes no tiene detalle por día');
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
@@ -431,12 +433,12 @@
     // En Anual ningun mes se resalta: el periodo es todo el ano.
     const highlight = state.annual ? null : state.monthId;
     const metrics = MONTHLY_ORDER.filter(metric => months.some(month => isNum(month[metric])));
-    document.getElementById('chart-title').textContent = 'Evolucion mensual | Inversion, resultados y costo por resultado';
+    document.getElementById('chart-title').textContent = 'Evolución mensual | Inversión, resultados y costo por resultado';
     const sub = document.getElementById('chart-sub');
     if (sub) {
       const totalCost = months.reduce((total, month) => total + (month.cost || 0), 0);
       const totalConversions = months.reduce((total, month) => total + (month.conversions || 0), 0);
-      sub.textContent = `${months.length} meses | ${fmtMoney(totalCost)} de inversion | ${fmtCount(totalConversions)} resultados | ${fmtMoney(totalConversions > 0 ? totalCost / totalConversions : null)} por resultado en el acumulado.`;
+      sub.textContent = `${months.length} meses | ${fmtMoney(totalCost)} de inversión | ${fmtCount(totalConversions)} resultados | ${fmtMoney(totalConversions > 0 ? totalCost / totalConversions : null)} por resultado en el acumulado.`;
     }
     const legend = document.querySelector('.chart-legend span');
     if (legend) {
@@ -444,7 +446,7 @@
     }
     const canvas = document.getElementById('chart-monthly');
     if (typeof Chart === 'undefined') {
-      canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Grafico no disponible sin conexion.</strong><span>La tabla de resultados sigue visible.</span></div>';
+      canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Gráfico no disponible sin conexión.</strong><span>La tabla de resultados sigue visible.</span></div>';
       return;
     }
     if (state.chart) state.chart.destroy();
@@ -498,12 +500,12 @@
           }
         },
         scales: {
-          x: { grid: { display: false }, border: { color: '#bfdbfe' }, ticks: { color: '#7890b5', font: { size: 11, weight: '600' } } },
+          x: { grid: { display: false }, border: { color: '#cbd5e1' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
           y: {
             beginAtZero: true,
             border: { display: false },
-            grid: { color: 'rgba(14,165,233,.16)' },
-            ticks: { color: '#7890b5', font: { size: 10 }, callback: value => formatValue(value, 'money', true) }
+            grid: { color: 'rgba(15,23,42,.06)' },
+            ticks: { color: '#94a3b8', font: { size: 10 }, callback: value => formatValue(value, 'money', true) }
           },
           y1: {
             beginAtZero: true,
@@ -563,10 +565,10 @@
 
   function dailySummary(rows, active, estimated, weeks) {
     const month = currentMonth();
-    const scope = weeks ? `${weeks} semanas (${rows.length} dias)` : `${rows.length} dias`;
+    const scope = weeks ? `${weeks} semanas (${rows.length} días)` : `${rows.length} días`;
     const parts = [`${scope} de ${month ? month.label : 'el periodo'}`];
     const totalOf = metric => rows.reduce((total, row) => total + (isNum(row[metric]) ? Number(row[metric]) : 0), 0);
-    if (active.includes('cost')) parts.push(`${fmtMoney(totalOf('cost'))} de inversion`);
+    if (active.includes('cost')) parts.push(`${fmtMoney(totalOf('cost'))} de inversión`);
     if (active.includes('conversions')) parts.push(`${fmtCount(totalOf('conversions'))} resultados`);
     if (active.includes('cost') && active.includes('conversions')) {
       const conversions = totalOf('conversions');
@@ -618,7 +620,7 @@
   }
 
   function weekLongLabel(first, last, days) {
-    const corto = days && days < 7 ? ` (${days} ${days === 1 ? 'dia' : 'dias'})` : '';
+    const corto = days && days < 7 ? ` (${days} ${days === 1 ? 'día' : 'días'})` : '';
     if (first === last) return `${formatLongDate(first)}${corto}`;
     return `Del ${formatLongDate(first)} al ${formatLongDate(last)}${corto}`;
   }
@@ -634,18 +636,18 @@
     panel.hidden = false;
     if (!rows.length || !active.length) {
       if (state.chart) { state.chart.destroy(); state.chart = null; }
-      document.getElementById('chart-title').textContent = `Evolucion ${detail} | ${month ? month.label : ''}`.trim();
-      document.getElementById('chart-sub').textContent = 'Este mes no tiene detalle por dia.';
+      document.getElementById('chart-title').textContent = `Evolución ${detail} | ${month ? month.label : ''}`.trim();
+      document.getElementById('chart-sub').textContent = 'Este mes no tiene detalle por día.';
       const emptyLegend = document.querySelector('.chart-legend span');
       if (emptyLegend) emptyLegend.innerHTML = '';
       const emptyNote = document.getElementById('chart-note');
       if (emptyNote) {
         emptyNote.hidden = false;
-        emptyNote.textContent = 'Sin serie diaria para este mes. En la vista Mes si aparece junto a los demas meses del ano.';
+        emptyNote.textContent = 'Sin serie diaria para este mes. En la vista Mes sí aparece junto a los demás meses del año.';
       }
       return;
     }
-    document.getElementById('chart-title').textContent = `Evolucion ${detail} | ${month ? month.label : ''}`.trim();
+    document.getElementById('chart-title').textContent = `Evolución ${detail} | ${month ? month.label : ''}`.trim();
     document.getElementById('chart-sub').textContent = dailySummary(dayRows, active, estimated, weekly ? rows.length : 0);
     const legend = document.querySelector('.chart-legend span');
     if (legend) {
@@ -657,16 +659,16 @@
       const guessed = ['cost', 'conversions'].filter(metric => estimated.has(metric)).map(metric => DAILY[metric].label.toLowerCase());
       note.hidden = !missing.length && !guessed.length;
       if (guessed.length) {
-        note.textContent = `Lineas punteadas: ${guessed.join(' y ')} del mes repartidos entre los dias segun las impresiones de cada dia, no son cifras diarias reales. Al importar el export diario con las columnas Fecha, Coste y Resultados se reemplazan por los valores reales.`;
+        note.textContent = `Líneas punteadas: ${guessed.join(' y ')} del mes repartidos entre los días según las impresiones de cada día, no son cifras diarias reales. Al importar el export diario con las columnas Fecha, Coste y Resultados se reemplazan por los valores reales.`;
       } else if (missing.length) {
-        note.textContent = `Falta el detalle diario de ${missing.join(' y ')}. Envia el export diario con las columnas Fecha, Coste y Resultados y este grafico las dibujara junto a las impresiones.`;
+        note.textContent = `Falta el detalle diario de ${missing.join(' y ')}. Envía el export diario con las columnas Fecha, Coste y Resultados y este gráfico las dibujará junto a las impresiones.`;
       } else {
         note.textContent = '';
       }
     }
     const canvas = document.getElementById('chart-monthly');
     if (typeof Chart === 'undefined') {
-      canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Grafico no disponible sin conexion.</strong><span>Los totales siguen visibles en los KPIs.</span></div>';
+      canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Gráfico no disponible sin conexión.</strong><span>Los totales siguen visibles en los KPIs.</span></div>';
       return;
     }
     if (state.chart) state.chart.destroy();
@@ -718,21 +720,21 @@
           }
         },
         scales: {
-          x: { grid: { display: false }, border: { color: '#bfdbfe' }, ticks: { color: '#7890b5', font: { size: 10 } } },
+          x: { grid: { display: false }, border: { color: '#cbd5e1' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
           y: {
             display: usesMoney,
             beginAtZero: true,
             border: { display: false },
-            grid: { color: 'rgba(14,165,233,.16)' },
-            ticks: { color: '#7890b5', font: { size: 10 }, callback: value => formatValue(value, 'money', true) }
+            grid: { color: 'rgba(15,23,42,.06)' },
+            ticks: { color: '#94a3b8', font: { size: 10 }, callback: value => formatValue(value, 'money', true) }
           },
           y1: {
             display: usesCount,
             position: usesMoney ? 'right' : 'left',
             beginAtZero: true,
             border: { display: false },
-            grid: { color: usesMoney ? 'rgba(0,0,0,0)' : 'rgba(14,165,233,.16)', drawOnChartArea: !usesMoney },
-            ticks: { color: '#7890b5', font: { size: 10 }, callback: value => fmtCount(value) }
+            grid: { color: usesMoney ? 'rgba(0,0,0,0)' : 'rgba(15,23,42,.06)', drawOnChartArea: !usesMoney },
+            ticks: { color: '#94a3b8', font: { size: 10 }, callback: value => fmtCount(value) }
           },
           // Ejes ocultos: cada serie conserva su escala y su forma se lee igual.
           y2: {
@@ -767,9 +769,9 @@
   const RATE_USES = { ctr: ['clicks', 'impressions'], cpc: ['cost', 'clicks'], costPerConversion: ['cost', 'conversions'], conversionRate: ['conversions', 'clicks'] };
   // Sumas que trae el informe por dia y campana (months[].detail): no trae impresiones.
   const DETAIL_SUMS = ['cost', 'clicks', 'conversions'];
-  const CHART_COLOR = '#0284c7';
-  const AXIS_COLOR = '#7890b5';
-  const GRID_COLOR = 'rgba(14,165,233,.16)';
+  const CHART_COLOR = '#2563eb';
+  const AXIS_COLOR = '#94a3b8';
+  const GRID_COLOR = 'rgba(15,23,42,.06)';
   const PREVIOUS_COLOR = '#94a3b8';
   const CHEVRON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>';
   // Por dia necesita el informe por dia y campana (months[].detail); sin el, solo Por mes. No hay acumulado
@@ -1170,7 +1172,7 @@
   function variationCell(current, previous) {
     if (previous === null || previous === undefined) return '<span class="status-pill new">Nuevo</span>';
     const d = change(current, previous);
-    if (d === null) return '<span class="no-data">-</span>';
+    if (d === null) return '<span class="no-data">—</span>';
     return `<span class="status-pill ${d >= 0 ? 'green' : 'red'}">${d >= 0 ? '▲' : '▼'} ${pctText(d, 0)}</span>`;
   }
 
@@ -1182,7 +1184,7 @@
 
   const shareCell = share => (isNum(share)
     ? `<td class="gasto-share-col"><span class="gasto-share"><span style="width:${Math.min(100, share * 100).toFixed(1)}%"></span></span><b>${fmtPercent(share)}</b></td>`
-    : '<td class="gasto-share-col"><span class="no-data">-</span></td>');
+    : '<td class="gasto-share-col"><span class="no-data">—</span></td>');
 
   // ── Pestanas de mes ──
   function renderTabs(period) {
@@ -1279,7 +1281,7 @@
     const total = periodTotals(period);
     const lastMonth = period.months[period.months.length - 1];
     document.getElementById('gasto-dist-sub').textContent = `${period.label} ${period.year} | ${campaigns.length} ${campaigns.length === 1 ? 'campaña' : 'campañas'} con inversión, impresiones o clics.${period.annual ? ' Estado y presupuesto del último mes.' : ''}`;
-    const money = value => (isNum(value) ? fmtMoney(value) : '<span class="no-data">-</span>');
+    const money = value => (isNum(value) ? fmtMoney(value) : '<span class="no-data">—</span>');
     document.getElementById('gasto-dist-body').innerHTML = campaigns.map(campaign => `
       <tr>
         <td class="campaign-name"><span>${escapeHtml(campaign.label)}</span><small>${escapeHtml(campaign.name)}</small></td>
@@ -1361,7 +1363,7 @@
       return `<tr>
           <td class="gasto-kw-name"><span>${escapeHtml(row.keyword)}</span><small>${escapeHtml(row.matchType || 'Sin concordancia')}</small></td>
           <td class="num gasto-strong">${fmtDecimal(row.conversions)}</td>
-          ${compare ? `<td class="num">${before ? fmtDecimal(before.conversions) : '<span class="no-data">-</span>'}</td><td class="num">${variationCell(row.conversions, before ? before.conversions : null)}</td>` : ''}
+          ${compare ? `<td class="num">${before ? fmtDecimal(before.conversions) : '<span class="no-data">—</span>'}</td><td class="num">${variationCell(row.conversions, before ? before.conversions : null)}</td>` : ''}
           <td class="num">${fmtMoney(row.costPerConversion)}</td>
           <td class="num">${fmtMoney(row.cost)}</td>
           ${shareCell(kwCost > 0 ? row.cost / kwCost : null)}
@@ -1467,7 +1469,7 @@
         labels: SHORT_NAMES,
         datasets: [{
           label: metric.label, unit: metric.unit, data, valueLabels: true,
-          borderColor: color, backgroundColor: 'rgba(2,132,199,.10)', fill: true, borderWidth: 2, tension: 0.25, spanGaps: false,
+          borderColor: color, backgroundColor: 'rgba(37,99,235,.10)', fill: true, borderWidth: 2, tension: 0.25, spanGaps: false,
           pointRadius: data.map((_, index) => (index === marked ? 6 : 4)), pointHoverRadius: 7,
           pointBackgroundColor: data.map((_, index) => (index === marked ? color : '#fff')), pointBorderColor: color, pointBorderWidth: 2
         }],
@@ -1522,7 +1524,7 @@
   }
 
   const tickValue = (unit, value) => (unit === 'money'
-    ? `S/ ${Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 })}`
+    ? `S/. ${Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 })}`
     : Number(value).toLocaleString('es-PE', { notation: Math.abs(value) >= 100000 ? 'compact' : 'standard', maximumFractionDigits: 1 }));
 
   // Con un indicador hay un solo eje y; con varios, un eje por indicador apilado en vertical (paneles con su
@@ -1541,7 +1543,7 @@
       // El tope de cada panel cae sobre el cero del panel de arriba: se omite para que no se encimen.
       ticks: Object.assign(base(metric.unit).ticks, { maxTicksLimit: 5, callback: (value, tickIndex, ticks) => (index > 0 && tickIndex === ticks.length - 1 ? '' : tickValue(metric.unit, value)) }),
       // La linea del cero marca el piso de cada panel.
-      grid: { color: ctx => (ctx.tick && ctx.tick.value === 0 ? '#bfdbfe' : GRID_COLOR) },
+      grid: { color: ctx => (ctx.tick && ctx.tick.value === 0 ? '#cbd5e1' : GRID_COLOR) },
       panelLabel: metric.label
     })]).reverse());
   }
@@ -1579,7 +1581,7 @@
         meta.data.forEach((point, index) => {
           const value = dataset.data[index];
           if (value === null || value === undefined || Number(value) === 0) return;
-          // Soles sin decimales, salvo montos chicos (S/ 0.40 no debe leerse S/ 0).
+          // Soles sin decimales, salvo montos chicos (S/. 0.40 no debe leerse S/. 0).
           const text = dataset.unit === 'money' && Math.abs(value) >= 10 ? tickValue('money', Math.round(value)) : formatValue(value, dataset.unit);
           const half = ctx.measureText(text).width / 2 + 2;
           const before = dataset.data[index - 1];
@@ -1647,7 +1649,7 @@
 
   function drawCampaignChart(canvas, series, metrics, modeKey, combined = false) {
     if (typeof Chart === 'undefined') {
-      canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Grafico no disponible sin conexion.</strong><span>Los KPIs y las tablas siguen visibles.</span></div>';
+      canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Gráfico no disponible sin conexión.</strong><span>Los KPIs y las tablas siguen visibles.</span></div>';
       return;
     }
     const year = viewYear();
@@ -1671,7 +1673,7 @@
           }
         },
         scales: Object.assign({
-          x: { grid: { display: false }, border: { color: '#bfdbfe' }, ticks: { color: AXIS_COLOR, font: { size: 10 }, autoSkip: true, maxTicksLimit: modeKey === 'monthly' ? 12 : 16 } }
+          x: { grid: { display: false }, border: { color: '#cbd5e1' }, ticks: { color: AXIS_COLOR, font: { size: 10 }, autoSkip: true, maxTicksLimit: modeKey === 'monthly' ? 12 : 16 } }
         }, yScales(metrics, combined))
       },
       plugins: CHART_PLUGINS
@@ -1786,8 +1788,8 @@
           <td class="gasto-rank-campaign" title="${escapeHtml(row.campaign)}"><span>${escapeHtml(campaignLabel(row.campaign))}</span></td>
           <td class="gasto-rank-keyword" title="${escapeHtml(`${row.keyword} (${row.matchType || 'Sin concordancia'})`)}"><span>${row.leader ? '<b class="gasto-leader" title="Líder de la campaña">★</b> ' : ''}${escapeHtml(row.keyword)}</span><small>${escapeHtml(row.matchType || 'Sin concordancia')}</small></td>
           <td class="num gasto-strong">${fmtDecimal(row.conversions)}</td>
-          <td class="num">${before ? fmtDecimal(before.conversions) : '<span class="no-data">-</span>'}</td>
-          <td class="num">${compare ? variationCell(row.conversions, before ? before.conversions : null) : '<span class="no-data">-</span>'}</td>
+          <td class="num">${before ? fmtDecimal(before.conversions) : '<span class="no-data">—</span>'}</td>
+          <td class="num">${compare ? variationCell(row.conversions, before ? before.conversions : null) : '<span class="no-data">—</span>'}</td>
           <td class="num">${fmtMoney(row.costPerConversion)}</td>
           <td class="num">${fmtMoney(row.cost)}</td>
           <td class="num">${fmtCount(row.impressions)}</td>

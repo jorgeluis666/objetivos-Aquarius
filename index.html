@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/dashboard.css?v=1.19.0">
+<link rel="stylesheet" href="css/dashboard.css?v=1.19.1">
 <style>
-  .reservations-total-row td { height: auto !important; padding: 10px 12px !important; border-top: 2px solid #cbd5e1 !important; color: #0f172a !important; background: #f8fafc; font-size: 13px; font-weight: 800; vertical-align: middle; }
+  .reservations-total-row td { height: auto !important; padding: 10px 12px !important; border-top: 1px solid var(--border) !important; color: #0f172a !important; background: #f8fbff; font-size: 13px; font-weight: 700; vertical-align: middle; }
   .reservations-total-row .total-label { text-align: right; }
   .reservations-total-row .resultados-col { font-size: 12px; }
   .deadline-cell { min-width: 92px; }
@@ -32,19 +32,19 @@
 <body>
 <div class="shell">
   <aside class="sidebar" id="aquarius-sidebar">
-    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.19.0</span></div></div>
-    <div class="s-group-lbl">Modulos activos</div>
-    <button title="Gasto Publicitario" class="s-item active" type="button" data-view-target="view-obj">
+    <div class="s-brand"><div class="s-title">Aquarius</div><div class="s-sub">BI Agencia Lima Retail <span class="app-version">v1.19.1</span></div></div>
+    <div class="s-group-lbl">Módulos activos</div>
+    <button title="Gasto publicitario" class="s-item active" type="button" data-view-target="view-obj">
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
-      <div class="s-text"><div class="s-title-nav">Gasto Publicitario</div><div class="s-desc-nav">Branding y ventas</div></div>
+      <div class="s-text"><div class="s-title-nav">Gasto publicitario</div><div class="s-desc-nav">Branding y ventas</div></div>
     </button>
     <button title="Proyecciones" class="s-item" type="button" data-view-target="view-projections">
       <div class="s-icon"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></div>
       <div class="s-text"><div class="s-title-nav">Proyecciones</div><div class="s-desc-nav">Cierre de mes y simulador</div></div>
     </button>
-    <button title="Palabras Clave" class="s-item" type="button" data-view-target="view-keywords">
+    <button title="Palabras clave" class="s-item" type="button" data-view-target="view-keywords">
       <div class="s-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
-      <div class="s-text"><div class="s-title-nav">Palabras Clave</div><div class="s-desc-nav">Análisis por campaña</div></div>
+      <div class="s-text"><div class="s-title-nav">Palabras clave</div><div class="s-desc-nav">Análisis por campaña</div></div>
     </button>
     <button title="Generación de Reporte" class="s-item" type="button" data-view-target="view-week">
       <div class="s-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></div>
@@ -68,7 +68,7 @@
         <button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-controls="aquarius-sidebar" aria-expanded="true" aria-label="Minimizar panel" title="Minimizar panel">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/><path class="sidebar-toggle-arrow" d="m16 9-3 3 3 3"/></svg>
         </button>
-        <div><div class="topbar-title" id="topbar-title">Gasto Publicitario</div><div class="topbar-caption" id="topbar-caption">Branding y ventas</div></div>
+        <div><div class="topbar-title" id="topbar-title">Gasto publicitario</div><div class="topbar-caption" id="topbar-caption">Branding y ventas</div></div>
       </div>
       <div class="topbar-meta">
         <div class="data-status" id="data-status">
@@ -79,14 +79,14 @@
           </button>
           <div class="data-status-card" id="data-status-card" hidden>
             <div class="data-status-head">Sincronización con Drive</div>
-            <div class="data-status-row"><span>Datos</span><strong id="status-data">-</strong></div>
-            <div class="data-status-row"><span>Meses cargados</span><strong id="status-months">-</strong></div>
-            <div class="data-status-row"><span>Último barrido</span><strong id="status-sweep">-</strong></div>
-            <div class="data-status-row"><span>Próximo barrido</span><strong id="status-next">-</strong></div>
-            <div class="data-status-row"><span>Datos actualizados</span><strong id="status-last">-</strong></div>
-            <div class="data-status-row"><span>Carpeta de campañas</span><strong id="status-folder">-</strong></div>
-            <div class="data-status-row"><span>Palabras clave</span><strong id="status-keywords">-</strong></div>
-            <div class="data-status-row"><span>Carpeta de palabras clave</span><strong id="status-kw-folder">-</strong></div>
+            <div class="data-status-row"><span>Datos</span><strong id="status-data">—</strong></div>
+            <div class="data-status-row"><span>Meses cargados</span><strong id="status-months">—</strong></div>
+            <div class="data-status-row"><span>Último barrido</span><strong id="status-sweep">—</strong></div>
+            <div class="data-status-row"><span>Próximo barrido</span><strong id="status-next">—</strong></div>
+            <div class="data-status-row"><span>Datos actualizados</span><strong id="status-last">—</strong></div>
+            <div class="data-status-row"><span>Carpeta de campañas</span><strong id="status-folder">—</strong></div>
+            <div class="data-status-row"><span>Palabras clave</span><strong id="status-keywords">—</strong></div>
+            <div class="data-status-row"><span>Carpeta de palabras clave</span><strong id="status-kw-folder">—</strong></div>
             <p class="data-status-note" id="status-note"></p>
             <p class="data-status-note" id="sync-status"></p>
           </div>
@@ -95,7 +95,7 @@
     </div>
     <div class="content">
       <section class="view visible" id="view-obj">
-        <h1 class="section-title">Gasto Publicitario</h1>
+        <h1 class="section-title">Gasto publicitario · Google Ads</h1>
         <p class="section-desc">Branding y ventas: resultados por campaña de Google Ads, inversión, clics, conversiones y costo por conversión, mes a mes y en el acumulado del año.</p>
         <div class="month-tabs gasto-month-tabs" id="month-tabs" role="group" aria-label="Mes del gasto publicitario"></div>
         <div class="data-notice gasto-alerts" id="gasto-alerts" role="status" hidden></div>
@@ -107,7 +107,7 @@
           <div class="kpi-strip gasto-kpis" id="kpi-strip" role="group" aria-label="Resumen del periodo"></div>
         </div>
         <div class="panel chart-panel" id="chart-panel">
-          <div class="panel-head chart-panel-head"><div><div class="panel-title" id="chart-title">Evolucion diaria</div><div class="panel-sub" id="chart-sub"></div></div><div class="chart-controls"><div class="chart-views" role="group" aria-label="Detalle del grafico"><button class="chart-view-btn is-active" type="button" data-chart-view="day" aria-pressed="true">Dia</button><button class="chart-view-btn" type="button" data-chart-view="week" aria-pressed="false">Semana</button><button class="chart-view-btn" type="button" data-chart-view="year" aria-pressed="false">Mes</button></div><div class="chart-legend"><span></span></div></div></div>
+          <div class="panel-head chart-panel-head"><div><div class="panel-title" id="chart-title">Evolución diaria</div><div class="panel-sub" id="chart-sub"></div></div><div class="chart-controls"><div class="chart-views" role="group" aria-label="Detalle del gráfico"><button class="chart-view-btn is-active" type="button" data-chart-view="day" aria-pressed="true">Día</button><button class="chart-view-btn" type="button" data-chart-view="week" aria-pressed="false">Semana</button><button class="chart-view-btn" type="button" data-chart-view="year" aria-pressed="false">Mes</button></div><div class="chart-legend"><span></span></div></div></div>
           <div class="chart-wrap h-360"><canvas id="chart-monthly"></canvas></div>
           <div class="panel-note" id="chart-note" hidden></div>
         </div>
@@ -134,7 +134,7 @@
               <label class="gasto-tool-select" for="gasto-kw-campaign"><span class="sr-only">Filtrar por campaña</span><select id="gasto-kw-campaign"><option value="all">Todas las campañas</option></select></label>
               <button type="button" class="gasto-tool-btn" id="gasto-kw-density" aria-pressed="false">Compacto</button>
               <button type="button" class="gasto-tool-btn" id="gasto-kw-expand" aria-pressed="false" title="Ver la tabla en pantalla completa (Esc para salir)">⤢ Pantalla completa</button>
-              <button type="button" class="gasto-tool-link" id="gasto-kw-more" title="Abre el módulo Palabras Clave: lectura de cada palabra clave y evolución mensual">Ver análisis completo »</button>
+              <button type="button" class="gasto-tool-link" id="gasto-kw-more" title="Abre el módulo Palabras clave: lectura de cada palabra clave y evolución mensual">Ver análisis completo »</button>
             </div>
           </div>
           <div class="gasto-rank-scroll" tabindex="0" role="region" aria-label="Ranking de palabras clave del periodo">
@@ -147,20 +147,20 @@
       </section>
 
       <section class="view" id="view-projections">
-        <h1 class="section-title">Proyecciones</h1>
-        <p class="section-desc" id="projection-desc">Proyeccion al cierre de mes calculada con los datos reales del modulo Gasto Publicitario.</p>
-        <div class="kpi-strip projection-kpis" id="projection-kpis" aria-label="KPIs de proyeccion"></div>
+        <h1 class="section-title">Proyecciones · Cierre de mes y simulador</h1>
+        <p class="section-desc" id="projection-desc">Proyección al cierre de mes calculada con los datos reales del módulo Gasto publicitario.</p>
+        <div class="kpi-strip projection-kpis" id="projection-kpis" aria-label="KPIs de proyección"></div>
         <div class="panel projection-empty" id="projection-empty" hidden>
-          <div class="empty-state"><strong>Sin datos para proyectar</strong><span>Todavia no hay inversion registrada. Sube el CSV del mes a la carpeta de Drive y sincroniza.</span></div>
+          <div class="empty-state"><strong>Sin datos para proyectar</strong><span>Todavía no hay inversión registrada. Sube el CSV del mes a la carpeta de Drive y sincroniza.</span></div>
         </div>
         <div class="panel projection-panel" id="projection-panel">
           <div class="panel-head projection-panel-head">
             <div>
-              <div class="panel-title" id="projection-title">Linea de tiempo</div>
+              <div class="panel-title" id="projection-title">Línea de tiempo</div>
               <div class="panel-sub" id="projection-sub">Cargando datos del mes en curso...</div>
             </div>
             <div class="chart-series-toggles" id="projection-metrics" role="group" aria-label="Indicador proyectado">
-              <label class="series-toggle active" data-series="investment"><input type="radio" name="projection-metric" value="investment" checked>Inversion</label>
+              <label class="series-toggle active" data-series="investment"><input type="radio" name="projection-metric" value="investment" checked>Inversión</label>
               <label class="series-toggle" data-series="clicks"><input type="radio" name="projection-metric" value="clicks">Clics</label>
               <label class="series-toggle" data-series="conversions"><input type="radio" name="projection-metric" value="conversions">Conversaciones</label>
             </div>
@@ -173,12 +173,12 @@
             <div class="projection-sim-head">
               <div>
                 <div class="panel-title">Simulador de objetivo</div>
-                <div class="panel-sub" id="projection-sim-sub">Arrastra el nodo del ultimo dia de la grafica hacia el cierre que quieres alcanzar.</div>
+                <div class="panel-sub" id="projection-sim-sub">Arrastra el nodo del último día de la gráfica hacia el cierre que quieres alcanzar.</div>
               </div>
               <div class="projection-sim-actions">
                 <label class="messages-field projection-sim-field" for="projection-sim-value">
                   <span id="projection-sim-label">Cierre objetivo</span>
-                  <span class="messages-input-wrap"><b id="projection-sim-prefix">S/</b><input id="projection-sim-value" type="number" min="0" step="1"></span>
+                  <span class="messages-input-wrap"><b id="projection-sim-prefix">S/.</b><input id="projection-sim-value" type="number" min="0" step="1"></span>
                 </label>
                 <button class="messages-btn secondary" id="projection-sim-goal" type="button" hidden>Llevar al presupuesto</button>
                 <button class="messages-btn secondary" id="projection-sim-reset" type="button" disabled>Restablecer</button>
@@ -192,14 +192,14 @@
         <div class="panel projection-table-panel">
           <div class="panel-head">
             <div>
-              <div class="panel-title">Proyeccion al cierre del mes</div>
-              <div class="panel-sub">Ritmo diario = acumulado real / dias con datos. La proyeccion mantiene ese ritmo hasta el ultimo dia del mes.</div>
+              <div class="panel-title">Proyección al cierre del mes</div>
+              <div class="panel-sub">Ritmo diario = acumulado real / días con datos. La proyección mantiene ese ritmo hasta el último día del mes.</div>
             </div>
           </div>
           <div class="table-scroll">
             <table class="data-table projection-table">
-              <thead><tr><th>Indicador</th><th class="num" id="projection-actual-head">Actual</th><th class="num">Ritmo diario</th><th class="num" id="projection-close-head">Proyeccion al cierre</th><th class="num">Referencia</th><th>Brecha</th></tr></thead>
-              <tbody id="projection-body"><tr><td class="table-empty" colspan="6">Cargando proyeccion...</td></tr></tbody>
+              <thead><tr><th>Indicador</th><th class="num" id="projection-actual-head">Actual</th><th class="num">Ritmo diario</th><th class="num" id="projection-close-head">Proyección al cierre</th><th class="num">Referencia</th><th>Brecha</th></tr></thead>
+              <tbody id="projection-body"><tr><td class="table-empty" colspan="6">Cargando proyección...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -207,17 +207,17 @@
         <div class="panel projection-table-panel">
           <div class="panel-head">
             <div>
-              <div class="panel-title" id="projection-campaigns-title">Proyeccion por campana</div>
-              <div class="panel-sub" id="projection-campaigns-sub">Un cuadro por campana con su proyeccion al cierre del mes.</div>
+              <div class="panel-title" id="projection-campaigns-title">Proyección por campaña</div>
+              <div class="panel-sub" id="projection-campaigns-sub">Un cuadro por campaña con su proyección al cierre del mes.</div>
             </div>
           </div>
-          <div class="campaign-grid" id="projection-campaigns-grid"><div class="empty-state projection-sim-empty">Cargando proyeccion...</div></div>
+          <div class="campaign-grid" id="projection-campaigns-grid"><div class="empty-state projection-sim-empty">Cargando proyección...</div></div>
           <p class="projection-note" id="projection-campaigns-foot"></p>
         </div>
       </section>
 
       <section class="view" id="view-keywords">
-        <h1 class="section-title">Análisis de Palabras Clave</h1>
+        <h1 class="section-title">Palabras clave · Análisis por campaña</h1>
         <p class="section-desc">Rendimiento de cada palabra clave de búsqueda en Google Ads, agrupado por campaña. Los datos salen de la carpeta de Drive "Google Ads Aquarius Keywords": se actualizan solos todos los días y en el momento con el botón Actualizar.</p>
         <div class="retail-filters kw-filters" id="kw-filters"></div>
         <div class="kpi-strip" id="kw-kpis" aria-label="Resumen de palabras clave"></div>
@@ -246,7 +246,7 @@
       </section>
 
       <section class="view" id="view-leads">
-        <h1 class="section-title">Leads</h1>
+        <h1 class="section-title">Leads · CRM de feedback</h1>
         <p class="section-desc">CRM de feedback: la inversión y los leads que reporta cada plataforma se cargan solos; el cliente completa en las columnas resaltadas lo que de verdad recibió de cada campaña y el tablero calcula lo que las plataformas no ven, como costo por lead real, costo por venta y ROAS.</p>
         <div class="data-notice crm-mode" id="crm-mode" role="status" hidden></div>
         <div class="retail-filters crm-filters" id="crm-filters"></div>
@@ -260,7 +260,7 @@
             <table class="data-table crm-summary-table">
               <thead>
                 <tr class="crm-group-row"><th colspan="5"></th><th class="crm-client crm-client-group" colspan="4">Lo completa el cliente</th><th colspan="7"></th></tr>
-                <tr><th>Campaña</th><th>Plataforma</th><th>Objetivo</th><th class="num">Inversión</th><th class="num">Leads plataforma</th><th class="num crm-client">Leads reales</th><th class="num crm-client">Calificados</th><th class="num crm-client">Ventas</th><th class="num crm-client">Monto vendido (S/)</th><th class="num">Coincidencia</th><th class="num">CPL plataforma</th><th class="num">CPL real</th><th class="num">Costo por calificado</th><th class="num">Costo por venta</th><th class="num">ROAS</th><th aria-label="Guardado"></th></tr>
+                <tr><th>Campaña</th><th>Plataforma</th><th>Objetivo</th><th class="num">Inversión</th><th class="num">Leads plataforma</th><th class="num crm-client">Leads reales</th><th class="num crm-client">Calificados</th><th class="num crm-client">Ventas</th><th class="num crm-client">Monto vendido (S/.)</th><th class="num">Coincidencia</th><th class="num">CPL plataforma</th><th class="num">CPL real</th><th class="num">Costo por calificado</th><th class="num">Costo por venta</th><th class="num">ROAS</th><th aria-label="Guardado"></th></tr>
               </thead>
               <tbody id="crm-summary-body"></tbody>
             </table>
@@ -273,15 +273,15 @@
     </div>
   </main>
 </div>
-<script src="js/objectives.js?v=1.19.0"></script>
-<script src="js/drive-sync.js?v=1.19.0"></script>
-<script src="js/reservation-goals.js?v=1.19.0"></script>
-<script src="js/projections.js?v=1.19.0"></script>
-<script src="js/keywords.js?v=1.19.0"></script>
-<script src="js/leads.js?v=1.19.0"></script>
-<script src="js/report-week.js?v=1.19.0"></script>
-<script src="js/navigation.js?v=1.19.0"></script>
-<script src="js/sidebar.js?v=1.19.0"></script>
+<script src="js/objectives.js?v=1.19.1"></script>
+<script src="js/drive-sync.js?v=1.19.1"></script>
+<script src="js/reservation-goals.js?v=1.19.1"></script>
+<script src="js/projections.js?v=1.19.1"></script>
+<script src="js/keywords.js?v=1.19.1"></script>
+<script src="js/leads.js?v=1.19.1"></script>
+<script src="js/report-week.js?v=1.19.1"></script>
+<script src="js/navigation.js?v=1.19.1"></script>
+<script src="js/sidebar.js?v=1.19.1"></script>
 <!-- El acceso lo pone el build: con AQ_PAGE_PASSWORD cifra el tablero dentro de deploy/pages-gate.html. -->
 </body>
 </html>

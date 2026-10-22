@@ -1,8 +1,8 @@
 (function () {
-  const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-  const SHORT_MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
+  const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const SHORT_MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   const METRICS = {
-    investment: { key: 'investment', label: 'Inversion', unit: 'money', color: '#0284c7', fill: 'rgba(2,132,199,.10)', field: 'cost', reference: 'budget', referenceLabel: 'Presupuesto' },
+    investment: { key: 'investment', label: 'Inversión', unit: 'money', color: '#2563eb', fill: 'rgba(37,99,235,.10)', field: 'cost', reference: 'budget', referenceLabel: 'Presupuesto' },
     clicks: { key: 'clicks', label: 'Clics', unit: 'count', color: '#d97706', fill: 'rgba(217,119,6,.10)', field: 'clicks', reference: null, referenceLabel: null },
     conversions: { key: 'conversions', label: 'Conversaciones', unit: 'count', color: '#16a34a', fill: 'rgba(22,163,74,.10)', field: 'conversions', reference: null, referenceLabel: null }
   };
@@ -17,9 +17,9 @@
   const state = { ready: false, metric: 'investment', chart: null, projection: null, factor: 1, dragging: false };
 
   const money = value => Number.isFinite(Number(value))
-    ? `S/ ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : '-';
-  const count = value => Number.isFinite(Number(value)) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 }) : '-';
+    ? `S/. ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : '—';
+  const count = value => Number.isFinite(Number(value)) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 }) : '—';
   const format = (value, unit) => (unit === 'money' ? money(value) : count(Math.round(Number(value) || 0)));
   const signed = (value, unit) => `${value >= 0 ? '+' : '-'}${format(Math.abs(value), unit)}`;
   // Los ritmos de conteo se muestran con un decimal: 0.8 conversaciones por dia no debe verse como 1.
@@ -34,7 +34,7 @@
   }
 
   function longDate(date) {
-    return date ? `${date.getDate()} de ${MONTHS[date.getMonth()].toLowerCase()} de ${date.getFullYear()}` : '-';
+    return date ? `${date.getDate()} de ${MONTHS[date.getMonth()].toLowerCase()} de ${date.getFullYear()}` : '—';
   }
 
   // El mes proyectado es el de la fecha de corte; si ese mes no tiene inversion, se usa el ultimo mes con datos.
@@ -187,11 +187,11 @@
       : 'Sin presupuesto registrado';
 
     const cards = [
-      { label: 'Inversion proyectada', value: money(investment.projected), hint: budgetHint },
-      { label: 'Clics proyectados', value: count(Math.round(clicks.projected)), hint: `Ritmo ${formatPace(clicks.pace, 'count')} por dia` },
-      { label: 'Conversaciones proyectadas', value: count(Math.round(conversions.projected)), hint: `Ritmo ${formatPace(conversions.pace, 'count')} por dia` },
-      { label: 'Ritmo de inversion', value: `${money(investment.pace)} / dia`, hint: projection.closed ? 'Mes cerrado' : `Quedan ${projection.daysLeft} dias del mes` },
-      { label: 'Avance del mes', value: `${projection.daysWithData} de ${projection.daysInMonth} dias`, hint: `Datos al ${longDate(projection.cutoffDate)}` }
+      { label: 'Inversión proyectada', value: money(investment.projected), hint: budgetHint },
+      { label: 'Clics proyectados', value: count(Math.round(clicks.projected)), hint: `Ritmo ${formatPace(clicks.pace, 'count')} por día` },
+      { label: 'Conversaciones proyectadas', value: count(Math.round(conversions.projected)), hint: `Ritmo ${formatPace(conversions.pace, 'count')} por día` },
+      { label: 'Ritmo de inversión', value: `${money(investment.pace)} / día`, hint: projection.closed ? 'Mes cerrado' : `Quedan ${projection.daysLeft} días del mes` },
+      { label: 'Avance del mes', value: `${projection.daysWithData} de ${projection.daysInMonth} días`, hint: `Datos al ${longDate(projection.cutoffDate)}` }
     ];
 
     host.innerHTML = cards.map(card => `
@@ -216,18 +216,18 @@
           <td class="num">${format(metric.actual, metric.unit)}</td>
           <td class="num">${formatPace(metric.pace, metric.unit)}</td>
           <td class="num projection-value">${format(metric.projected, metric.unit)}</td>
-          <td class="num">${metric.reference == null ? '<span class="no-data">-</span>' : format(metric.reference, metric.unit)}</td>
+          <td class="num">${metric.reference == null ? '<span class="no-data">—</span>' : format(metric.reference, metric.unit)}</td>
           <td>${gap}</td>
         </tr>`;
     }).join('');
 
     const costRow = `
       <tr class="projection-cost-row">
-        <td class="campaign-name">CPC / costo por conversacion</td>
+        <td class="campaign-name">CPC / costo por conversación</td>
         <td class="num">${money(projection.costPerClick)} / ${money(projection.costPerConversion)}</td>
-        <td class="num"><span class="no-data">-</span></td>
+        <td class="num"><span class="no-data">—</span></td>
         <td class="num projection-value">${money(projection.projectedCostPerClick)} / ${money(projection.projectedCostPerConversion)}</td>
-        <td class="num"><span class="no-data">-</span></td>
+        <td class="num"><span class="no-data">—</span></td>
         <td><span class="no-data">Se mantiene si el ritmo no cambia</span></td>
       </tr>`;
 
@@ -236,7 +236,7 @@
     const head = document.getElementById('projection-actual-head');
     if (head) head.textContent = `Actual al ${projection.daysWithData}-${projection.shortMonth}`;
     const closeHead = document.getElementById('projection-close-head');
-    if (closeHead) closeHead.textContent = `Proyeccion al ${projection.daysInMonth}-${projection.shortMonth}`;
+    if (closeHead) closeHead.textContent = `Proyección al ${projection.daysInMonth}-${projection.shortMonth}`;
   }
 
   function renderLegend(projection, metric, scenario) {
@@ -246,7 +246,7 @@
       `<span><i class="legend-line" style="background:${metric.color}"></i><b>Acumulado real</b></span>`
     ];
     if (!projection.closed) {
-      items.push(`<span style="color:${metric.color}"><i class="legend-line dashed"></i><b>Proyeccion al cierre</b></span>`);
+      items.push(`<span style="color:${metric.color}"><i class="legend-line dashed"></i><b>Proyección al cierre</b></span>`);
     }
     if (scenario.active) {
       items.push(`<span style="color:${SCENARIO_COLOR}"><i class="legend-line dashed"></i><b>Escenario objetivo</b></span>`);
@@ -289,10 +289,10 @@
       ctx.lineTo(x, bottom);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = '#7890b5';
+      ctx.fillStyle = '#94a3b8';
       ctx.font = '700 9px Inter, sans-serif';
       ctx.textAlign = x > (chart.chartArea.left + chart.chartArea.right) / 2 ? 'right' : 'left';
-      ctx.fillText(options.label || 'Ultima actualizacion', x + (ctx.textAlign === 'right' ? -6 : 6), top + 10);
+      ctx.fillText(options.label || 'Última actualización', x + (ctx.textAlign === 'right' ? -6 : 6), top + 10);
       ctx.restore();
     }
   };
@@ -301,7 +301,7 @@
     const canvas = document.getElementById('chart-projection');
     if (!canvas) return;
     if (typeof Chart === 'undefined') {
-      canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Grafico no disponible sin conexion.</strong><span>El simulador sigue funcionando con el campo numerico.</span></div>';
+      canvas.parentElement.innerHTML = '<div class="empty-state"><strong>Gráfico no disponible sin conexión.</strong><span>El simulador sigue funcionando con el campo numérico.</span></div>';
       return;
     }
     const metric = projection.byKey[state.metric] || projection.byKey.investment;
@@ -316,7 +316,7 @@
 
     const datasets = [
       { label: 'Acumulado real', data: real, borderColor: metric.color, backgroundColor: metric.fill, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, tension: .15, fill: true },
-      { label: 'Proyeccion al cierre', data: projection.closed ? [] : forecast, borderColor: scenario.active ? `${metric.color}66` : metric.color, borderDash: [6, 5], borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, tension: .15, fill: false },
+      { label: 'Proyección al cierre', data: projection.closed ? [] : forecast, borderColor: scenario.active ? `${metric.color}66` : metric.color, borderDash: [6, 5], borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, tension: .15, fill: false },
       { label: 'Escenario objetivo', data: scenario.active ? series.lineData : [], borderColor: SCENARIO_COLOR, borderDash: [2, 4], borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, tension: 0, fill: false },
       { label: 'Cierre objetivo', data: series.handleData, showLine: false, pointRadius: 7, pointHoverRadius: 9, pointBorderWidth: 3, pointBackgroundColor: '#fff', pointBorderColor: handleColor, pointHoverBackgroundColor: '#fff', pointHoverBorderColor: handleColor, borderColor: handleColor }
     ];
@@ -327,7 +327,7 @@
     const suggestedMax = Math.max(metric.projected * 1.4, (metric.reference || 0) * 1.1, scenarioMetric.target * 1.25);
 
     const ticks = metric.unit === 'money'
-      ? value => (value === 0 ? 'S/ 0' : `S/ ${(value / 1000).toFixed(1)}k`)
+      ? value => (value === 0 ? 'S/. 0' : `S/. ${(value / 1000).toFixed(1)}k`)
       : value => Number(value).toLocaleString('es-PE');
 
     if (state.chart) state.chart.destroy();
@@ -349,8 +349,8 @@
           }
         },
         scales: {
-          x: { grid: { display: false }, border: { color: '#bfdbfe' }, ticks: { color: '#7890b5', font: { size: 10 }, maxTicksLimit: 10, autoSkip: true } },
-          y: { beginAtZero: true, suggestedMax, border: { display: false }, grid: { color: 'rgba(14,165,233,.16)' }, ticks: { color: '#7890b5', font: { size: 10 }, callback: ticks } }
+          x: { grid: { display: false }, border: { color: '#cbd5e1' }, ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 10, autoSkip: true } },
+          y: { beginAtZero: true, suggestedMax, border: { display: false }, grid: { color: 'rgba(15,23,42,.06)' }, ticks: { color: '#94a3b8', font: { size: 10 }, callback: ticks } }
         }
       },
       plugins: [cutoffMarker]
@@ -395,7 +395,7 @@
     const prefix = document.getElementById('projection-sim-prefix');
 
     if (label) label.textContent = `${metric.label} al cierre`;
-    if (prefix) prefix.textContent = metric.unit === 'money' ? 'S/' : '#';
+    if (prefix) prefix.textContent = metric.unit === 'money' ? 'S/.' : '#';
     if (input) {
       input.disabled = !simulable;
       input.step = metric.unit === 'money' ? '10' : '1';
@@ -415,7 +415,7 @@
     if (!simulable) {
       const reason = projection.closed
         ? `${projection.monthLabel} ya cerro: el simulador se activa con el informe del mes en curso.`
-        : `Todavia no hay ${metric.label.toLowerCase()} registrados para simular.`;
+        : `Todavía no hay ${metric.label.toLowerCase()} registrados para simular.`;
       if (sub) sub.textContent = reason;
       grid.innerHTML = `<div class="empty-state projection-sim-empty"><strong>Simulador no disponible</strong>${reason}</div>`;
       if (note) note.textContent = '';
@@ -424,8 +424,8 @@
 
     if (sub) {
       sub.textContent = scenario.active
-        ? `Escenario: cerrar ${projection.monthLabel} con ${format(selected.target, metric.unit)} de ${metric.label.toLowerCase()} (${signedPct(selected.deltaPct)} vs la proyeccion).`
-        : 'Arrastra el nodo del ultimo dia de la grafica (o escribe el valor) hacia el cierre que quieres alcanzar.';
+        ? `Escenario: cerrar ${projection.monthLabel} con ${format(selected.target, metric.unit)} de ${metric.label.toLowerCase()} (${signedPct(selected.deltaPct)} vs la proyección).`
+        : 'Arrastra el nodo del último día de la gráfica (o escribe el valor) hacia el cierre que quieres alcanzar.';
     }
 
     const referenceRow = item => {
@@ -440,16 +440,16 @@
 
     const cards = scenario.metrics.map(item => {
       const trend = !scenario.active ? '' : item.delta >= 0 ? 'up' : 'down';
-      const perDay = item.unit === 'money' ? '/ dia' : 'por dia';
+      const perDay = item.unit === 'money' ? '/ día' : 'por día';
       return `
         <div class="sim-card ${item.key === metric.key ? 'selected' : ''}">
           <span>${item.label} al cierre</span>
           <strong>${format(item.target, item.unit)}</strong>
-          <small class="sim-delta ${trend}">${scenario.active ? `${signed(item.delta, item.unit)} vs proyeccion (${signedPct(item.deltaPct)})` : 'Igual a la proyeccion'}</small>
+          <small class="sim-delta ${trend}">${scenario.active ? `${signed(item.delta, item.unit)} vs proyección (${signedPct(item.deltaPct)})` : 'Igual a la proyección'}</small>
           <dl>
             <div><dt>${item.key === 'investment' ? 'Presupuesto diario requerido' : 'Ritmo requerido'}</dt><dd>${formatPace(item.scenarioPace, item.unit)} ${perDay}</dd></div>
             <div><dt>Ritmo actual</dt><dd>${formatPace(item.pace, item.unit)} ${perDay}${scenario.active && item.paceChangePct != null ? ` (${signedPct(item.paceChangePct)})` : ''}</dd></div>
-            <div><dt>Falta realizar</dt><dd>${format(Math.max(0, item.target - item.actual), item.unit)} en ${projection.daysLeft} dias</dd></div>
+            <div><dt>Falta realizar</dt><dd>${format(Math.max(0, item.target - item.actual), item.unit)} en ${projection.daysLeft} días</dd></div>
             ${referenceRow(item)}
           </dl>
         </div>`;
@@ -460,40 +460,40 @@
       <div class="sim-card efficiency">
         <span>Eficiencia del escenario</span>
         <strong>${signed(spend.delta, 'money')}</strong>
-        <small class="sim-delta ${!scenario.active ? '' : spend.delta >= 0 ? 'up' : 'down'}">Inversion ${spend.delta >= 0 ? 'adicional' : 'menor'} vs el ritmo actual</small>
+        <small class="sim-delta ${!scenario.active ? '' : spend.delta >= 0 ? 'up' : 'down'}">Inversión ${spend.delta >= 0 ? 'adicional' : 'menor'} vs el ritmo actual</small>
         <dl>
           <div><dt>CPC</dt><dd>${money(projection.costPerClick)}</dd></div>
-          <div><dt>Costo por conversacion</dt><dd>${money(projection.costPerConversion)}</dd></div>
-          <div><dt>Tasa de conversion</dt><dd>${projection.conversionRate == null ? '-' : `${projection.conversionRate.toFixed(1)}%`}</dd></div>
+          <div><dt>Costo por conversación</dt><dd>${money(projection.costPerConversion)}</dd></div>
+          <div><dt>Tasa de conversión</dt><dd>${projection.conversionRate == null ? '—' : `${projection.conversionRate.toFixed(1)}%`}</dd></div>
         </dl>
       </div>`);
 
     grid.innerHTML = cards.join('');
 
     if (note) {
-      note.textContent = `El escenario conserva la eficiencia real del mes (CPC, costo por conversacion y tasa de conversion): mover un indicador recalcula los otros dos en la misma proporcion. El cierre objetivo no puede quedar por debajo de lo ya realizado al ${projection.daysWithData}-${projection.shortMonth}.`;
+      note.textContent = `El escenario conserva la eficiencia real del mes (CPC, costo por conversación y tasa de conversión): mover un indicador recalcula los otros dos en la misma proporción. El cierre objetivo no puede quedar por debajo de lo ya realizado al ${projection.daysWithData}-${projection.shortMonth}.`;
     }
   }
 
   function renderHeader(projection) {
     const title = document.getElementById('projection-title');
-    if (title) title.textContent = `Linea de tiempo | ${projection.monthLabel}`;
+    if (title) title.textContent = `Línea de tiempo | ${projection.monthLabel}`;
     const sub = document.getElementById('projection-sub');
     if (sub) {
       sub.textContent = projection.closed
-        ? `Mes cerrado con ${projection.daysInMonth} dias de datos.`
-        : `Datos reales hasta el dia ${projection.daysWithData} y proyeccion lineal hasta el ${projection.daysInMonth}.`;
+        ? `Mes cerrado con ${projection.daysInMonth} días de datos.`
+        : `Datos reales hasta el día ${projection.daysWithData} y proyección lineal hasta el ${projection.daysInMonth}.`;
     }
     const note = document.getElementById('projection-note');
     if (note) {
       const budget = projection.budget
-        ? ` Presupuesto = presupuesto diario de las campanas habilitadas en el informe (${money(projection.dailyBudget)}) x ${projection.daysInMonth} dias.`
+        ? ` Presupuesto = presupuesto diario de las campañas habilitadas en el informe (${money(projection.dailyBudget)}) x ${projection.daysInMonth} días.`
         : '';
-      note.textContent = `La proyeccion asume que se mantiene el ritmo promedio del mes (${money(projection.byKey.investment.pace)} por dia).${budget} Fuente: ${projection.source || 'Gasto Publicitario'}.`;
+      note.textContent = `La proyección asume que se mantiene el ritmo promedio del mes (${money(projection.byKey.investment.pace)} por día).${budget} Fuente: ${projection.source || 'Gasto publicitario'}.`;
     }
     const desc = document.getElementById('projection-desc');
     if (desc) {
-      desc.textContent = `Proyeccion al cierre de ${projection.monthLabel} calculada con los datos reales del modulo Gasto Publicitario, actualizados al ${longDate(projection.cutoffDate)}.`;
+      desc.textContent = `Proyección al cierre de ${projection.monthLabel} calculada con los datos reales del módulo Gasto publicitario, actualizados al ${longDate(projection.cutoffDate)}.`;
     }
   }
 
@@ -513,25 +513,25 @@
     if (!card.active) {
       budget = `<p class="campaign-card-note">${escapeHtml(card.status)}: cierra el mes con lo ya gastado.</p>`;
     } else if (spend.reference == null) {
-      budget = '<p class="campaign-card-note">El informe no trae presupuesto diario para esta campana.</p>';
+      budget = '<p class="campaign-card-note">El informe no trae presupuesto diario para esta campaña.</p>';
     } else {
       const pct = (spend.projected / spend.reference) * 100;
       const over = spend.gap < 0;
       budget = `
         <div class="campaign-card-budget">
           <div><span>Presupuesto del mes</span><b>${money(spend.reference)}</b></div>
-          <div class="campaign-meter" role="img" aria-label="Proyeccion al ${pct.toFixed(0)}% del presupuesto"><i class="${over ? 'over' : ''}" style="width:${Math.min(100, pct).toFixed(1)}%"></i></div>
-          <div><small>${money(card.dailyBudget)} x ${projection.daysInMonth} dias | proyeccion al ${pct.toFixed(0)}%</small><span class="projection-gap ${over ? 'over' : 'ok'}">${over ? 'Excede' : 'Quedan'} ${money(Math.abs(spend.gap))}</span></div>
+          <div class="campaign-meter" role="img" aria-label="Proyección al ${pct.toFixed(0)}% del presupuesto"><i class="${over ? 'over' : ''}" style="width:${Math.min(100, pct).toFixed(1)}%"></i></div>
+          <div><small>${money(card.dailyBudget)} x ${projection.daysInMonth} días | proyección al ${pct.toFixed(0)}%</small><span class="projection-gap ${over ? 'over' : 'ok'}">${over ? 'Excede' : 'Quedan'} ${money(Math.abs(spend.gap))}</span></div>
         </div>`;
     }
 
     const clicks = card.byKey.clicks.actual;
     const conversions = card.byKey.conversions.actual;
     const facts = [
-      ['CPC', clicks ? money(spend.actual / clicks) : '-'],
-      ['Costo x conversacion', conversions ? money(spend.actual / conversions) : '-']
+      ['CPC', clicks ? money(spend.actual / clicks) : '—'],
+      ['Costo x conversación', conversions ? money(spend.actual / conversions) : '—']
     ];
-    if (previousName) facts.push([`Gasto ${previousName.toLowerCase()}`, card.previousCost == null ? '-' : money(card.previousCost)]);
+    if (previousName) facts.push([`Gasto ${previousName.toLowerCase()}`, card.previousCost == null ? '—' : money(card.previousCost)]);
 
     return `
       <article class="campaign-card">
@@ -540,7 +540,7 @@
           ${card.status ? `<span class="status-pill ${card.active ? 'green' : 'muted'}">${escapeHtml(card.status)}</span>` : ''}
         </header>
         <table class="campaign-card-table">
-          <thead><tr><th>Indicador</th><th class="num">Real al ${realDay}</th><th class="num">Ritmo diario</th><th class="num">Proyeccion ${closeDay}</th></tr></thead>
+          <thead><tr><th>Indicador</th><th class="num">Real al ${realDay}</th><th class="num">Ritmo diario</th><th class="num">Proyección ${closeDay}</th></tr></thead>
           <tbody>${rows}
           </tbody>
         </table>
@@ -556,11 +556,11 @@
     const sub = document.getElementById('projection-campaigns-sub');
     const foot = document.getElementById('projection-campaigns-foot');
     const cards = buildCampaignProjections(projection);
-    if (title) title.textContent = `Proyeccion por campana | ${projection.monthLabel}`;
+    if (title) title.textContent = `Proyección por campaña | ${projection.monthLabel}`;
     if (!cards.length) {
-      if (sub) sub.textContent = `El informe de ${projection.monthLabel} no trae campanas.`;
+      if (sub) sub.textContent = `El informe de ${projection.monthLabel} no trae campañas.`;
       if (foot) foot.textContent = '';
-      grid.innerHTML = '<div class="empty-state projection-sim-empty"><strong>Sin campanas para proyectar</strong>Sube el informe de campana del mes a la carpeta de Drive y sincroniza.</div>';
+      grid.innerHTML = '<div class="empty-state projection-sim-empty"><strong>Sin campañas para proyectar</strong>Sube el informe de campaña del mes a la carpeta de Drive y sincroniza.</div>';
       return;
     }
 
@@ -568,7 +568,7 @@
     const realDay = `${projection.daysWithData}-${projection.shortMonth}`;
     const days = projection.daysWithData;
     if (sub) {
-      sub.textContent = `${cards.length} campanas | ${money(sum('investment', 'actual'))} invertidos al ${realDay} | ${money(sum('investment', 'projected'))} proyectados al cierre del mes.`;
+      sub.textContent = `${cards.length} campañas | ${money(sum('investment', 'actual'))} invertidos al ${realDay} | ${money(sum('investment', 'projected'))} proyectados al cierre del mes.`;
     }
     const previousName = projection.previous ? MONTHS[Number(projection.previous.id.slice(5)) - 1] : null;
     grid.innerHTML = cards.map(card => campaignCard(card, projection, previousName)).join('');
@@ -576,9 +576,9 @@
     if (foot) {
       // Con pocos dias un solo dia fuerte o en cero mueve mucho la proyeccion; se avisa la primera semana.
       const early = !projection.closed && days < 7
-        ? ` Con ${days} ${days === 1 ? 'dia' : 'dias'} de datos la proyeccion es muy sensible: se estabiliza a medida que llegan mas dias.`
+        ? ` Con ${days} ${days === 1 ? 'día' : 'días'} de datos la proyección es muy sensible: se estabiliza a medida que llegan más días.`
         : '';
-      foot.textContent = `Cada cuadro usa el ritmo diario de la campana (real al ${realDay} / ${days} ${days === 1 ? 'dia' : 'dias'}) x ${projection.daysInMonth} dias. Presupuesto del mes = presupuesto diario de la campana x ${projection.daysInMonth} dias, el vigente al exportar el informe. Una campana detenida cierra con lo ya gastado.${early}`;
+      foot.textContent = `Cada cuadro usa el ritmo diario de la campaña (real al ${realDay} / ${days} ${days === 1 ? 'día' : 'días'}) x ${projection.daysInMonth} días. Presupuesto del mes = presupuesto diario de la campaña x ${projection.daysInMonth} días, el vigente al exportar el informe. Una campaña detenida cierra con lo ya gastado.${early}`;
     }
   }
 
@@ -598,16 +598,16 @@
     const body = document.getElementById('projection-body');
     if (body) body.innerHTML = '<tr><td class="table-empty" colspan="6">Sin datos para proyectar.</td></tr>';
     const grid = document.getElementById('projection-campaigns-grid');
-    if (grid) grid.innerHTML = '<div class="empty-state projection-sim-empty"><strong>Sin campanas para proyectar</strong>Todavia no hay inversion registrada.</div>';
+    if (grid) grid.innerHTML = '<div class="empty-state projection-sim-empty"><strong>Sin campañas para proyectar</strong>Todavía no hay inversión registrada.</div>';
   }
 
   function renderWaiting() {
     const sub = document.getElementById('projection-sub');
-    if (sub) sub.textContent = 'Esperando los datos del modulo Gasto Publicitario...';
+    if (sub) sub.textContent = 'Esperando los datos del módulo Gasto publicitario...';
     const body = document.getElementById('projection-body');
-    if (body) body.innerHTML = '<tr><td class="table-empty" colspan="6">Esperando los datos del modulo Gasto Publicitario...</td></tr>';
+    if (body) body.innerHTML = '<tr><td class="table-empty" colspan="6">Esperando los datos del módulo Gasto publicitario...</td></tr>';
     const grid = document.getElementById('projection-campaigns-grid');
-    if (grid) grid.innerHTML = '<div class="empty-state projection-sim-empty">Esperando los datos del modulo Gasto Publicitario...</div>';
+    if (grid) grid.innerHTML = '<div class="empty-state projection-sim-empty">Esperando los datos del módulo Gasto publicitario...</div>';
   }
 
   function render() {

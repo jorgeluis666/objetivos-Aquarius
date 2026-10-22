@@ -20,7 +20,7 @@
   let CONFIG = window.AQUARIUS_DRIVE_CONFIG || {};
   const CACHE_KEY = 'aquarius_drive_cache';
   const SHEET_MIME = 'application/vnd.google-apps.spreadsheet';
-  const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const MONTH_BY_NAME = {
     enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6, julio: 7,
     agosto: 8, setiembre: 9, septiembre: 9, octubre: 10, noviembre: 11, diciembre: 12
@@ -293,7 +293,7 @@
 
   async function driveJson(url) {
     const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) throw new Error('Drive respondio ' + response.status);
+    if (!response.ok) throw new Error('Drive respondió ' + response.status);
     return response.json();
   }
 
@@ -422,13 +422,13 @@
         if (!current || ((current.period && current.period.end) || '') < end) byMonth[report.monthId] = report;
       });
       const parsed = Object.keys(byMonth).map(id => byMonth[id]);
-      if (!parsed.length) throw new Error('ningun archivo trajo el informe de campana');
+      if (!parsed.length) throw new Error('ningún archivo trajo el informe de campaña');
       const data = mergeIntoData(window.AquariusDashboard.getData(), parsed, files);
       window.AquariusDashboard.applyData(data);
       writeCache(data);
       const latest = parsed.slice().sort((a, b) => String(a.monthId).localeCompare(String(b.monthId))).pop();
       const until = latest.period && latest.period.end ? ', datos al ' + Number(latest.period.end.slice(8, 10)) + ' de ' + MONTH_NAMES[Number(latest.period.end.slice(5, 7)) - 1].toLowerCase() : '';
-      setStatus(parsed.length + ' meses leidos de Drive ahora' + until + (failed.length ? ' (' + failed.length + ' archivos con error)' : '') + '.', failed.length ? 'is-error' : 'is-ok');
+      setStatus(parsed.length + ' meses leídos de Drive ahora' + until + (failed.length ? ' (' + failed.length + ' archivos con error)' : '') + '.', failed.length ? 'is-error' : 'is-ok');
       return data;
     } catch (error) {
       console.error('[drive-sync]', error);
@@ -445,7 +445,7 @@
   // Sin informes conocidos (y sin clave para listar la carpeta) queda traer la ultima publicacion, que es lo
   // que deja el barrido diario del servidor.
   function reloadPublished() {
-    setStatus('Buscando la ultima publicacion...', 'is-working');
+    setStatus('Buscando la última publicación...', 'is-working');
     setBusy(true);
     const url = new URL(window.location.href);
     url.searchParams.set('sync', String(Date.now()));
@@ -473,7 +473,7 @@
 
   async function actionsJson(path) {
     const response = await fetch(`${ACTIONS_API}/${path}`, { cache: 'no-store', headers: { Accept: 'application/vnd.github+json' } });
-    if (!response.ok) throw new Error(`GitHub respondio ${response.status}`);
+    if (!response.ok) throw new Error(`GitHub respondió ${response.status}`);
     return response.json();
   }
 
@@ -485,34 +485,34 @@
       if (run && run.status === 'completed') return run;
       await wait(POLL_MS);
     }
-    throw new Error('la sincronizacion tarda mas de lo normal; el tablero se actualiza al terminar');
+    throw new Error('la sincronización tarda más de lo normal; el tablero se actualiza al terminar');
   }
 
   async function syncOnServer() {
     if (running) return;
     running = true;
     setBusy(true);
-    setStatus('Pidiendo la sincronizacion con Drive...', 'is-working');
+    setStatus('Pidiendo la sincronización con Drive...', 'is-working');
     const asked = Date.now();
     const deadline = asked + MAX_WAIT_MS;
     try {
       const response = await fetch(CONFIG.syncUrl, { method: 'POST', body: 'action=sync', redirect: 'follow' });
       const result = await response.json().catch(() => ({}));
-      if (!result.ok) throw new Error(result.error || 'el servidor no acepto el pedido');
+      if (!result.ok) throw new Error(result.error || 'el servidor no aceptó el pedido');
       // Si alguien la pidio hace menos de 4 minutos, se espera esa misma corrida.
       const since = asked - (result.pending ? 5 * 60000 : 60000);
-      setStatus(result.pending ? 'Ya hay una sincronizacion en curso: esperando que termine...' : 'Leyendo la carpeta de Drive...', 'is-working');
+      setStatus(result.pending ? 'Ya hay una sincronización en curso: esperando que termine...' : 'Leyendo la carpeta de Drive...', 'is-working');
       const run = await waitForRun('sync-drive.yml', since, deadline);
-      if (run.conclusion !== 'success') throw new Error('la lectura de Drive termino con error');
+      if (run.conclusion !== 'success') throw new Error('la lectura de Drive terminó con error');
       const { jobs = [] } = await actionsJson(`runs/${run.id}/jobs`);
       const publish = jobs.flatMap(job => job.steps || []).find(step => step.name === 'Publicar el tablero');
       if (!publish || publish.conclusion !== 'success') {
-        setStatus('Drive no tenia cambios: el tablero ya esta al dia.', 'is-ok');
+        setStatus('Drive no tenía cambios: el tablero ya está al día.', 'is-ok');
         return;
       }
       setStatus('Publicando los datos nuevos...', 'is-working');
       const deploy = await waitForRun('deploy-pages.yml', Date.parse(run.created_at), deadline);
-      if (deploy.conclusion !== 'success') throw new Error('la publicacion termino con error');
+      if (deploy.conclusion !== 'success') throw new Error('la publicación terminó con error');
       setStatus('Datos nuevos publicados: recargando...', 'is-ok');
       // GitHub Pages tarda unos segundos en servir la version nueva.
       await wait(5000);
@@ -565,7 +565,7 @@
     try {
       window.AquariusDashboard.applyData(cached);
     } catch (error) {
-      console.error('[drive-sync] cache invalido', error);
+      console.error('[drive-sync] cache inválido', error);
     }
   }
 

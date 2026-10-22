@@ -2,7 +2,7 @@
   const VIEW_KEY = 'aquarius-active-view';
   const VIEW_META = {
     'view-obj': {
-      title: 'Gasto Publicitario',
+      title: 'Gasto publicitario',
       caption: 'Branding y ventas',
       status: 'Fuente pendiente de validar',
       source: 'Fuente: data/aquarius-lima-retail-2026.json',
@@ -12,11 +12,11 @@
       title: 'Proyecciones',
       caption: 'Cierre de mes y simulador de objetivo',
       status: 'Proyección sobre datos reales',
-      source: 'Fuente: Gasto Publicitario / carpeta 02 Google Ads',
+      source: 'Fuente: Gasto publicitario / carpeta 02 Google Ads',
       footer: 'Proyección lineal según el ritmo del mes',
     },
     'view-keywords': {
-      title: 'Análisis de Palabras Clave',
+      title: 'Palabras clave',
       caption: 'Comportamiento de las palabras clave por campaña',
       status: 'Informe de palabras clave de Google Ads',
       source: 'Fuente: data/aquarius-palabras-clave-2026.json (Drive: Google Ads Aquarius Keywords)',
@@ -26,14 +26,14 @@
       title: 'Generación de Reporte',
       caption: 'Reporte de Publicidad en PDF',
       status: 'Mes elegido de los informes de Google Ads',
-      source: 'Fuente: Gasto Publicitario y Palabras Clave (informes de Google Ads)',
+      source: 'Fuente: Gasto publicitario y Palabras clave (informes de Google Ads)',
       footer: 'El mes elegido, listo para descargar en PDF',
     },
     'view-leads': {
       title: 'Leads',
       caption: 'CRM de feedback del cliente',
       status: 'Leads reales frente a las plataformas',
-      source: 'Fuente: hoja privada del CRM y Gasto Publicitario',
+      source: 'Fuente: hoja privada del CRM y Gasto publicitario',
       footer: 'Los leads se guardan en la hoja de Google de la agencia, no en el repositorio',
     },
   };

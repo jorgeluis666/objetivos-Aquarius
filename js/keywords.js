@@ -21,7 +21,7 @@
   const CACHE_KEY = 'aquarius_keywords_cache';
   const PREFS_KEY = 'aquarius_keywords_prefs';
   const SHEET_MIME = 'application/vnd.google-apps.spreadsheet';
-  const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const MONTH_BY_NAME = {
     enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6, julio: 7,
     agosto: 8, setiembre: 9, septiembre: 9, octubre: 10, noviembre: 11, diciembre: 12
@@ -79,10 +79,10 @@
   let loading = null;
 
   const isNum = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
-  const fmtMoney = value => (isNum(value) ? `S/ ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-');
-  const fmtCount = value => (isNum(value) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 }) : '-');
-  const fmtDecimal = value => (isNum(value) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 2 }) : '-');
-  const fmtPercent = value => (isNum(value) ? `${(Number(value) * 100).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : '-');
+  const fmtMoney = value => (isNum(value) ? `S/. ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—');
+  const fmtCount = value => (isNum(value) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 }) : '—');
+  const fmtDecimal = value => (isNum(value) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 2 }) : '—');
+  const fmtPercent = value => (isNum(value) ? `${(Number(value) * 100).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : '—');
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const normalize = text => String(text == null ? '' : text).normalize('NFD').replace(/[̀-ͯ]/g, '')
     .trim().toLowerCase().replace(/\s+/g, ' ');
@@ -263,7 +263,7 @@
       .filter(month => /^\d{4}-\d{2}$/.test(String(month.id || '')))
       .map(month => ({
         id: String(month.id),
-        label: month.label || monthLabel(month.id),
+        label: /^\d{4}-\d{2}$/.test(String(month.id || '')) ? monthLabel(month.id) : (month.label || monthLabel(month.id)),
         sourceFile: month.sourceFile || null,
         period: month.period || null,
         keywords: withoutExcluded(Array.isArray(month.keywords) ? month.keywords : [])
@@ -479,7 +479,7 @@
       return `
           <tr>
             <td class="kw-name"><span>${escapeHtml(entry.keyword)}</span><small>${escapeHtml(entry.matchType || 'Sin concordancia')}${groups}</small></td>
-            <td><span class="status-pill ${statusTone(entry.status)}"${reasons ? ` title="${escapeHtml(reasons)}"` : ''}>${escapeHtml(entry.status || '-')}</span>${reasons ? `<small class="kw-reason">${escapeHtml(reasons)}</small>` : ''}</td>
+            <td><span class="status-pill ${statusTone(entry.status)}"${reasons ? ` title="${escapeHtml(reasons)}"` : ''}>${escapeHtml(entry.status || '—')}</span>${reasons ? `<small class="kw-reason">${escapeHtml(reasons)}</small>` : ''}</td>
             <td class="num">${fmtCount(entry.impressions)}</td>
             <td class="num">${fmtCount(entry.clicks)}</td>
             <td class="num">${fmtPercent(metricValue(entry, 'ctr'))}</td>
@@ -487,7 +487,7 @@
             <td class="num kw-strong">${fmtMoney(entry.cost)}</td>
             <td class="num">${fmtDecimal(entry.conversions)}</td>
             <td class="num">${fmtMoney(metricValue(entry, 'costPerConversion'))}</td>
-            <td class="num">${escapeHtml(entry.lostRank || '-')}${entry.topShare ? `<small>Parte sup. ${escapeHtml(entry.topShare)}</small>` : ''}</td>
+            <td class="num">${escapeHtml(entry.lostRank || '—')}${entry.topShare ? `<small>Parte sup. ${escapeHtml(entry.topShare)}</small>` : ''}</td>
             <td class="kw-trend">${sparkline(series, state.metric)}${deltaHtml(series, index, state.metric)}</td>
             <td><span class="status-pill ${tone}" title="${escapeHtml(detail)}">${label}</span></td>
           </tr>`;
@@ -546,9 +546,9 @@
 
     const cell = (totals, max) => {
       const value = totals ? metricValue(totals, state.metric) : null;
-      if (!isNum(value)) return '<td class="num kw-heat-empty">-</td>';
+      if (!isNum(value)) return '<td class="num kw-heat-empty">—</td>';
       const alpha = max > 0 && value > 0 ? (0.06 + 0.34 * (value / max)).toFixed(3) : 0;
-      return `<td class="num"${alpha ? ` style="background:rgba(2,132,199,${alpha})"` : ''}>${format(value, metric.unit)}</td>`;
+      return `<td class="num"${alpha ? ` style="background:rgba(37,99,235,${alpha})"` : ''}>${format(value, metric.unit)}</td>`;
     };
     const head = state.months.map(month => `<th class="num${month.id === state.monthId ? ' kw-col-active' : ''}">${escapeHtml(shortMonth(month.id))}</th>`).join('');
     const body = rows.map(({ entry, series, total }) => {
@@ -683,7 +683,7 @@
       if (title) title.textContent = `Evolución mensual | ${metric.label}`;
       if (sub) sub.textContent = `${campaigns.length} ${campaigns.length === 1 ? 'campaña' : 'campañas'} | ${state.months.length} meses, de ${first.label} a ${last.label}.`;
       host.innerHTML = campaigns.map(trendCard).join('');
-      if (foot) foot.textContent = `Cada celda es ${metric.label.toLowerCase()} de la palabra clave en el mes; el color más intenso marca el valor más alto de su fila. "-" = la palabra clave no aparece en el informe de ese mes. Acumulado = suma de los meses (CTR y costo por conversión se recalculan sobre las sumas). El mes resaltado es el del filtro.`;
+      if (foot) foot.textContent = `Cada celda es ${metric.label.toLowerCase()} de la palabra clave en el mes; el color más intenso marca el valor más alto de su fila. "—" = la palabra clave no aparece en el informe de ese mes. Acumulado = suma de los meses (CTR y costo por conversión se recalculan sobre las sumas). El mes resaltado es el del filtro.`;
       return;
     }
 
@@ -841,12 +841,12 @@
         const url = `https://www.googleapis.com/drive/v3/files?q=${query}&key=${encodeURIComponent(config.apiKey)}`
           + `&fields=${encodeURIComponent('files(id,name,modifiedTime,mimeType)')}&pageSize=200`;
         const response = await fetch(url, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`Drive respondio ${response.status}`);
+        if (!response.ok) throw new Error(`Drive respondió ${response.status}`);
         const payload = await response.json();
         const files = (payload.files || []).filter(file => file.mimeType === SHEET_MIME || /\.csv$/i.test(file.name));
         if (files.length) return { files, discovery: 'navegador (API)' };
       } catch (error) {
-        console.warn('[keywords] no se pudo listar la carpeta; uso la ultima lista conocida', error);
+        console.warn('[keywords] no se pudo listar la carpeta; uso la última lista conocida', error);
       }
     }
     const known = ((state.data && state.data.drive && state.data.drive.files) || []).filter(file => file && file.id);

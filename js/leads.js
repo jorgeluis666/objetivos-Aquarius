@@ -20,7 +20,7 @@
 
   const LOCAL_KEY = 'aquarius_crm_results_local';
   const PREFS_KEY = 'aquarius_crm_prefs';
-  const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   // Lo que completa el cliente: conteos enteros y el monto en soles.
   const CLIENT_FIELDS = [
     { key: 'leads', label: 'Leads reales', kind: 'count' },
@@ -49,11 +49,11 @@
   };
 
   const isNum = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
-  const fmtMoney = value => (isNum(value) ? `S/ ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-');
-  const fmtCount = value => (isNum(value) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 }) : '-');
-  const fmtDecimal = value => (isNum(value) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 2 }) : '-');
-  const fmtPercent = value => (isNum(value) ? `${(Number(value) * 100).toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%` : '-');
-  const fmtRoas = value => (isNum(value) ? `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}x` : '-');
+  const fmtMoney = value => (isNum(value) ? `S/. ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—');
+  const fmtCount = value => (isNum(value) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 }) : '—');
+  const fmtDecimal = value => (isNum(value) ? Number(value).toLocaleString('es-PE', { maximumFractionDigits: 2 }) : '—');
+  const fmtPercent = value => (isNum(value) ? `${(Number(value) * 100).toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%` : '—');
+  const fmtRoas = value => (isNum(value) ? `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}x` : '—');
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const normalize = text => String(text ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
   const limaToday = () => new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
@@ -330,7 +330,7 @@
     }
     const value = isNum(row[field.key]) ? row[field.key] : '';
     const step = field.kind === 'money' ? '0.01' : '1';
-    return `<td class="num crm-client"><input class="crm-cell" type="number" min="0" step="${step}" inputmode="${field.kind === 'money' ? 'decimal' : 'numeric'}" data-field="${field.key}" value="${escapeHtml(value)}" placeholder="-" aria-label="${escapeHtml(`${field.label} de ${row.label}`)}">${rate}</td>`;
+    return `<td class="num crm-client"><input class="crm-cell" type="number" min="0" step="${step}" inputmode="${field.kind === 'money' ? 'decimal' : 'numeric'}" data-field="${field.key}" value="${escapeHtml(value)}" placeholder="—" aria-label="${escapeHtml(`${field.label} de ${row.label}`)}">${rate}</td>`;
   }
 
   function rowStatusHtml(key) {
@@ -356,8 +356,8 @@
         <td class="campaign-name"><span>${escapeHtml(row.label)}</span>${row.name && row.name !== row.label ? `<small>${escapeHtml(row.name)}</small>` : ''}</td>
         <td>${escapeHtml(row.platform)}</td>
         <td>${objectivePill(row.objective)}</td>
-        <td class="num">${row.cost === null ? '<span class="no-data">-</span>' : fmtMoney(row.cost)}</td>
-        <td class="num">${row.platformLeads === null ? '<span class="no-data">-</span>' : fmtDecimal(row.platformLeads)}</td>
+        <td class="num">${row.cost === null ? '<span class="no-data">—</span>' : fmtMoney(row.cost)}</td>
+        <td class="num">${row.platformLeads === null ? '<span class="no-data">—</span>' : fmtDecimal(row.platformLeads)}</td>
         ${CLIENT_FIELDS.map(field => clientCell(row, field)).join('')}
         ${derived}
         <td class="crm-actions" data-status>${rowStatusHtml(key)}</td>
