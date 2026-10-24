@@ -410,9 +410,10 @@ GitHub atrasa varias horas los workflows programados (en octubre de 2026 el de l
 06:20 corria entre las 10:00 y las 15:20), asi que la hora la fija un activador de
 **Google Apps Script** que lanza el workflow al momento
 (`scripts/apps-script/sincronizar-aquarius.gs`; Apps Script lo corre dentro de unos
-15 minutos de las 10:00). El cron de las 15:00 UTC (10:00 en Lima) queda de
-respaldo: si el activador falla, el barrido igual corre, mas tarde. Instalacion,
-una sola vez:
+15 minutos de las 10:00). El workflow ya no tiene cron de GitHub: atrasaba varias
+horas y repetia el barrido. Si el activador falla, Apps Script avisa por correo y
+la pildora del tablero pasa a ambar a las 30 horas sin barrido. Instalacion, una
+sola vez:
 
 1. En GitHub > Settings > Developer settings > Personal access tokens > Fine-grained
    tokens, crear un token solo para el repositorio `objetivos-Aquarius` con el
