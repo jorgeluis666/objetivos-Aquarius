@@ -8,11 +8,12 @@ data/aquarius-palabras-clave-2026.json. Tambien acepta CSV sueltos en la carpeta
 
 Descubrimiento de archivos, en el mismo orden que scripts/sync-drive.py:
 
-1. API de Drive, si hay API key (AQ_DRIVE_API_KEY, GOOGLE_API_KEY o apiKey en
+1. Apps Script de Aquarius, si hay AQ_DRIVE_SCRIPT_URL y AQ_DRIVE_READ_KEY (las
+   carpetas son privadas).
+2. API de Drive, si hay API key (AQ_DRIVE_API_KEY, GOOGLE_API_KEY o apiKey en
    data/drive-config.json).
-2. Vista publica de la carpeta, que no necesita credenciales mientras siga
-   compartida por enlace.
-3. data/keywords-manifest.json, la ultima lista conocida de archivos.
+3. Vista publica de la carpeta, solo si sigue compartida por enlace.
+4. data/keywords-manifest.json, la ultima lista conocida de archivos.
 
 Uso:
 
@@ -257,6 +258,14 @@ def finish_document(document, months):
 
 def list_files(folder_id):
     """Mismo orden que sync-drive.py, con el manifiesto propio de palabras clave."""
+    reader = drive.script_reader()
+    if reader:
+        try:
+            files = drive.list_with_script(folder_id, reader)
+            if files:
+                return files, "apps script"
+        except (urllib.error.URLError, json.JSONDecodeError, KeyError, ValueError) as error:
+            print(f"[sync-keywords] el Apps Script no entrego la carpeta ({error}); pruebo las otras vias.")
     key = drive.api_key()
     if key:
         try:
@@ -285,8 +294,11 @@ def is_report(item):
 
 def download(item):
     """Exporta la hoja como CSV (o baja el CSV). Devuelve None si Drive no lo entrega."""
-    key = drive.api_key()
     file_id = item["id"]
+    text = drive.script_csv(file_id)
+    if text is not None:
+        return text
+    key = drive.api_key()
     if item["name"].lower().endswith(".csv"):
         urls = [f"https://drive.google.com/uc?export=download&id={file_id}",
                 f"https://drive.usercontent.google.com/download?id={file_id}&export=download"]

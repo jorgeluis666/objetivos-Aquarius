@@ -9,11 +9,13 @@ Lee los numeros en formato espanol (99,46 y 1.894) o ingles (99.46 y 1,894).
 
 Descubrimiento de archivos, en orden:
 
-1. API de Drive, si hay API key (AQ_DRIVE_API_KEY, GOOGLE_API_KEY o apiKey en
+1. Apps Script de Aquarius (scripts/apps-script/sincronizar-aquarius.gs), si hay
+   AQ_DRIVE_SCRIPT_URL y AQ_DRIVE_READ_KEY: lee las carpetas privadas con la
+   cuenta duena y devuelve cada hoja ya exportada como CSV.
+2. API de Drive, si hay API key (AQ_DRIVE_API_KEY, GOOGLE_API_KEY o apiKey en
    data/drive-config.json).
-2. Vista publica de la carpeta, que no necesita credenciales mientras siga
-   compartida por enlace.
-3. data/drive-manifest.json, la ultima lista conocida de archivos.
+3. Vista publica de la carpeta, solo si sigue compartida por enlace.
+4. data/drive-manifest.json, la ultima lista conocida de archivos.
 
 Uso:
 
@@ -210,6 +212,43 @@ def api_key():
     return str(load_config().get("apiKey") or "").strip()
 
 
+def script_reader():
+    """URL del Web App y clave de lectura del Apps Script, o None si falta alguna."""
+    url = os.environ.get("AQ_DRIVE_SCRIPT_URL", "").strip()
+    key = os.environ.get("AQ_DRIVE_READ_KEY", "").strip()
+    return (url, key) if url and key else None
+
+
+# CSV que ya entrego el Apps Script al listar la carpeta, por id de archivo.
+_SCRIPT_CSV = {}
+
+
+def list_with_script(folder_id, reader):
+    """Le pide la carpeta al Apps Script (sin subcarpetas). La clave va en el cuerpo del POST, nunca en la URL."""
+    url, key = reader
+    body = urllib.parse.urlencode({"action": "leer", "carpeta": folder_id, "clave": key}).encode("utf-8")
+    request = urllib.request.Request(url, data=body, headers={
+        "User-Agent": USER_AGENT,
+        "Content-Type": "application/x-www-form-urlencoded",
+    })
+    # Apps Script responde con una redireccion a la respuesta; urllib la sigue con GET, sin el cuerpo.
+    with urllib.request.urlopen(request, timeout=TIMEOUT * 4) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    if not payload.get("ok"):
+        raise ValueError(payload.get("error") or "respuesta sin ok")
+    files = []
+    for item in payload.get("files", []):
+        _SCRIPT_CSV[item["id"]] = item.get("csv") or ""
+        files.append({"id": item["id"], "name": item["name"], "modifiedTime": item.get("modifiedTime")})
+    return files
+
+
+def script_csv(file_id):
+    """El CSV que entrego el Apps Script para este archivo, o None si no paso por ahi."""
+    text = _SCRIPT_CSV.get(file_id)
+    return text.lstrip("\ufeff") if text is not None else None
+
+
 def list_with_api(folder_id, key):
     query = urllib.parse.urlencode({
         "q": f"'{folder_id}' in parents and trashed = false",
@@ -235,6 +274,14 @@ def list_with_public_view(folder_id):
 
 
 def list_files(folder_id):
+    reader = script_reader()
+    if reader:
+        try:
+            files = list_with_script(folder_id, reader)
+            if files:
+                return files, "apps script"
+        except (urllib.error.URLError, json.JSONDecodeError, KeyError, ValueError) as error:
+            print(f"[sync-drive] el Apps Script no entrego la carpeta ({error}); pruebo las otras vias.")
     key = api_key()
     if key:
         try:
@@ -263,6 +310,9 @@ def is_report(item):
 
 def download(file_id, name):
     """Baja el CSV o exporta la hoja de calculo como CSV. Devuelve None si Drive no lo entrega."""
+    text = script_csv(file_id)
+    if text is not None:
+        return text
     key = api_key()
     urls = []
     if name.lower().endswith(".csv"):

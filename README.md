@@ -169,19 +169,18 @@ carpeta de Drive **Google Ads Aquarius Keywords**, una hoja de calculo por mes (
 
 ### Datos y sincronizacion
 
-- `scripts/sync-keywords.py` exporta cada hoja como CSV (`docs.google.com/spreadsheets/d/<id>/export?format=csv`,
-  sin credenciales mientras la carpeta siga compartida por enlace) y escribe
+- `scripts/sync-keywords.py` recibe cada hoja ya exportada como CSV del Apps Script de Aquarius (la carpeta es
+  privada, ver "Carpetas privadas") y escribe
   `data/aquarius-palabras-clave-2026.json`, `data/keywords-manifest.json` y una copia de cada informe en
   `data/csv-backups/keywords/`. El mes sale de la linea de rango del informe ("1 de septiembre de 2026 - ...")
   y, si no esta, del nombre del archivo. Reusa los helpers de `scripts/sync-drive.py`.
 - **Todos los dias**: es un paso mas de `.github/workflows/sync-drive.yml` (10:00 en Lima). Si cambio algo,
   hace commit y publica el tablero. Cada carpeta se sincroniza aunque la otra falle.
-- **Boton Actualizar** (en el filtro): el navegador vuelve a leer las hojas de Drive y repinta el modulo sin
-  recargar. La exportacion CSV de Sheets permite CORS, asi que **no necesita API key**; el resultado queda en
-  `localStorage` (`aquarius_keywords_cache`) y gana contra la publicacion mientras sea mas reciente. Sin API
-  key usa la lista de hojas que dejo la ultima sincronizacion diaria: una hoja de un mes nuevo aparece al dia
-  siguiente (o al correr el workflow a mano). Con `AQ_DRIVE_API_KEY` incrustada en el build, el boton tambien
-  lista la carpeta y encuentra los meses nuevos al instante.
+- **Boton Actualizar** (en el filtro): como el navegador ya no puede bajar las hojas privadas, pide el mismo
+  barrido del servidor que el boton Sincronizar (`AQ_SYNC_URL`), que trae tambien las palabras clave, y
+  muestra el avance en su propio estado. Sin esa URL trae la ultima publicacion. Solo con
+  `AQ_DRIVE_API_KEY` incrustada en el build lee Drive desde el navegador y guarda el resultado en
+  `localStorage` (`aquarius_keywords_cache`).
 - La carpeta y su ID estan en `data/drive-config.json` (`keywords.folderId`).
 - **Campanas excluidas**: `keywords.excludeCampaigns` en `data/drive-config.json` lista campanas que no se
   muestran ni se guardan aunque vengan en el informe. Hoy: `Website traffic-Search-33` (palabra clave
@@ -437,9 +436,27 @@ python scripts/sync-drive.py          # sincroniza
 python scripts/sync-drive.py --check  # dice si hay cambios, sin escribir
 ```
 
-El script encuentra los archivos en este orden: API de Drive (si hay API key),
-vista publica de la carpeta (sin credenciales, mientras siga compartida por
-enlace) y, como ultimo recurso, `data/drive-manifest.json`.
+El script encuentra los archivos en este orden: Apps Script de Aquarius (si hay
+`AQ_DRIVE_SCRIPT_URL` y `AQ_DRIVE_READ_KEY`), API de Drive (si hay API key),
+vista publica de la carpeta (solo si siguiera compartida por enlace) y, como
+ultimo recurso, `data/drive-manifest.json`.
+
+### Carpetas privadas
+
+La carpeta de campanas ("02 Google Ads") y la de palabras clave no se comparten por enlace (sus IDs estan en
+este repositorio publico). El barrido las lee con la accion `leer` del mismo Web App del boton Sincronizar
+(`scripts/apps-script/sincronizar-aquarius.gs`, proyecto "Barrido diario Aquarius"), que corre con la cuenta
+de Lima Retail:
+
+- Solo responde con la clave `LECTURA_CLAVE` de las Propiedades del script, enviada por POST (nunca en la
+  URL), y solo para las dos carpetas de `CARPETAS_LECTURA`. Devuelve cada hoja exportada como CSV; de
+  "02 Google Ads" solo trae sus archivos, no las subcarpetas.
+- En GitHub la clave es el secret `AQ_DRIVE_READ_KEY` y la URL es la de `AQ_SYNC_URL`
+  (`sync-drive.yml` la pasa como `AQ_DRIVE_SCRIPT_URL`).
+- Al editar el script hay que publicar una version nueva de la misma implementacion (Implementar >
+  Gestionar implementaciones > lapiz > Version: Nueva version), para que la URL no cambie, y ejecutar
+  `probarLectura` una vez para aceptar el permiso de Drive.
+- Para probar en local: `AQ_DRIVE_SCRIPT_URL=<url> AQ_DRIVE_READ_KEY=<clave> python scripts/sync-drive.py --check`.
 
 ### Manual, desde el tablero
 
@@ -457,12 +474,8 @@ comportamiento depende de `data/drive-config.json`:
   publicacion y recarga; si no, avisa que el tablero ya estaba al dia. Como mucho un barrido cada 4
   minutos para todos los visitantes. La URL llega por el secret `AQ_SYNC_URL` y solo queda dentro
   del HTML cifrado.
-- **Sin `apiKey`** (estado actual): el boton vuelve a leer desde el navegador las
-  hojas que encontro el ultimo barrido (la exportacion CSV de Google Sheets responde
-  con CORS abierto), actualiza el tablero sin recargar y guarda el resultado en
-  `localStorage`. Abre el detalle de la pildora para mostrar el avance y el
-  resultado. Una hoja nueva de la carpeta (otro mes o un archivo reemplazado)
-  aparece con el barrido diario siguiente.
+- **Sin el Web App ni `apiKey`**: el boton trae la ultima publicacion. Las carpetas
+  son privadas, asi que el navegador ya no puede bajar las hojas por su cuenta.
 - **Con `apiKey`**: ademas lista la carpeta, asi que encuentra las hojas nuevas al
   instante, y se sincroniza solo cuando pasaron `autoSyncHours` horas (24 por
   defecto) desde la ultima vez.
@@ -475,8 +488,8 @@ secret **`AQ_DRIVE_API_KEY`** y `scripts/build.js` la incrusta en el HTML
 cifrado al publicar. Para probar en local se puede poner en `apiKey` dentro de
 `data/drive-config.json` (sin commitearla).
 
-La carpeta debe seguir compartida como "cualquiera con el enlace puede ver": es
-lo que permite leerla sin cuenta de servicio.
+Las carpetas ya no se comparten por enlace: el barrido las lee por el Apps Script
+(ver "Carpetas privadas").
 
 ## Importar archivos sueltos
 

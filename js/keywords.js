@@ -905,6 +905,14 @@
 
   async function syncFromDrive() {
     if (state.running) return;
+    if (!(state.config && state.config.apiKey)) {
+      // Las carpetas de Drive son privadas: el navegador no puede bajar las hojas. El barrido del servidor
+      // (el mismo del boton Actualizar) trae tambien las palabras clave; sin el, se trae la ultima publicacion.
+      const driveSync = window.AquariusDriveSync;
+      if (driveSync && driveSync.hasSyncUrl()) driveSync.syncOnServer({ status: setStatus, busy: setBusy });
+      else reloadPublished();
+      return;
+    }
     setBusy(true);
     setStatus('Leyendo las hojas de Drive...', 'is-working');
     try {
