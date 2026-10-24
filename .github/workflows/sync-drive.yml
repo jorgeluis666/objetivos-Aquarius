@@ -8,12 +8,10 @@ name: Sincronizar Drive
 #   palabras clave (Analisis de Palabras Clave).
 # Corre todos los dias a las 10:00 de Lima: lo lanza un activador de Google Apps
 # Script (scripts/apps-script/sincronizar-aquarius.gs) por workflow_dispatch, que
-# arranca al momento. El cron de las 15:00 UTC (10:00 en Lima) queda de respaldo:
-# GitHub atrasa varias horas los workflows programados. Tambien a mano desde
-# Actions > Sincronizar Drive > Run workflow.
+# arranca al momento. No hay cron de GitHub: atrasaba varias horas y repetia el
+# barrido del dia. Tambien a mano desde Actions > Sincronizar Drive > Run workflow
+# y con el boton Sincronizar del tablero.
 on:
-  schedule:
-    - cron: '0 15 * * *'
   workflow_dispatch:
 
 permissions:
