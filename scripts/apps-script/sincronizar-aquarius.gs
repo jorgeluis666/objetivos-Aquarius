@@ -1,5 +1,5 @@
 /**
- * Barrido diario de Aquarius a las 10:00 de Lima.
+ * Barrido diario de Aquarius a las 06:30, 13:30 y 18:30 de Lima, después de Nexus.
  *
  * GitHub atrasa varias horas los workflows programados (cron), asi que la hora fija la pone
  * Google Apps Script: un activador diario llama a la API de GitHub y lanza el workflow
@@ -24,7 +24,7 @@
 
 const REPO = 'jorgeluis666/objetivos-Aquarius';
 const WORKFLOW = 'sync-drive.yml';
-const HORA = 10;
+const HORAS = [6, 13, 18];
 const ZONA = 'America/Lima';
 
 function sincronizarAquarius() {
@@ -48,19 +48,19 @@ function sincronizarAquarius() {
   console.log('Barrido de Aquarius lanzado en GitHub Actions.');
 }
 
-// Deja un solo activador diario a las 10:00 de Lima (Apps Script lo corre dentro de unos 15 minutos de esa hora).
+// Tres barridos después de Nexus; Apps Script tiene un margen aproximado de 15 minutos.
 function instalarActivador() {
   ScriptApp.getProjectTriggers()
     .filter(trigger => trigger.getHandlerFunction() === 'sincronizarAquarius')
     .forEach(trigger => ScriptApp.deleteTrigger(trigger));
-  ScriptApp.newTrigger('sincronizarAquarius')
+  HORAS.forEach(hora => ScriptApp.newTrigger('sincronizarAquarius')
     .timeBased()
     .everyDays(1)
-    .atHour(HORA)
-    .nearMinute(0)
+    .atHour(hora)
+    .nearMinute(30)
     .inTimezone(ZONA)
-    .create();
-  console.log(`Activador diario creado: ${HORA}:00 (${ZONA}).`);
+    .create());
+  console.log(`Tres activadores creados: 06:30, 13:30 y 18:30 (${ZONA}).`);
 }
 
 // ── Boton "Sincronizar" del tablero ─────────────────────────────────────────
