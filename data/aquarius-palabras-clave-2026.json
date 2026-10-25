@@ -18819,7 +18819,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 344,
+          "impressions": 345,
           "cost": 70.57,
           "clicks": 31,
           "conversions": 4
@@ -19703,9 +19703,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "status": "Apto",
-          "impressions": 1793,
-          "cost": 86.51,
-          "clicks": 92,
+          "impressions": 1797,
+          "cost": 87.02,
+          "clicks": 94,
           "conversions": 0
         },
         {
@@ -20187,7 +20187,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "status": "Apto",
-          "impressions": 44,
+          "impressions": 51,
           "cost": 14.83,
           "clicks": 9,
           "conversions": 0
@@ -20300,7 +20300,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "status": "Apto",
-          "impressions": 226,
+          "impressions": 234,
           "cost": 72.36,
           "clicks": 17,
           "conversions": 0
@@ -22226,9 +22226,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
           "status": "Apto",
-          "impressions": 1363,
-          "cost": 276.77,
-          "clicks": 121,
+          "impressions": 1370,
+          "cost": 278.14,
+          "clicks": 122,
           "conversions": 14
         },
         {
@@ -24225,7 +24225,7 @@
   "drive": {
     "folderId": "1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO",
     "discovery": "apps script",
-    "lastSync": "2026-10-25T17:14:09Z",
+    "lastSync": "2026-10-25T18:25:24Z",
     "files": [
       {
         "id": "17oCEc4yhZfWSY8y_km3IPYb0hmH2VKHBXOi60LvHd0w",
@@ -24270,7 +24270,7 @@
       {
         "id": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
         "name": "Aquarius KW octubre 2026",
-        "modifiedTime": "2026-10-25T17:12:55.014Z"
+        "modifiedTime": "2026-10-25T18:01:16.172Z"
       },
       {
         "id": "1tJ7B5yQydbvGxOczu0XxnAoot8ew7_vZjFOJOU3cabw",
