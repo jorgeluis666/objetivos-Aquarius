@@ -6,7 +6,7 @@ name: Sincronizar Drive
 #   (Gasto Publicitario y Proyecciones);
 # - carpeta "Google Ads Aquarius Keywords": una hoja por mes con el informe de
 #   palabras clave (Analisis de Palabras Clave).
-# Corre todos los dias a las 10:00 de Lima: lo lanza un activador de Google Apps
+# Corre todos los dias a las 06:30, 13:30 y 18:30 de Lima: lo lanzan activadores de Google Apps
 # Script (scripts/apps-script/sincronizar-aquarius.gs) por workflow_dispatch, que
 # arranca al momento. No hay cron de GitHub: atrasaba varias horas y repetia el
 # barrido del dia. Tambien a mano desde Actions > Sincronizar Drive > Run workflow
