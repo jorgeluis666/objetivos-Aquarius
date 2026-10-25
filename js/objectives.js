@@ -259,10 +259,10 @@
 
   // ── Sincronizacion: pildora de la barra superior con su detalle y el boton Sincronizar ──
   // drive-sync.js maneja el boton (#sync-now) y escribe su avance en #sync-status, dentro del detalle.
-  // El barrido diario corre en GitHub Actions (.github/workflows/sync-drive.yml): lo lanza a las 10:00 de Lima
-  // (15:00 UTC) un activador de Google Apps Script (scripts/apps-script/sincronizar-aquarius.gs). El tablero lee
+  // El barrido diario corre en GitHub Actions (.github/workflows/sync-drive.yml): lo lanza después de las extracciones de 06:00, 13:00 y 18:00 de Lima
+  // (aproximadamente 30 minutos más tarde) un activador de Google Apps Script (scripts/apps-script/sincronizar-aquarius.gs). El tablero lee
   // su ultima ejecucion de la API publica de GitHub: sin credenciales, 60 consultas por hora y por IP.
-  const DAILY_SYNC_UTC = { hour: 15, minute: 0 };
+  const SYNC_HOURS_LIMA = [6, 13, 18];
   const SYNC_RUNS_URL = 'https://api.github.com/repos/jorgeluis666/objetivos-Aquarius/actions/workflows/sync-drive.yml/runs?per_page=1';
   // Sin barrido en mas de un dia y algo, la pildora pasa a ambar.
   const STALE_SWEEP_HOURS = 30;
@@ -271,9 +271,10 @@
 
   function nextSyncLabel() {
     const now = new Date();
-    const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), DAILY_SYNC_UTC.hour, DAILY_SYNC_UTC.minute));
-    if (next <= now) next.setUTCDate(next.getUTCDate() + 1);
-    return `${stampLabel(next, false)} · todos los días`;
+    const lima = new Date(now.getTime() - 5 * 3600000);
+    const candidates = SYNC_HOURS_LIMA.map(hour => new Date(Date.UTC(lima.getUTCFullYear(), lima.getUTCMonth(), lima.getUTCDate(), hour + 5)));
+    const next = candidates.find(date => date > now) || new Date(candidates[0].getTime() + 86400000);
+    return `${stampLabel(next, false)} · 06:00, 13:00 y 18:00 (Lima). Publicación después del barrido de Drive, aprox. 30 min más tarde`;
   }
 
   // Ultima ejecucion del barrido. Se consulta al cargar y al abrir el detalle (como mucho cada 10 minutos).
