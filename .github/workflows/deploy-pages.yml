@@ -34,13 +34,16 @@ jobs:
           AQ_SYNC_URL: ${{ secrets.AQ_SYNC_URL }}
           AQ_CRM_URL: ${{ secrets.AQ_CRM_URL }}
           AQ_CRM_TOKEN: ${{ secrets.AQ_CRM_TOKEN }}
+          # Correos de la alerta (ruedita de Notificaciones): Web App alertas-destinatarios.gs.
+          AQ_ALERTAS_URL: ${{ secrets.AQ_ALERTAS_URL }}
+          AQ_ALERTAS_TOKEN: ${{ secrets.AQ_ALERTAS_TOKEN }}
         run: |
           # Sin clave no se publica: el tablero quedaria abierto a cualquiera con el enlace.
           if [ -z "$AQ_PAGE_PASSWORD" ]; then echo "::error::Falta el secret AQ_PAGE_PASSWORD"; exit 1; fi
           node scripts/build.js
           # Ultimo control: lo que se sube tiene que ser la pantalla de acceso, no el tablero en claro.
           grep -q 'id="gate-payload"' dist/index.html || { echo "::error::dist/index.html no salio cifrado"; exit 1; }
-          if grep -qE 'AQUARIUS_(RETAIL|KEYWORDS)_DATA|AQUARIUS_CRM' dist/index.html; then echo "::error::dist/index.html trae los datos en claro"; exit 1; fi
+          if grep -qE 'AQUARIUS_(RETAIL|KEYWORDS)_DATA|AQUARIUS_(CRM|ALERTAS)' dist/index.html; then echo "::error::dist/index.html trae los datos en claro"; exit 1; fi
 
       - uses: actions/upload-pages-artifact@v3
         with:

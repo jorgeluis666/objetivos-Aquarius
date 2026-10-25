@@ -71,6 +71,8 @@
         <div><div class="topbar-title" id="topbar-title">Gasto publicitario</div><div class="topbar-caption" id="topbar-caption">Branding y ventas</div></div>
       </div>
       <div class="topbar-meta">
+        <!-- Campanita: avisos del mes y la ruedita de los correos de la alerta (js/notificaciones.js). -->
+        <div class="notif-zone" id="notif-zone" hidden></div>
         <div class="data-status" id="data-status">
           <button type="button" class="topbar-pill sync ok" id="data-status-btn" aria-expanded="false" aria-controls="data-status-card" title="Ver el detalle de la sincronización"><span class="sync-dot"></span><span id="topbar-status">Fuente pendiente de validar</span><svg class="status-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
           <button class="sync-btn topbar-sync" id="sync-now" type="button" title="Trae de Drive los informes de Google Ads">
@@ -273,6 +275,7 @@
     </div>
   </main>
 </div>
+<script src="js/alertas-core.js?v=1.20.0"></script>
 <script src="js/objectives.js?v=1.20.0"></script>
 <script src="js/drive-sync.js?v=1.20.0"></script>
 <script src="js/reservation-goals.js?v=1.20.0"></script>
@@ -282,6 +285,7 @@
 <script src="js/report-week.js?v=1.20.0"></script>
 <script src="js/navigation.js?v=1.20.0"></script>
 <script src="js/sidebar.js?v=1.20.0"></script>
+<script src="js/notificaciones.js?v=1.20.0"></script>
 <!-- El acceso lo pone el build: con AQ_PAGE_PASSWORD cifra el tablero dentro de deploy/pages-gate.html. -->
 </body>
 </html>

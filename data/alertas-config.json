@@ -1,0 +1,9 @@
+{
+  "workspace": "Lima Retail · Dashboard Aquarius",
+  "url_dashboard": "https://aquarius.limaretail.com/",
+  "from_name": "Lima Retail Alertas",
+  "from_email": "alertas@limaretail.com",
+  "destinatarios": [
+    { "email": "jorgeluis@limaretail.com", "nombre": "Jorge Luis" }
+  ]
+}

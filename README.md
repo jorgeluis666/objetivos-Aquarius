@@ -501,6 +501,57 @@ que no este en Drive, por ejemplo las series diarias de impresiones:
 python scripts/import-aquarius-data.py "ruta/al/archivo.csv" --month 2026-09
 ```
 
+## Notificaciones y alerta de Google Ads
+
+El mismo sistema de alertas de Royal Baby, con los numeros de Google Ads. Tiene dos caras y las dos
+salen del mismo calculo (`js/alertas-core.js`): el ultimo mes con inversion, su ritmo diario y el
+cierre proyectado (ritmo x dias del mes, igual que Proyecciones), frente a dos referencias: el
+**presupuesto del mes** (el presupuesto diario de las campanas por los dias del mes, como en
+Proyecciones) y el **mes anterior**, llevado a mes completo cuando su informe quedo a medias.
+
+**La campanita de la barra superior** (`js/notificaciones.js`, a la izquierda de la pildora de
+sincronizacion) muestra los avisos del mes y, con un clic, abre el modulo donde se ve ese numero:
+
+| Aviso | Cuando aparece |
+| --- | --- |
+| Cierre del gasto vs presupuesto | hay presupuesto diario; rojo si el cierre pasa el 115 %, ambar sobre 105 % o por debajo del 80 % |
+| Conversaciones al cierre vs mes anterior | rojo bajo el 80 %, ambar bajo el 95 % |
+| Costo por conversacion vs mes anterior | ambar si sube mas de 10 %, rojo sobre 30 % |
+| Campanas que gastan sin conversaciones | alguna campana del mes gasto y no convirtio |
+| La campana que sostiene el mes | informativo: cuanta conversacion concentra y a que costo |
+
+La ruedita del panel abre la lista de **correos de la alerta** (nombre opcional y correo, hasta 25).
+La lista vive en el Web App de `scripts/apps-script/alertas-destinatarios.gs` (propiedades del
+script, no en el repo): el tablero publicado la edita con la URL y la clave que el build deja dentro
+del HTML cifrado, y la alerta la lee antes de cada envio. Mientras nadie guardo una lista, o si el
+Web App no responde, se usan los destinatarios de `data/alertas-config.json`; una lista guardada
+vacia no envia nada.
+
+**El correo** (`scripts/alertas.js`, con la estetica del tablero) sale por
+`.github/workflows/alertas-semanales.yml`:
+
+- **Lunes a las 6:00 p. m. de Lima**, una vez por semana.
+- **Despues de cada barrido de Drive** (workflow "Sincronizar Drive"), solo si cambiaron las cifras
+  del mes desde el ultimo envio: se compara una huella guardada en `data/alertas-envios.json`.
+- A mano: `Actions > Alerta semanal de Google Ads > Run workflow`, con «Simulacion» para no enviar y
+  «Reenviar» para mandarla aunque ya haya salido esa semana.
+- En local, sin enviar nada: `node scripts/alertas.js --preview correo.html` escribe el correo en un
+  archivo y `node scripts/alertas.js --dry-run` muestra a quien iria.
+
+El correo lee `data/aquarius-lima-retail-2026.json`, el mismo archivo que publica el tablero, asi que las dos vistas
+muestran los mismos numeros.
+
+**Puesta en marcha** (una vez): ejecutar `instalar()` en el Web App de
+`scripts/apps-script/alertas-destinatarios.gs`, implementarlo como aplicacion web con acceso
+«Cualquier persona» y crear los secrets:
+
+| Secret | Para que |
+| --- | --- |
+| `AQ_ALERTAS_URL`, `AQ_ALERTAS_TOKEN` | la lista de correos que se edita en el tablero (build y alerta) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | cuenta alertas@limaretail.com del hosting, que tambien es el remitente |
+| `RESEND_API_KEY` | alternativa si no hay SMTP |
+| variable `DASHBOARD_URL` | opcional, si el enlace del correo debe ser otro que el de `data/alertas-config.json` |
+
 ## Build
 
 ```bash

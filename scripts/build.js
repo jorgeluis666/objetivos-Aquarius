@@ -74,7 +74,21 @@ function main() {
   if (crmConfig.url && crmConfig.token) console.log('[build] CRM de leads conectado a la hoja privada');
   else console.warn('[build] sin AQ_CRM_URL/AQ_CRM_TOKEN: el modulo Leads guarda solo en el navegador');
 
-  html = html.replace('</head>', () => `<script>window.AQUARIUS_RETAIL_DATA = ${data};window.AQUARIUS_KEYWORDS_DATA = ${keywords};window.AQUARIUS_DRIVE_CONFIG = ${driveJson};window.AQUARIUS_CRM = ${crmJson};</script></head>`);
+  // Correos de la alerta de Google Ads (ruedita de Notificaciones): el Web App de
+  // scripts/apps-script/alertas-destinatarios.gs. URL y clave no viven en el repo: llegan por
+  // AQ_ALERTAS_URL y AQ_ALERTAS_TOKEN y solo quedan dentro del HTML cifrado. Sin ellas la ruedita
+  // muestra la lista del repositorio (data/alertas-config.json) sin poder guardarla.
+  const alertas = {
+    url: process.env.AQ_ALERTAS_URL || '',
+    token: process.env.AQ_ALERTAS_TOKEN || '',
+    porDefecto: (JSON.parse(readFile('data/alertas-config.json')).destinatarios || [])
+      .map(destinatario => ({ nombre: destinatario.nombre || '', email: destinatario.email })),
+  };
+  const alertasJson = JSON.stringify(alertas).replace(/</g, '\\u003c');
+  if (alertas.url && alertas.token) console.log('[build] correos de las alertas conectados al Web App');
+  else console.warn('[build] sin AQ_ALERTAS_URL/AQ_ALERTAS_TOKEN: la ruedita de Notificaciones no puede guardar');
+
+  html = html.replace('</head>', () => `<script>window.AQUARIUS_RETAIL_DATA = ${data};window.AQUARIUS_KEYWORDS_DATA = ${keywords};window.AQUARIUS_DRIVE_CONFIG = ${driveJson};window.AQUARIUS_CRM = ${crmJson};window.AQUARIUS_ALERTAS = ${alertasJson};</script></head>`);
 
   try {
     fs.rmSync(DIST_DIR, { recursive: true, force: true });

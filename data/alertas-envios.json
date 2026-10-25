@@ -1,0 +1,6 @@
+{
+  "nota": "Registro de alertas enviadas. Clave = semana ISO (YYYY-Www). Lo genera scripts/alertas.js.",
+  "enviados": {},
+  "ultimaHuella": "",
+  "ultimoEnvio": null
+}
