@@ -400,6 +400,15 @@ def parse_campaign_report(text, name, exclude=frozenset()):
             excluded.append({field: entry.get(field) for field in ("campaign", "cost", "impressions", "clicks", "conversions")})
             continue
         if entry.get("campaign"):
+            # Nexus also returns removed campaigns. An inactive historical duplicate
+            # must not invalidate the current month; retain any removed campaign
+            # with activity so the duplicate-name guard still protects real data.
+            status_position = budget_columns.get("status")
+            status = normalize(row[status_position]) if status_position is not None and status_position < len(row) else ""
+            if status in {"eliminada", "eliminado", "removed"} and all(
+                entry.get(field) == 0 for field in ("cost", "impressions", "clicks", "conversions")
+            ):
+                continue
             add_budget(budgets, entry, row, budget_columns, comma)
             records.append(entry)
     names = [normalize(record["campaign"]) for record in records]
