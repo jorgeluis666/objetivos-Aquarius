@@ -1548,6 +1548,27 @@ body.gasto-table-fullscreen {
   margin-bottom: 4px;
 }
 
+/* Las seis tarjetas se leen de un vistazo, asi que van en una sola fila: con la barra lateral
+   abierta el ancho util daba para cinco de 150px y la sexta bajaba sola. Seis columnas iguales y el
+   valor escalado al ancho, en una linea. A 1181px (lo mas estrecho que llega aqui) entra un monto
+   de cinco cifras; por encima sobra sitio. Por debajo mandan las reglas generales de .kpi-strip,
+   que reparten en tres columnas y luego en una. */
+@media (min-width: 1181px) {
+  .projection-kpis {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .projection-kpis .kpi-pill {
+    padding-right: 11px;
+    padding-left: 11px;
+  }
+
+  .projection-kpis .kpi-pill > strong {
+    font-size: clamp(13px, 1.3vw, 22px);
+    white-space: nowrap;
+  }
+}
+
 .projection-panel,
 .projection-empty {
   margin-top: 20px;
