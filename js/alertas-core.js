@@ -98,6 +98,13 @@
     return Boolean(comparar) && Number.isFinite(valor) && comparar(dia, valor);
   }
 
+  // Las reglas de la hoja, por el camino que haya traido alguna: primero el barrido de Drive (lo
+  // que dice la hoja hoy), despues lo que viaje en el repositorio.
+  function reglasVigentes(data, reglas) {
+    const barrido = ((data || {}).drive || {}).reglas;
+    return Array.isArray(barrido) && barrido.length ? barrido : reglas;
+  }
+
   // Los hitos se evaluan en el orden de la hoja y gana el primero que cumple: con «<= 7», «<= 14»,
   // «<= 21» y «> 21», el dia 10 cae en el segundo y solo en el segundo. La semana sale de la
   // posicion en la hoja y no del dia, para que siga siendo la correcta en una marca que movio su
@@ -210,7 +217,12 @@
       corteLabel: corta(mes.corte) || `dia ${mes.dias}`,
       // El hito se mide con el dia que cubre el informe, no con la fecha de quien mira: un mes
       // cerrado se lee con su ultimo dia, que es el final del ciclo.
-      hito: hitoDe(reglas, mes.dias),
+      //
+      // Y las reglas que trae el barrido de Drive mandan sobre las del repositorio, porque son la
+      // hoja tal como esta hoy. Se resuelve aqui, y no en cada pantalla, para que la campanita, las
+      // acciones sugeridas y el correo semanal no puedan contestar cosas distintas sobre la misma
+      // marca. Sin barrido siguen las del repositorio, y sin ninguna de las dos no hay hito.
+      hito: hitoDe(reglasVigentes(data, reglas), mes.dias),
     };
   }
 
@@ -486,7 +498,7 @@
 
   return {
     MARCA, VOCAB, MESES, ABR, LIMITES, NIVEL_LABEL, CONTEXTO_HITO, ORDEN_HITO, ORDEN_ACCIONES,
-    meses, estado, avisos, acciones, cierreDe, mesAnterior, hoyLima, hitoDe, cumple, clave,
+    meses, estado, avisos, acciones, reglasVigentes, cierreDe, mesAnterior, hoyLima, hitoDe, cumple, clave,
     money, moneyCorto, count, decimal, pctTxt, signedPct, corta,
   };
 });
