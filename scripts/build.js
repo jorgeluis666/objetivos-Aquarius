@@ -88,7 +88,16 @@ function main() {
   if (alertas.url && alertas.token) console.log('[build] correos de las alertas conectados al Web App');
   else console.warn('[build] sin AQ_ALERTAS_URL/AQ_ALERTAS_TOKEN: la ruedita de Notificaciones no puede guardar');
 
-  html = html.replace('</head>', () => `<script>window.AQUARIUS_RETAIL_DATA = ${data};window.AQUARIUS_KEYWORDS_DATA = ${keywords};window.AQUARIUS_DRIVE_CONFIG = ${driveJson};window.AQUARIUS_CRM = ${crmJson};window.AQUARIUS_ALERTAS = ${alertasJson};</script></head>`);
+  // Ciclo Mensual de Analisis y Optimizacion: dice en que parte del mes vamos y con eso ordena los
+  // avisos de Notificaciones. dist/ no lleva la carpeta data/, asi que viaja dentro del HTML.
+  let reglasJson = 'null';
+  try {
+    reglasJson = JSON.stringify(JSON.parse(readFile('data/reglas.json'))).replace(/</g, '\\u003c');
+  } catch (error) {
+    console.warn(`[build] sin data/reglas.json: los avisos no se ordenan por hito (${error.message})`);
+  }
+
+  html = html.replace('</head>', () => `<script>window.AQUARIUS_RETAIL_DATA = ${data};window.AQUARIUS_KEYWORDS_DATA = ${keywords};window.AQUARIUS_DRIVE_CONFIG = ${driveJson};window.AQUARIUS_CRM = ${crmJson};window.AQUARIUS_ALERTAS = ${alertasJson};window.AQUARIUS_REGLAS = ${reglasJson};</script></head>`);
 
   try {
     fs.rmSync(DIST_DIR, { recursive: true, force: true });
