@@ -1,6 +1,10 @@
 {
   "nota": "Registro de alertas enviadas. Clave = semana ISO (YYYY-Www). Lo genera scripts/alertas.js.",
   "enviados": {},
-  "ultimaHuella": "",
-  "ultimoEnvio": null
+  "ultimaHuella": "20b51e14a2b97e99",
+  "ultimoEnvio": {
+    "fecha": "2026-10-26T11:30:02.900Z",
+    "motivo": "datos",
+    "mes": "2026-10"
+  }
 }
