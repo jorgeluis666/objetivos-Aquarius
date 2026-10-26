@@ -339,9 +339,154 @@
     }].concat(ordenados);
   }
 
+  // ── Acciones sugeridas ─────────────────────────────────────────────────────
+  // Lo que toca hacer, con las cifras del mes y la ruta exacta donde se hace en Google Ads. Cada
+  // accion pertenece a un hito; el hito que corre hoy pone las suyas primero, pero no se esconde
+  // ninguna: una campana que gasta sin resultado no puede esperar a la semana que le toque.
+  //
+  // El id es estable (tipo + campana, nunca la cifra): lo que se marca como hecho sigue marcado
+  // aunque el monto cambie al dia siguiente.
+  const ORDEN_ACCIONES = ['alerta_pacing', 'pausar_fatigados', 'alerta_overlap', 'escalar_presupuesto'];
+
+  // El id tiene que ser corto y legible, pero sobre todo unico: varias campanas comparten los
+  // primeros caracteres (los SKAG son todos «IDG_MARCA_PE_SKAG-...»), asi que cortar por longitud
+  // haria que marcar una marcase otra. Se corta y se le pega un resumen del nombre completo.
+  function clave(texto) {
+    const plano = String(texto || '')
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (plano.length <= 32) return plano;
+    let suma = 5381;
+    for (let i = 0; i < plano.length; i += 1) suma = ((suma * 33) ^ plano.charCodeAt(i)) >>> 0;
+    return plano.slice(0, 32) + '-' + suma.toString(36);
+  }
+
+  function acciones(e) {
+    if (!e) return [];
+    const { mes, gasto, conv, previo, diasRest } = e;
+    const V = VOCAB;
+    const lista = [];
+
+    // 1. El presupuesto diario contra lo que exige cerrar el mes donde se quiere. Es la accion mas
+    //    directa que existe: un campo de Google Ads y un numero.
+    const diarioCargado = mes.campanas.reduce((total, c) => total + num(c.presupuestoDiario), 0);
+    if (mes.presupuesto && diasRest > 0 && diarioCargado) {
+      const faltaDia = Math.max(0, mes.presupuesto - mes.gasto) / diasRest;
+      const desvio = (faltaDia - diarioCargado) / diarioCargado;
+      if (Math.abs(desvio) >= 0.1) {
+        const sube = faltaDia > diarioCargado;
+        const conDiario = mes.campanas.filter(c => num(c.presupuestoDiario) > 0);
+        // A una campana que gasta sin convertir se le sugiere pausarla mas abajo: subirle el diario
+        // al mismo tiempo seria pedir dos cosas opuestas. Mientras haya alguna que si convierte, el
+        // reparto va solo entre esas, que ademas es donde el dinero rinde.
+        const convierten = conDiario.filter(c => c.conversiones > 0);
+        const reparto = convierten.length ? convierten : conDiario;
+        const totalGasto = reparto.reduce((total, c) => total + c.gasto, 0);
+        reparto.forEach(c => {
+          // Se reparte proporcional a lo que ya mueve cada campana: la que mas gasta, mas cambia.
+          const parte = totalGasto > 0 ? c.gasto / totalGasto : 1 / reparto.length;
+          lista.push({
+            id: 'presupuesto:' + clave(c.nombre),
+            hito: sube ? 'escalar_presupuesto' : 'alerta_pacing',
+            tono: sube ? 'amber' : 'red',
+            titulo: `${sube ? 'Subir' : 'Bajar'} el presupuesto diario de ${c.nombre} de ${money(c.presupuestoDiario)} a ${money(faltaDia * parte)}`,
+            porque: `Para cerrar el mes en ${moneyCorto(mes.presupuesto)} quedan ${money(faltaDia)} por día en los ${diasRest} días que faltan, y los diarios cargados suman ${money(diarioCargado)}.`,
+            donde: `Campañas › ${c.nombre} › Presupuesto`,
+          });
+        });
+      }
+    }
+
+    // 2. Lo que quema dinero sin traer nada. Sale en cualquier semana.
+    mes.campanas.filter(c => c.gasto > 0 && c.conversiones === 0).forEach(c => {
+      lista.push({
+        id: 'seca:' + clave(c.nombre),
+        hito: 'pausar_fatigados',
+        tono: c.gasto > gasto.real * 0.2 ? 'red' : 'amber',
+        titulo: `Pausar ${c.nombre} o rehacer su segmentación`,
+        porque: `Lleva ${money(c.gasto)} del mes sin una sola ${V.conv1}.`,
+        donde: `Campañas › ${c.nombre} › Estado`,
+      });
+    });
+
+    // 3. La campana que paga mucho mas caro que el resto de la cuenta.
+    const cpaCuenta = conv.real > 0 ? gasto.real / conv.real : null;
+    if (cpaCuenta) {
+      mes.campanas.filter(c => c.conversiones > 0).forEach(c => {
+        const suyo = c.gasto / c.conversiones;
+        if (suyo > cpaCuenta * 1.5) {
+          lista.push({
+            id: 'cpa:' + clave(c.nombre),
+            hito: 'pausar_fatigados',
+            tono: 'amber',
+            titulo: `Revisar los anuncios de ${c.nombre}: cada ${V.conv1} sale ${money(suyo)}`,
+            porque: `La cuenta está en ${money(cpaCuenta)}, así que esta campaña paga ${pctTxt((suyo / cpaCuenta - 1) * 100)} de más.`,
+            donde: `Anuncios y recursos › ${c.nombre} › Anuncios`,
+          });
+        }
+      });
+    }
+
+    // 4. La campana que sostiene el mes: ahi es donde mirar las creatividades.
+    const lider = mes.campanas.filter(c => c.conversiones > 0).sort((a, b) => b.conversiones - a.conversiones)[0];
+    if (lider && conv.real > 0) {
+      lista.push({
+        id: 'creatividades:' + clave(lider.nombre),
+        hito: 'pausar_fatigados',
+        tono: 'blue',
+        titulo: `Revisar el CTR por anuncio en ${lider.nombre} y pausar los que vayan por debajo`,
+        porque: `Sostiene el mes con ${count(Math.round(lider.conversiones))} de ${count(Math.round(conv.real))} ${V.conv}: lo que se gane ahí se nota.`,
+        donde: `Anuncios y recursos › ${lider.nombre} › Anuncios`,
+      });
+      // Con una sola campana no hay a donde repartir, asi que abrir publicos solo se sugiere
+      // cuando hay varias y una se lo lleva casi todo.
+      if (mes.campanas.length > 1 && lider.conversiones / conv.real > 0.8) {
+        lista.push({
+          id: 'concentracion:' + clave(lider.nombre),
+          hito: 'alerta_overlap',
+          tono: 'amber',
+          titulo: `Abrir la segmentación: ${lider.nombre} concentra el ${pctTxt((lider.conversiones / conv.real) * 100)} del resultado`,
+          porque: `De ${mes.campanas.length} campañas, una sola trae casi todo. Si se satura, el mes se cae con ella.`,
+          donde: `Campañas › ${lider.nombre} › Públicos y ubicaciones`,
+        });
+      }
+    }
+
+    // 5. El clic mas caro que el mes pasado apunta a la puja o a la competencia.
+    const cpcAhora = mes.clics > 0 ? mes.gasto / mes.clics : null;
+    const cpcPrevio = previo && previo.clics > 0 ? previo.gasto / previo.clics : null;
+    if (cpcAhora && cpcPrevio && cpcAhora > cpcPrevio * 1.3) {
+      lista.push({
+        id: 'puja',
+        hito: 'alerta_overlap',
+        tono: 'amber',
+        titulo: 'Revisar la estrategia de oferta',
+        porque: `El clic pasó de ${money(cpcPrevio)} en ${previo.nombre.toLowerCase()} a ${money(cpcAhora)}: ${pctTxt((cpcAhora / cpcPrevio - 1) * 100)} más caro.`,
+        donde: 'Campañas › Configuración › Ofertas',
+      });
+    }
+
+    // 6. Las negativas son la poda de siempre: mientras haya gasto, hay terminos que revisar.
+    if (gasto.real > 0) {
+      lista.push({
+        id: 'negativas',
+        hito: 'alerta_overlap',
+        tono: 'blue',
+        titulo: `Añadir negativas con los términos de búsqueda que no traen ${V.conv}`,
+        porque: `El mes lleva ${money(gasto.real)} invertidos; lo que se va en búsquedas que no convierten se recorta aquí.`,
+        donde: 'Campañas › Información y estadísticas › Términos de búsqueda',
+      });
+    }
+
+    // El hito de hoy manda: sus acciones primero, el resto en el orden del ciclo.
+    const activo = e.hito ? e.hito.accion : null;
+    const peso = accion => (accion === activo ? -1 : ORDEN_ACCIONES.indexOf(accion));
+    return lista.sort((left, right) => peso(left.hito) - peso(right.hito));
+  }
+
   return {
-    MARCA, VOCAB, MESES, ABR, LIMITES, NIVEL_LABEL, CONTEXTO_HITO, ORDEN_HITO,
-    meses, estado, avisos, cierreDe, mesAnterior, hoyLima, hitoDe, cumple,
+    MARCA, VOCAB, MESES, ABR, LIMITES, NIVEL_LABEL, CONTEXTO_HITO, ORDEN_HITO, ORDEN_ACCIONES,
+    meses, estado, avisos, acciones, cierreDe, mesAnterior, hoyLima, hitoDe, cumple, clave,
     money, moneyCorto, count, decimal, pctTxt, signedPct, corta,
   };
 });

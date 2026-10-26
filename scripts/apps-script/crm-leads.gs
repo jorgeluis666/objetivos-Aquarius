@@ -30,6 +30,9 @@ function doPost(e) {
     authorize(body.token);
     if (body.action === 'list') return { rows: readRows(), updatedAt: new Date().toISOString() };
     if (body.action === 'save') return { row: withLock(() => saveRow(body.row || {})) };
+    // Acciones sugeridas del modulo Proyecciones: que se marco como hecho este mes.
+    if (body.action === 'acciones-list') return { rows: readAcciones(), updatedAt: new Date().toISOString() };
+    if (body.action === 'acciones-save') return { row: withLock(() => saveAccion(body.row || {})) };
     throw new Error('Accion no valida');
   });
 }
@@ -75,6 +78,66 @@ function sheet() {
     tab.getRange('A:A').setNumberFormat('@');
   }
   return tab;
+}
+
+// ── Acciones sugeridas ──────────────────────────────────────────────────────
+// Pestana aparte en la misma hoja: una fila por mes y accion. El id de la accion lo arma el tablero
+// (tipo + campana, nunca el monto), asi que lo marcado sigue marcado aunque las cifras cambien.
+const ACCIONES_SHEET = 'Acciones del mes';
+const ACCIONES_COLUMNS = ['mes', 'accion', 'hecha', 'actualizado'];
+
+function accionesSheet() {
+  const book = SpreadsheetApp.getActiveSpreadsheet();
+  let tab = book.getSheetByName(ACCIONES_SHEET);
+  if (!tab) {
+    tab = book.insertSheet(ACCIONES_SHEET);
+    tab.appendRow(ACCIONES_COLUMNS);
+    tab.setFrozenRows(1);
+    // El mes como texto: si no, la hoja lo convierte en fecha.
+    tab.getRange('A:A').setNumberFormat('@');
+  }
+  return tab;
+}
+
+function readAcciones() {
+  return accionesSheet().getDataRange().getValues().slice(1)
+    .filter(values => values[0] && values[1])
+    .map(values => ({
+      mes: values[0] instanceof Date ? Utilities.formatDate(values[0], 'America/Lima', 'yyyy-MM') : String(values[0]),
+      accion: String(values[1]),
+      hecha: values[2] === true || String(values[2]).toLowerCase() === 'true',
+      actualizado: values[3] instanceof Date ? values[3].toISOString() : String(values[3] || ''),
+    }));
+}
+
+function saveAccion(row) {
+  const mes = String(row.mes || '').trim();
+  const accion = String(row.accion || '').trim();
+  if (!/^\d{4}-\d{2}$/.test(mes)) throw new Error('Mes no valido');
+  if (!accion) throw new Error('Falta la accion');
+
+  const tab = accionesSheet();
+  const values = tab.getDataRange().getValues();
+  const buscado = `${mes}|${accion}`;
+  let fila = 0;
+  for (let i = 1; i < values.length; i += 1) {
+    const suMes = values[i][0] instanceof Date
+      ? Utilities.formatDate(values[i][0], 'America/Lima', 'yyyy-MM')
+      : String(values[i][0]);
+    if (`${suMes}|${String(values[i][1])}` === buscado) { fila = i + 1; break; }
+  }
+
+  const hecha = row.hecha === true;
+  // Desmarcar borra la fila: la hoja guarda lo hecho, no un historial de idas y vueltas.
+  if (!hecha) {
+    if (fila) tab.deleteRow(fila);
+    return { mes, accion, hecha: false };
+  }
+
+  const datos = [mes, accion, true, new Date()];
+  if (fila) tab.getRange(fila, 1, 1, ACCIONES_COLUMNS.length).setValues([datos]);
+  else tab.appendRow(datos);
+  return { mes, accion, hecha: true };
 }
 
 const keyOf = row => `${row.mes}|${normalize(row.campana)}`;
