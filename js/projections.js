@@ -7,6 +7,14 @@
     conversions: { key: 'conversions', label: 'Conversaciones', unit: 'count', color: '#16a34a', fill: 'rgba(22,163,74,.10)', field: 'conversions', reference: null, referenceLabel: null }
   };
 
+  // Los botones del grafico siguen a Tierra Films; los clics quedan en la tabla y en el simulador.
+  const CHART_ORDER = ['investment', 'conversions', 'costPerConversion'];
+  const RATIO_METRIC = {
+    key: 'costPerConversion', label: 'Costo x conversación', unit: 'money',
+    color: '#0f766e', fill: 'transparent', ratio: true, drag: false,
+    reference: null, referenceLabel: null
+  };
+
   const SCENARIO_COLOR = '#7c3aed';
   const HANDLE_HIT_RADIUS = 16;
   // Orden fijo de datasets para poder actualizar el escenario mientras se arrastra sin recrear la grafica.
@@ -14,7 +22,8 @@
 
   // factor = cierre objetivo / cierre proyectado. Es comun a los tres indicadores porque el escenario
   // mantiene el CPC y la tasa de conversion del mes; asi cambiar de indicador conserva el escenario.
-  const state = { ready: false, metric: 'investment', chart: null, projection: null, factor: 1, dragging: false };
+  // goal = cierre objetivo en conversaciones; marginalCpa = lo que cuesta cada una de las que faltan.
+  const state = { ready: false, metric: 'investment', chart: null, projection: null, goal: null, marginalCpa: null, dragging: false };
 
   const money = value => Number.isFinite(Number(value))
     ? `S/. ${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -79,6 +88,13 @@
     const spend = byKey.investment;
     const clicks = byKey.clicks;
     const conversions = byKey.conversions;
+    byKey.costPerConversion = {
+      ...RATIO_METRIC,
+      actual: conversions.actual ? spend.actual / conversions.actual : null,
+      pace: null,
+      projected: conversions.projected ? spend.projected / conversions.projected : null,
+      gap: null
+    };
 
     return {
       monthLabel: `${MONTHS[monthIndex]} ${year}`,
@@ -100,6 +116,13 @@
       conversionRate: clicks.actual ? (conversions.actual / clicks.actual) * 100 : null,
       projectedCostPerClick: clicks.projected ? spend.projected / clicks.projected : null,
       projectedCostPerConversion: conversions.projected ? spend.projected / conversions.projected : null,
+      monthIndex,
+      // Las impresiones no entran al grafico, pero si a la tabla de cierre y a las semanas que faltan.
+      impressions: (() => {
+        const actual = Number(month.impressions) || 0;
+        const pace = actual / daysWithData;
+        return { actual, pace, projected: closed ? actual : pace * daysInMonth };
+      })(),
       campaigns: month.campaigns || [],
       previous: (snapshot.months || []).find(item => item.id === previousMonth(month.id)) || null
     };
@@ -145,24 +168,61 @@
   }
 
   function canSimulate(projection, metric) {
-    return !projection.closed && metric.projected > 0;
+    return !projection.closed && metric.drag !== false && metric.projected > 0;
+  }
+
+  // Costo de cada conversación adicional: por defecto el que proyecta el mes.
+  function baseCpa(projection) {
+    const { investment, conversions } = projection.byKey;
+    if (conversions.projected > 0) return investment.projected / conversions.projected;
+    return projection.costPerConversion || 0;
+  }
+
+  function marginalCpa(projection) {
+    return Number.isFinite(state.marginalCpa) && state.marginalCpa > 0 ? state.marginalCpa : baseCpa(projection);
   }
 
   // El cierre objetivo nunca puede quedar por debajo de lo ya realizado.
-  function clampFactor(projection, factor) {
-    const min = projection.daysWithData / projection.daysInMonth;
-    return Number.isFinite(factor) ? Math.max(min, factor) : 1;
+  function goalOf(projection) {
+    const conversions = projection.byKey.conversions;
+    const goal = Number.isFinite(state.goal) ? state.goal : conversions.projected;
+    return Math.max(conversions.actual, goal);
   }
 
+  // El objetivo se fija en conversaciones; el gasto sale del costo marginal y el
+  // resto de los indicadores sigue la misma proporcion.
   function setTarget(projection, metric, value) {
     if (!canSimulate(projection, metric)) return;
-    state.factor = clampFactor(projection, Number(value) / metric.projected);
+    const conversions = projection.byKey.conversions;
+    const number = Number(value);
+    if (!Number.isFinite(number)) return;
+    if (metric.key === 'conversions') {
+      state.goal = number;
+      return;
+    }
+    if (metric.key === 'investment') {
+      const cpa = marginalCpa(projection);
+      state.goal = cpa > 0
+        ? conversions.actual + (number - projection.byKey.investment.actual) / cpa
+        : conversions.projected;
+      return;
+    }
+    const ratio = metric.projected > 0 ? number / metric.projected : 1;
+    state.goal = conversions.projected * ratio;
   }
 
   function buildScenario(projection) {
-    const factor = clampFactor(projection, state.factor);
+    const conversions = projection.byKey.conversions;
+    const investment = projection.byKey.investment;
+    const goal = goalOf(projection);
+    const cpa = marginalCpa(projection);
+    const cost = investment.actual + (goal - conversions.actual) * cpa;
+    const ratio = conversions.projected > 0 ? goal / conversions.projected : 1;
     const metrics = projection.metrics.map(metric => {
-      const target = metric.projected * factor;
+      let target;
+      if (metric.key === 'conversions') target = goal;
+      else if (metric.key === 'investment') target = cost;
+      else target = metric.projected * ratio;
       const pace = projection.daysLeft > 0 ? (target - metric.actual) / projection.daysLeft : null;
       return {
         ...metric,
@@ -175,68 +235,162 @@
         referencePct: metric.reference ? (target / metric.reference) * 100 : null
       };
     });
-    return { factor, active: Math.abs(factor - 1) > 0.0005, metrics, byKey: Object.fromEntries(metrics.map(metric => [metric.key, metric])) };
+    return {
+      goal,
+      cpa,
+      ratio,
+      active: Math.abs(goal - conversions.projected) > 0.05 || (Number.isFinite(state.marginalCpa) && state.marginalCpa > 0),
+      metrics,
+      byKey: Object.fromEntries(metrics.map(metric => [metric.key, metric]))
+    };
   }
 
   function renderKpis(projection) {
     const host = document.getElementById('projection-kpis');
     if (!host) return;
     const { investment, clicks, conversions } = projection.byKey;
-    const budgetHint = projection.budget
-      ? `${projection.budgetProjectedPct.toFixed(0)}% del presupuesto (${money(projection.budget)})`
-      : 'Sin presupuesto registrado';
-
+    const previous = projection.previous;
+    const before = previous ? Number(previous.conversions) || 0 : 0;
     const cards = [
-      { label: 'Inversión proyectada', value: money(investment.projected), hint: budgetHint },
-      { label: 'Clics proyectados', value: count(Math.round(clicks.projected)), hint: `Ritmo ${formatPace(clicks.pace, 'count')} por día` },
-      { label: 'Conversaciones proyectadas', value: count(Math.round(conversions.projected)), hint: `Ritmo ${formatPace(conversions.pace, 'count')} por día` },
-      { label: 'Ritmo de inversión', value: `${money(investment.pace)} / día`, hint: projection.closed ? 'Mes cerrado' : `Quedan ${projection.daysLeft} días del mes` },
-      { label: 'Avance del mes', value: `${projection.daysWithData} de ${projection.daysInMonth} días`, hint: `Datos al ${longDate(projection.cutoffDate)}` }
+      [`Gasto al ${projection.daysWithData}-${projection.shortMonth}`, money(investment.actual),
+        `${projection.daysWithData} de ${projection.daysInMonth} días`],
+      ['Gasto proyectado', money(investment.projected),
+        projection.budget ? `${projection.budgetProjectedPct.toFixed(0)}% del presupuesto (${money(projection.budget)})` : 'Al cierre del mes'],
+      ['Conversaciones proyectadas', count(Math.round(conversions.projected)),
+        before ? `${count(Math.round(before))} en ${String(previous.name || previous.label || '').toLowerCase()}` : `${count(Math.round(conversions.actual))} reales`],
+      ['Costo x conversación', money(projection.projectedCostPerConversion),
+        `Real a la fecha ${money(projection.costPerConversion)}`],
+      ['Clics proyectados', count(Math.round(clicks.projected)), `CPC ${money(projection.projectedCostPerClick)}`],
+      ['Días restantes', String(projection.daysLeft),
+        projection.daysLeft ? `Del ${projection.daysWithData + 1} al ${projection.daysInMonth} ${projection.shortMonth.toLowerCase()}` : 'Mes cerrado']
     ];
-
-    host.innerHTML = cards.map(card => `
+    host.innerHTML = cards.map(([label, value, hint]) => `
       <div class="kpi-pill">
-        <span>${card.label}</span>
-        <strong>${card.value}</strong>
-        <small>${card.hint}</small>
+        <span>${label}</span>
+        <strong>${value}</strong>
+        <small>${hint}</small>
       </div>
     `).join('');
+  }
+
+  // Botones del grafico, como en Tierra Films: gasto, conversaciones y el cociente entre ambos.
+  function renderToggles(projection) {
+    const host = document.getElementById('projection-metrics');
+    if (!host) return;
+    host.innerHTML = CHART_ORDER.map(key => {
+      const metric = projection.byKey[key];
+      if (!metric) return '';
+      const active = key === state.metric;
+      const style = active ? ` style="color:${metric.color};border-color:${metric.color};background:${metric.color}14"` : '';
+      return `<label class="series-toggle${active ? ' active' : ''}" data-series="${key}"${style}><input type="radio" name="projection-metric" value="${key}"${active ? ' checked' : ''}>${metric.label}</label>`;
+    }).join('');
+  }
+
+  const ratioOf = (top, bottom) => (Number(bottom) > 0 ? Number(top) / Number(bottom) : null);
+  const shareOf = (top, bottom) => (Number(bottom) > 0 ? (Number(top) / Number(bottom)) * 100 : null);
+
+  function cell(value, unit) {
+    if (value == null || !Number.isFinite(Number(value))) return '—';
+    if (unit === 'percent') return `${Number(value).toLocaleString('es-PE', { maximumFractionDigits: 2 })}%`;
+    return format(value, unit);
+  }
+
+  // Verde cuando el cierre mejora el mes anterior; inverse invierte la lectura
+  // en los costos, donde bajar es lo bueno.
+  function gapBadge(value, reference, inverse) {
+    if (!Number.isFinite(Number(value)) || !Number.isFinite(Number(reference)) || Number(reference) === 0) {
+      return '<span class="projection-gap">—</span>';
+    }
+    const diff = Number(value) / Number(reference) - 1;
+    const good = inverse ? diff <= 0 : diff >= 0;
+    return `<span class="projection-gap ${good ? 'ok' : 'over'}">${diff > 0 ? '+' : ''}${(diff * 100).toLocaleString('es-PE', { maximumFractionDigits: 1 })}%</span>`;
   }
 
   function renderTable(projection) {
     const body = document.getElementById('projection-body');
     if (!body) return;
-    const rows = projection.metrics.map(metric => {
-      const gap = metric.gap == null
-        ? '<span class="no-data">Sin referencia</span>'
-        : `<span class="projection-gap ${metric.gap >= 0 ? 'ok' : 'over'}">${metric.gap >= 0 ? '' : '+'}${format(Math.abs(metric.gap), metric.unit)} ${metric.gap >= 0 ? 'por debajo' : 'por encima'}</span>`;
+    const scenario = buildScenario(projection);
+    const previous = projection.previous;
+    const { investment, clicks, conversions } = projection.byKey;
+    const sim = scenario.byKey;
+    const impressions = projection.impressions;
+    const simImpressions = impressions.projected * scenario.ratio;
+    const prev = field => (previous ? Number(previous[field]) || 0 : null);
+
+    const rows = [
+      { label: 'Gasto', unit: 'money', actual: investment.actual, pace: investment.pace, close: investment.projected, sim: sim.investment.target, ref: prev('cost') },
+      { label: 'Conversaciones', unit: 'count', actual: conversions.actual, pace: conversions.pace, close: conversions.projected, sim: sim.conversions.target, ref: prev('conversions') },
+      { label: 'Costo x conversación', unit: 'money', rate: true, inverse: true, actual: ratioOf(investment.actual, conversions.actual), close: ratioOf(investment.projected, conversions.projected), sim: ratioOf(sim.investment.target, sim.conversions.target), ref: previous ? ratioOf(previous.cost, previous.conversions) : null },
+      { label: 'Impresiones', unit: 'count', actual: impressions.actual, pace: impressions.pace, close: impressions.projected, sim: simImpressions, ref: prev('impressions') },
+      { label: 'Clics', unit: 'count', actual: clicks.actual, pace: clicks.pace, close: clicks.projected, sim: sim.clicks.target, ref: prev('clicks') },
+      { label: 'CTR', unit: 'percent', rate: true, actual: shareOf(clicks.actual, impressions.actual), close: shareOf(clicks.projected, impressions.projected), sim: shareOf(sim.clicks.target, simImpressions), ref: previous ? shareOf(previous.clicks, previous.impressions) : null },
+      { label: 'CPC medio', unit: 'money', rate: true, inverse: true, actual: ratioOf(investment.actual, clicks.actual), close: ratioOf(investment.projected, clicks.projected), sim: ratioOf(sim.investment.target, sim.clicks.target), ref: previous ? ratioOf(previous.cost, previous.clicks) : null }
+    ];
+
+    body.innerHTML = rows.map(row => `
+        <tr class="${row.rate ? 'projection-cost-row' : ''}">
+          <td>${row.label}</td>
+          <td class="num">${cell(row.actual, row.unit)}</td>
+          <td class="num">${row.rate ? '—' : formatPace(row.pace, row.unit)}</td>
+          <td class="num projection-value">${cell(row.close, row.unit)}</td>
+          <td class="num projection-sim-value">${cell(row.sim, row.unit)}</td>
+          <td class="num">${cell(row.ref, row.unit)}</td>
+          <td>${row.ref == null ? '<span class="projection-gap">—</span>' : gapBadge(row.close, row.ref, row.inverse)}</td>
+        </tr>`).join('');
+
+    const set = (id, text) => { const node = document.getElementById(id); if (node) node.textContent = text; };
+    set('projection-actual-head', `Real al ${projection.daysWithData}-${projection.shortMonth}`);
+    set('projection-close-head', `Cierre ${projection.monthLabel.split(' ')[0]}`);
+    set('projection-sim-head', scenario.active ? 'Simulación' : 'Simulación (=)');
+    set('projection-ref-head', previous ? previous.label || previous.name : 'Mes anterior');
+    set('projection-table-sub', `Ritmo diario = acumulado real / ${projection.daysWithData} días con datos. Cierre = real + ritmo diario x ${projection.daysLeft} días restantes.`);
+  }
+
+  // Semanas que faltan para cerrar el mes, con el ritmo del escenario.
+  function renderWeeks(projection) {
+    const body = document.getElementById('projection-weeks-body');
+    if (!body) return;
+    const scenario = buildScenario(projection);
+    const left = projection.daysLeft;
+    const sub = document.getElementById('projection-weeks-sub');
+    if (sub) {
+      sub.textContent = scenario.active
+        ? 'Lo que tendría que aportar cada semana restante para llegar al cierre simulado.'
+        : 'Lo que aportaría cada semana restante del mes al ritmo actual.';
+    }
+    if (!left) {
+      body.innerHTML = '<tr><td colspan="7" class="table-empty">El mes ya está cerrado con datos reales.</td></tr>';
+      return;
+    }
+    const rate = {
+      cost: (scenario.byKey.investment.target - projection.byKey.investment.actual) / left,
+      conversions: (scenario.byKey.conversions.target - projection.byKey.conversions.actual) / left,
+      clicks: projection.byKey.clicks.pace * scenario.ratio,
+      impressions: projection.impressions.pace * scenario.ratio
+    };
+    // Las semanas van de lunes a domingo y se cortan al terminar el mes.
+    const weeks = [];
+    for (let day = projection.daysWithData + 1; day <= projection.daysInMonth; day += 1) {
+      const date = new Date(projection.year, projection.monthIndex, day);
+      const last = weeks[weeks.length - 1];
+      if (!last || date.getDay() === 1) weeks.push({ start: day, end: day });
+      else last.end = day;
+    }
+    body.innerHTML = weeks.map(week => {
+      const days = week.end - week.start + 1;
+      const cost = rate.cost * days;
+      const conversions = rate.conversions * days;
       return `
         <tr>
-          <td class="campaign-name">${metric.label}</td>
-          <td class="num">${format(metric.actual, metric.unit)}</td>
-          <td class="num">${formatPace(metric.pace, metric.unit)}</td>
-          <td class="num projection-value">${format(metric.projected, metric.unit)}</td>
-          <td class="num">${metric.reference == null ? '<span class="no-data">—</span>' : format(metric.reference, metric.unit)}</td>
-          <td>${gap}</td>
+          <td class="campaign-name"><span>${week.start} - ${week.end} ${projection.shortMonth}</span><small>${days} ${days === 1 ? 'día' : 'días'}</small></td>
+          <td class="num">${money(cost)}</td>
+          <td class="num">${money(cost / days)}</td>
+          <td class="num">${count(Math.round(rate.impressions * days))}</td>
+          <td class="num">${count(Math.round(rate.clicks * days))}</td>
+          <td class="num">${Number(conversions).toLocaleString('es-PE', { maximumFractionDigits: 1 })}</td>
+          <td class="num">${money(conversions > 0 ? cost / conversions : null)}</td>
         </tr>`;
     }).join('');
-
-    const costRow = `
-      <tr class="projection-cost-row">
-        <td class="campaign-name">CPC / costo por conversación</td>
-        <td class="num">${money(projection.costPerClick)} / ${money(projection.costPerConversion)}</td>
-        <td class="num"><span class="no-data">—</span></td>
-        <td class="num projection-value">${money(projection.projectedCostPerClick)} / ${money(projection.projectedCostPerConversion)}</td>
-        <td class="num"><span class="no-data">—</span></td>
-        <td><span class="no-data">Se mantiene si el ritmo no cambia</span></td>
-      </tr>`;
-
-    body.innerHTML = rows + costRow;
-
-    const head = document.getElementById('projection-actual-head');
-    if (head) head.textContent = `Actual al ${projection.daysWithData}-${projection.shortMonth}`;
-    const closeHead = document.getElementById('projection-close-head');
-    if (closeHead) closeHead.textContent = `Proyección al ${projection.daysInMonth}-${projection.shortMonth}`;
   }
 
   function renderLegend(projection, metric, scenario) {
@@ -260,15 +414,31 @@
     host.innerHTML = items.join('');
   }
 
-  function scenarioSeries(projection, metric, scenarioMetric) {
-    const last = projection.daysInMonth - 1;
+  function scenarioSeries(projection, metric, scenario) {
+    const days = projection.daysInMonth;
+    const lastIndex = days - 1;
+    if (metric.ratio) {
+      // El cociente no se arrastra: su linea sale de acumular el gasto y las conversiones del escenario.
+      const spend = projection.byKey.investment;
+      const conversions = projection.byKey.conversions;
+      const costPerDay = scenario.byKey.investment.scenarioPace || 0;
+      const convPerDay = scenario.byKey.conversions.scenarioPace || 0;
+      const lineData = Array.from({ length: days }, (_, index) => {
+        const step = index + 1 - projection.daysWithData;
+        if (step < 0) return null;
+        const conv = conversions.actual + convPerDay * step;
+        return conv > 0 ? (spend.actual + costPerDay * step) / conv : null;
+      });
+      return { lineData, handleData: Array.from({ length: days }, () => null) };
+    }
+    const scenarioMetric = scenario.byKey[metric.key];
     const simulable = canSimulate(projection, metric);
-    const lineData = Array.from({ length: projection.daysInMonth }, (_, index) => (
+    const lineData = Array.from({ length: days }, (_, index) => (
       index + 1 >= projection.daysWithData
         ? metric.actual + scenarioMetric.scenarioPace * (index + 1 - projection.daysWithData)
         : null
     ));
-    const handleData = Array.from({ length: projection.daysInMonth }, (_, index) => (index === last && simulable ? scenarioMetric.target : null));
+    const handleData = Array.from({ length: days }, (_, index) => (index === lastIndex && simulable ? scenarioMetric.target : null));
     return { lineData, handleData };
   }
 
@@ -306,16 +476,22 @@
     }
     const metric = projection.byKey[state.metric] || projection.byKey.investment;
     const labels = Array.from({ length: projection.daysInMonth }, (_, index) => `${index + 1} ${projection.shortMonth}`);
-    const real = labels.map((_, index) => (index + 1 <= projection.daysWithData ? metric.pace * (index + 1) : null));
-    const forecast = labels.map((_, index) => (index + 1 >= projection.daysWithData ? metric.pace * (index + 1) : null));
+    // El cociente se acumula aparte: gasto acumulado entre conversiones acumuladas.
+    const spend = projection.byKey.investment;
+    const conv = projection.byKey.conversions;
+    const at = index => (metric.ratio
+      ? (conv.pace * (index + 1) > 0 ? (spend.pace * (index + 1)) / (conv.pace * (index + 1)) : null)
+      : metric.pace * (index + 1));
+    const real = labels.map((_, index) => (index + 1 <= projection.daysWithData ? at(index) : null));
+    const forecast = labels.map((_, index) => (index + 1 >= projection.daysWithData ? at(index) : null));
 
     const scenario = buildScenario(projection);
-    const scenarioMetric = scenario.byKey[metric.key];
-    const series = scenarioSeries(projection, metric, scenarioMetric);
+    const scenarioMetric = scenario.byKey[metric.key] || null;
+    const series = scenarioSeries(projection, metric, scenario);
     const handleColor = scenario.active ? SCENARIO_COLOR : metric.color;
 
     const datasets = [
-      { label: 'Acumulado real', data: real, borderColor: metric.color, backgroundColor: metric.fill, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, tension: .15, fill: true },
+      { label: metric.ratio ? 'Real a la fecha' : 'Acumulado real', data: real, borderColor: metric.color, backgroundColor: metric.fill, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, tension: .15, fill: !metric.ratio },
       { label: 'Proyección al cierre', data: projection.closed ? [] : forecast, borderColor: scenario.active ? `${metric.color}66` : metric.color, borderDash: [6, 5], borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, tension: .15, fill: false },
       { label: 'Escenario objetivo', data: scenario.active ? series.lineData : [], borderColor: SCENARIO_COLOR, borderDash: [2, 4], borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, tension: 0, fill: false },
       { label: 'Cierre objetivo', data: series.handleData, showLine: false, pointRadius: 7, pointHoverRadius: 9, pointBorderWidth: 3, pointBackgroundColor: '#fff', pointBorderColor: handleColor, pointHoverBackgroundColor: '#fff', pointHoverBorderColor: handleColor, borderColor: handleColor }
@@ -324,11 +500,15 @@
       datasets.push({ label: metric.referenceLabel, data: labels.map(() => metric.reference), borderColor: '#94a3b8', borderDash: [3, 4], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false });
     }
     // Margen sobre el cierre para que el nodo tenga recorrido hacia arriba al arrastrarlo.
-    const suggestedMax = Math.max(metric.projected * 1.4, (metric.reference || 0) * 1.1, scenarioMetric.target * 1.25);
+    const suggestedMax = metric.ratio
+      ? undefined
+      : Math.max(metric.projected * 1.4, (metric.reference || 0) * 1.1, scenarioMetric.target * 1.25);
 
-    const ticks = metric.unit === 'money'
-      ? value => (value === 0 ? 'S/. 0' : `S/. ${(value / 1000).toFixed(1)}k`)
-      : value => Number(value).toLocaleString('es-PE');
+    const ticks = metric.ratio
+      ? value => `S/. ${Number(value).toLocaleString('es-PE', { maximumFractionDigits: 2 })}`
+      : metric.unit === 'money'
+        ? value => (value === 0 ? 'S/. 0' : `S/. ${(value / 1000).toFixed(1)}k`)
+        : value => Number(value).toLocaleString('es-PE');
 
     if (state.chart) state.chart.destroy();
     state.chart = new Chart(canvas, {
@@ -350,7 +530,7 @@
         },
         scales: {
           x: { grid: { display: false }, border: { color: '#cbd5e1' }, ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 10, autoSkip: true } },
-          y: { beginAtZero: true, suggestedMax, border: { display: false }, grid: { color: 'rgba(15,23,42,.06)' }, ticks: { color: '#94a3b8', font: { size: 10 }, callback: ticks } }
+          y: { beginAtZero: !metric.ratio, suggestedMax, border: { display: false }, grid: { color: 'rgba(15,23,42,.06)' }, ticks: { color: '#94a3b8', font: { size: 10 }, callback: ticks } }
         }
       },
       plugins: [cutoffMarker]
@@ -365,7 +545,7 @@
     const metric = projection.byKey[state.metric] || projection.byKey.investment;
     const scenario = buildScenario(projection);
     if (chart) {
-      const series = scenarioSeries(projection, metric, scenario.byKey[metric.key]);
+      const series = scenarioSeries(projection, metric, scenario);
       const handleColor = scenario.active ? SCENARIO_COLOR : metric.color;
       const handle = chart.data.datasets[DS.handle];
       chart.data.datasets[DS.forecast].borderColor = scenario.active ? `${metric.color}66` : metric.color;
@@ -383,39 +563,37 @@
     if (!grid) return;
     const metric = projection.byKey[state.metric] || projection.byKey.investment;
     const scenario = buildScenario(projection);
-    const selected = scenario.byKey[metric.key];
-    const simulable = canSimulate(projection, metric);
+    const conversions = projection.byKey.conversions;
+    const simulable = canSimulate(projection, conversions);
 
-    const input = document.getElementById('projection-sim-value');
-    const goalButton = document.getElementById('projection-sim-goal');
+    const goalInput = document.getElementById('projection-goal');
+    const cpaInput = document.getElementById('projection-cpa');
+    const prevButton = document.getElementById('projection-sim-prev');
     const resetButton = document.getElementById('projection-sim-reset');
     const sub = document.getElementById('projection-sim-sub');
     const note = document.getElementById('projection-sim-note');
-    const label = document.getElementById('projection-sim-label');
-    const prefix = document.getElementById('projection-sim-prefix');
 
-    if (label) label.textContent = `${metric.label} al cierre`;
-    if (prefix) prefix.textContent = metric.unit === 'money' ? 'S/.' : '#';
-    if (input) {
-      input.disabled = !simulable;
-      input.step = metric.unit === 'money' ? '10' : '1';
-      input.min = simulable ? String(Math.ceil(metric.actual)) : '0';
-      // No se pisa lo que el usuario esta escribiendo.
-      if (document.activeElement !== input) {
-        input.value = simulable ? (metric.unit === 'money' ? selected.target.toFixed(2) : String(Math.round(selected.target))) : '';
-      }
+    // No se pisa lo que el usuario esta escribiendo.
+    if (goalInput) {
+      goalInput.disabled = !simulable;
+      goalInput.min = String(Math.ceil(conversions.actual));
+      if (document.activeElement !== goalInput) goalInput.value = simulable ? String(Math.round(scenario.goal)) : '';
+    }
+    if (cpaInput) {
+      cpaInput.disabled = !simulable;
+      if (document.activeElement !== cpaInput) cpaInput.value = simulable ? scenario.cpa.toFixed(2) : '';
     }
     if (resetButton) resetButton.disabled = !scenario.active;
-    if (goalButton) {
-      const hasGoal = simulable && metric.reference != null && metric.reference > 0;
-      goalButton.hidden = !hasGoal;
-      if (hasGoal) goalButton.textContent = `Llevar al ${metric.referenceLabel.toLowerCase()} (${format(metric.reference, metric.unit)})`;
+    if (prevButton) {
+      const before = projection.previous ? Number(projection.previous.conversions) || 0 : 0;
+      prevButton.hidden = !(simulable && before > 0);
+      if (!prevButton.hidden) prevButton.textContent = `Igualar ${projection.previous.name || 'mes anterior'} (${count(Math.round(before))})`;
     }
 
     if (!simulable) {
       const reason = projection.closed
-        ? `${projection.monthLabel} ya cerro: el simulador se activa con el informe del mes en curso.`
-        : `Todavía no hay ${metric.label.toLowerCase()} registrados para simular.`;
+        ? `${projection.monthLabel} ya cerró: el simulador se activa con el informe del mes en curso.`
+        : 'Todavía no hay conversaciones registradas para simular.';
       if (sub) sub.textContent = reason;
       grid.innerHTML = `<div class="empty-state projection-sim-empty"><strong>Simulador no disponible</strong>${reason}</div>`;
       if (note) note.textContent = '';
@@ -424,8 +602,8 @@
 
     if (sub) {
       sub.textContent = scenario.active
-        ? `Escenario: cerrar ${projection.monthLabel} con ${format(selected.target, metric.unit)} de ${metric.label.toLowerCase()} (${signedPct(selected.deltaPct)} vs la proyección).`
-        : 'Arrastra el nodo del último día de la gráfica (o escribe el valor) hacia el cierre que quieres alcanzar.';
+        ? `Escenario: cerrar ${projection.monthLabel} con ${count(Math.round(scenario.goal))} conversaciones (${signedPct(scenario.byKey.conversions.deltaPct)} vs la proyección).`
+        : 'Arrastra el nodo del último día de la gráfica o escribe la meta: se recalcula cuánto gasto exigen esas conversaciones.';
     }
 
     const referenceRow = item => {
@@ -471,7 +649,9 @@
     grid.innerHTML = cards.join('');
 
     if (note) {
-      note.textContent = `El escenario conserva la eficiencia real del mes (CPC, costo por conversación y tasa de conversión): mover un indicador recalcula los otros dos en la misma proporción. El cierre objetivo no puede quedar por debajo de lo ya realizado al ${projection.daysWithData}-${projection.shortMonth}.`;
+      note.textContent = scenario.active
+        ? `Frente a la proyección base: ${signed(scenario.byKey.conversions.delta, 'count')} conversaciones y ${signed(scenario.byKey.investment.delta, 'money')} de gasto, a ${money(scenario.cpa)} cada conversación adicional. Cambia ese costo marginal si esperas que las conversaciones extra salgan más caras.`
+        : `La simulación arranca en la proyección del mes. Cada conversación adicional se valoriza a ${money(scenario.cpa)}: cámbialo si esperas que salgan más caras. El cierre no puede quedar por debajo de lo ya realizado al ${projection.daysWithData}-${projection.shortMonth}.`;
     }
   }
 
@@ -596,7 +776,7 @@
     toggleEmpty(true);
     if (state.chart) { state.chart.destroy(); state.chart = null; }
     const body = document.getElementById('projection-body');
-    if (body) body.innerHTML = '<tr><td class="table-empty" colspan="6">Sin datos para proyectar.</td></tr>';
+    if (body) body.innerHTML = '<tr><td class="table-empty" colspan="7">Sin datos para proyectar.</td></tr>';
     const grid = document.getElementById('projection-campaigns-grid');
     if (grid) grid.innerHTML = '<div class="empty-state projection-sim-empty"><strong>Sin campañas para proyectar</strong>Todavía no hay inversión registrada.</div>';
   }
@@ -605,7 +785,7 @@
     const sub = document.getElementById('projection-sub');
     if (sub) sub.textContent = 'Esperando los datos del módulo Gasto publicitario...';
     const body = document.getElementById('projection-body');
-    if (body) body.innerHTML = '<tr><td class="table-empty" colspan="6">Esperando los datos del módulo Gasto publicitario...</td></tr>';
+    if (body) body.innerHTML = '<tr><td class="table-empty" colspan="7">Esperando los datos del módulo Gasto publicitario...</td></tr>';
     const grid = document.getElementById('projection-campaigns-grid');
     if (grid) grid.innerHTML = '<div class="empty-state projection-sim-empty">Esperando los datos del módulo Gasto publicitario...</div>';
   }
@@ -626,14 +806,18 @@
     toggleEmpty(false);
     renderHeader(projection);
     renderKpis(projection);
+    renderToggles(projection);
     renderChart(projection);
     renderTable(projection);
     renderSimulator(projection);
+    renderWeeks(projection);
     renderCampaignCards(projection);
   }
 
   function handlePosition(chart, projection, metric) {
-    const target = buildScenario(projection).byKey[metric.key].target;
+    const entry = buildScenario(projection).byKey[metric.key];
+    if (!entry) return null;
+    const target = entry.target;
     return { x: chart.scales.x.getPixelForValue(projection.daysInMonth - 1), y: chart.scales.y.getPixelForValue(target) };
   }
 
@@ -651,6 +835,7 @@
     const metric = projection.byKey[state.metric];
     if (!metric || !canSimulate(projection, metric)) return false;
     const point = handlePosition(chart, projection, metric);
+    if (!point) return false;
     const pointer = pointerPosition(event, chart);
     return Math.hypot(pointer.x - point.x, pointer.y - point.y) <= HANDLE_HIT_RADIUS;
   }
@@ -697,50 +882,61 @@
 
     canvas.addEventListener('dblclick', event => {
       if (!nearHandle(event) || !state.projection) return;
-      state.factor = 1;
+      state.goal = null;
+      state.marginalCpa = null;
       renderChart(state.projection);
       renderSimulator(state.projection);
     });
   }
 
   function wireSimulator() {
-    const input = document.getElementById('projection-sim-value');
-    input?.addEventListener('input', () => {
-      const projection = state.projection;
-      if (!projection || input.value === '') return;
-      const metric = projection.byKey[state.metric];
-      const value = Number(input.value);
-      // Mientras se escribe, un valor por debajo de lo realizado se ignora en vez de corregirlo a mitad de tecleo.
-      if (!Number.isFinite(value) || value < metric.actual) return;
-      setTarget(projection, metric, value);
-      renderChart(projection);
-      renderSimulator(projection);
-    });
-    input?.addEventListener('change', () => {
+    const goalInput = document.getElementById('projection-goal');
+    const cpaInput = document.getElementById('projection-cpa');
+
+    const apply = () => {
       const projection = state.projection;
       if (!projection) return;
-      const metric = projection.byKey[state.metric];
-      if (input.value !== '') setTarget(projection, metric, Number(input.value));
-      input.blur();
       renderChart(projection);
+      renderTable(projection);
+      renderWeeks(projection);
       renderSimulator(projection);
+    };
+
+    goalInput?.addEventListener('input', () => {
+      const projection = state.projection;
+      if (!projection || goalInput.value === '') return;
+      const value = Number(goalInput.value);
+      // Mientras se escribe, un valor por debajo de lo realizado se ignora en vez de corregirlo a mitad de tecleo.
+      if (!Number.isFinite(value) || value < projection.byKey.conversions.actual) return;
+      state.goal = value;
+      apply();
+    });
+    goalInput?.addEventListener('change', () => {
+      const projection = state.projection;
+      if (!projection) return;
+      if (goalInput.value !== '') state.goal = Number(goalInput.value);
+      goalInput.blur();
+      apply();
     });
 
-    document.getElementById('projection-sim-goal')?.addEventListener('click', () => {
+    cpaInput?.addEventListener('change', () => {
+      const value = Number(cpaInput.value);
+      state.marginalCpa = Number.isFinite(value) && value > 0 ? value : null;
+      cpaInput.blur();
+      apply();
+    });
+
+    document.getElementById('projection-sim-prev')?.addEventListener('click', () => {
       const projection = state.projection;
-      if (!projection) return;
-      const metric = projection.byKey[state.metric];
-      if (metric.reference == null) return;
-      setTarget(projection, metric, metric.reference);
-      renderChart(projection);
-      renderSimulator(projection);
+      if (!projection || !projection.previous) return;
+      state.goal = Number(projection.previous.conversions) || 0;
+      apply();
     });
 
     document.getElementById('projection-sim-reset')?.addEventListener('click', () => {
-      state.factor = 1;
-      if (!state.projection) return;
-      renderChart(state.projection);
-      renderSimulator(state.projection);
+      state.goal = null;
+      state.marginalCpa = null;
+      apply();
     });
   }
 
@@ -749,10 +945,8 @@
       const input = event.target.closest('input[type="radio"]');
       if (!input) return;
       state.metric = input.value;
-      document.querySelectorAll('#projection-metrics .series-toggle').forEach(label => {
-        label.classList.toggle('active', label.dataset.series === state.metric);
-      });
       if (state.projection) {
+        renderToggles(state.projection);
         renderChart(state.projection);
         renderSimulator(state.projection);
       }

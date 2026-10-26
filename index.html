@@ -161,11 +161,7 @@
               <div class="panel-title" id="projection-title">Línea de tiempo</div>
               <div class="panel-sub" id="projection-sub">Cargando datos del mes en curso...</div>
             </div>
-            <div class="chart-series-toggles" id="projection-metrics" role="group" aria-label="Indicador proyectado">
-              <label class="series-toggle active" data-series="investment"><input type="radio" name="projection-metric" value="investment" checked>Inversión</label>
-              <label class="series-toggle" data-series="clicks"><input type="radio" name="projection-metric" value="clicks">Clics</label>
-              <label class="series-toggle" data-series="conversions"><input type="radio" name="projection-metric" value="conversions">Conversaciones</label>
-            </div>
+            <div class="chart-series-toggles" id="projection-metrics" role="radiogroup" aria-label="Indicador del gráfico"></div>
           </div>
           <div class="chart-wrap h-360"><canvas id="chart-projection"></canvas></div>
           <div class="chart-legend projection-legend" id="projection-legend"></div>
@@ -174,15 +170,19 @@
           <div class="projection-sim" id="projection-sim">
             <div class="projection-sim-head">
               <div>
-                <div class="panel-title">Simulador de objetivo</div>
+                <div class="panel-title">Simulador de cierre</div>
                 <div class="panel-sub" id="projection-sim-sub">Arrastra el nodo del último día de la gráfica hacia el cierre que quieres alcanzar.</div>
               </div>
               <div class="projection-sim-actions">
-                <label class="messages-field projection-sim-field" for="projection-sim-value">
-                  <span id="projection-sim-label">Cierre objetivo</span>
-                  <span class="messages-input-wrap"><b id="projection-sim-prefix">S/.</b><input id="projection-sim-value" type="number" min="0" step="1"></span>
+                <label class="messages-field projection-sim-field" for="projection-goal">
+                  <span>Conversaciones al cierre</span>
+                  <span class="messages-input-wrap"><b>#</b><input id="projection-goal" type="number" min="0" step="1"></span>
                 </label>
-                <button class="messages-btn secondary" id="projection-sim-goal" type="button" hidden>Llevar al presupuesto</button>
+                <label class="messages-field projection-sim-field" for="projection-cpa">
+                  <span>Costo x conversación marginal</span>
+                  <span class="messages-input-wrap"><b>S/.</b><input id="projection-cpa" type="number" min="0" step="0.5"></span>
+                </label>
+                <button class="messages-btn secondary" id="projection-sim-prev" type="button" hidden>Igualar mes anterior</button>
                 <button class="messages-btn secondary" id="projection-sim-reset" type="button" disabled>Restablecer</button>
               </div>
             </div>
@@ -195,13 +195,28 @@
           <div class="panel-head">
             <div>
               <div class="panel-title">Proyección al cierre del mes</div>
-              <div class="panel-sub">Ritmo diario = acumulado real / días con datos. La proyección mantiene ese ritmo hasta el último día del mes.</div>
+              <div class="panel-sub" id="projection-table-sub">Ritmo diario = acumulado real / días con datos. La proyección mantiene ese ritmo hasta el último día del mes.</div>
             </div>
           </div>
           <div class="table-scroll">
             <table class="data-table projection-table">
-              <thead><tr><th>Indicador</th><th class="num" id="projection-actual-head">Actual</th><th class="num">Ritmo diario</th><th class="num" id="projection-close-head">Proyección al cierre</th><th class="num">Referencia</th><th>Brecha</th></tr></thead>
-              <tbody id="projection-body"><tr><td class="table-empty" colspan="6">Cargando proyección...</td></tr></tbody>
+              <thead><tr><th>Indicador</th><th class="num" id="projection-actual-head">Real</th><th class="num">Ritmo diario</th><th class="num" id="projection-close-head">Proyección al cierre</th><th class="num" id="projection-sim-head">Simulación</th><th class="num" id="projection-ref-head">Mes anterior</th><th>Vs mes anterior</th></tr></thead>
+              <tbody id="projection-body"><tr><td class="table-empty" colspan="7">Cargando proyección...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel projection-table-panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Semanas que faltan</div>
+              <div class="panel-sub" id="projection-weeks-sub">Lo que aportaría cada semana restante del mes con el escenario elegido.</div>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table projection-table">
+              <thead><tr><th>Semana</th><th class="num">Gasto</th><th class="num">Gasto x día</th><th class="num">Impresiones</th><th class="num">Clics</th><th class="num">Conversaciones</th><th class="num">Costo x conversación</th></tr></thead>
+              <tbody id="projection-weeks-body"></tbody>
             </table>
           </div>
         </div>
@@ -219,16 +234,46 @@
       </section>
 
       <section class="view" id="view-keywords">
-        <h1 class="section-title">Palabras clave · Análisis por campaña</h1>
-        <p class="section-desc">Rendimiento de cada palabra clave de búsqueda en Google Ads, agrupado por campaña. Los datos salen de la carpeta de Drive "Google Ads Aquarius Keywords": se actualizan solos todos los días y en el momento con el botón Actualizar.</p>
-        <div class="retail-filters kw-filters" id="kw-filters"></div>
-        <div class="kpi-strip" id="kw-kpis" aria-label="Resumen de palabras clave"></div>
-        <div class="kw-toolbar">
-          <div><div class="panel-title" id="kw-campaigns-title">Comportamiento por campaña</div><div class="panel-sub" id="kw-campaigns-sub"></div></div>
-          <div class="chart-views" role="group" aria-label="Vista de los cuadros por campaña"><button class="chart-view-btn is-active" type="button" data-kw-view="month" aria-pressed="true">Detalle del mes</button><button class="chart-view-btn" type="button" data-kw-view="trend" aria-pressed="false">Evolución mensual</button></div>
+        <h1 class="section-title">Palabras clave · Cuota, ranking y calidad</h1>
+        <p class="section-desc">Informe de palabras clave de búsqueda de Google Ads: cuánto del mercado captamos, cuánto perdemos por Ad Rank y qué palabras mueven el gasto. Los datos salen de la carpeta de Drive "Google Ads Aquarius Keywords": se actualizan solos todos los días y en el momento con el botón Actualizar.</p>
+        <div class="retail-filters" id="keywords-filters"></div>
+        <div class="kpi-strip" id="keywords-kpis" aria-label="KPIs de palabras clave"></div>
+
+        <div class="panel projection-table-panel diagnosis-panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Por qué se movieron las impresiones y los clics</div>
+              <div class="panel-sub" id="keywords-diagnosis-sub"></div>
+            </div>
+          </div>
+          <ul class="diagnosis-list" id="keywords-diagnosis"></ul>
         </div>
-        <div class="kw-campaigns" id="kw-campaigns"><div class="empty-state">Cargando palabras clave...</div></div>
-        <p class="projection-note kw-foot" id="kw-foot"></p>
+
+        <div class="panel chart-panel">
+          <div class="panel-head chart-panel-head">
+            <div>
+              <div class="panel-title">Evolución mensual</div>
+              <div class="panel-sub" id="keywords-chart-sub"></div>
+            </div>
+            <div class="chart-legend projection-legend" id="keywords-legend"></div>
+          </div>
+          <div class="chart-wrap h-360"><canvas id="chart-keywords" aria-label="Impresiones, cuota y ranking por mes"></canvas></div>
+        </div>
+
+        <div class="panel campaigns-panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Palabras clave del periodo</div>
+              <div class="panel-sub" id="keywords-table-sub"></div>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table campaigns-table">
+              <thead><tr><th>Palabra clave</th><th class="num">Impresiones</th><th class="num">% Δ</th><th class="num">Clics</th><th class="num">CTR</th><th class="num">Gasto</th><th class="num">CPC</th><th class="num">Conv.</th><th class="num">Costo x conv.</th><th class="num">Cuota impr.</th><th class="num">Perdido ranking</th><th class="num">Calidad</th><th>Relevancia anuncio</th><th>Página destino</th></tr></thead>
+              <tbody id="keywords-body"></tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <section class="view" id="view-week">

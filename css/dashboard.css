@@ -3583,6 +3583,138 @@ body.gasto-table-fullscreen {
   background: #f8fbff;
 }
 
+/* ===== Palabras clave · diseño del tablero Tierra Films ===== */
+/* El filtro de meses manda en el ancho; la ficha del informe va debajo. */
+#keywords-filters {
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 230px) minmax(190px, 230px);
+}
+
+#keywords-filters .filter-hint {
+  grid-column: 1 / -1;
+}
+
+@media(max-width:900px) {
+  #keywords-filters {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Pestañas de mes que se adaptan al texto, no la rejilla de 12 del módulo Gasto. */
+.filter-months {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.filter-months .month-tab {
+  display: inline-flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  height: auto;
+  padding: 7px 13px;
+  line-height: 1.2;
+}
+
+.filter-months .month-tab small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.filter-months .month-tab.active small {
+  color: var(--brand-text);
+}
+
+#keywords-filters + .kpi-strip {
+  margin-top: 12px;
+}
+
+/* Variación contra el mes anterior */
+.delta-cell {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.delta-cell.up { color: #16a34a; }
+.delta-cell.down { color: #dc2626; }
+
+.campaigns-table .campaign-name small {
+  display: block;
+  margin-top: 3px;
+  color: #b45309;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* Por qué se movieron las impresiones y los clics */
+.diagnosis-panel {
+  margin-top: 18px;
+}
+
+.diagnosis-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 18px;
+  color: #334155;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.diagnosis-list b {
+  color: var(--ink);
+}
+
+.diagnosis-list li::marker {
+  color: var(--brand);
+}
+
+.kw-low {
+  color: var(--red);
+}
+
+/* Notas de calidad del informe de Google Ads */
+.grade-pill {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 99px;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.grade-pill.grade-ok {
+  color: var(--green-text);
+  background: var(--green-soft);
+}
+
+.grade-pill.grade-mid {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.grade-pill.grade-low {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+/* Columna simulada de la tabla de proyección */
+.projection-sim-value {
+  color: #c2410c;
+  font-weight: 700;
+  background: #fff7ed;
+}
+
+.projection-sim-field {
+  width: 190px;
+}
+
 /* ── Notificaciones: campanita de la barra superior y su desplegable (patron de LR Suite) ── */
 .notif-zone { position: relative; }
 .notif-zone[hidden] { display: none; }
