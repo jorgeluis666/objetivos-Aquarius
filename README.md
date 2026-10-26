@@ -457,6 +457,9 @@ de Lima Retail:
 - Al editar el script hay que publicar una version nueva de la misma implementacion (Implementar >
   Gestionar implementaciones > lapiz > Version: Nueva version), para que la URL no cambie, y ejecutar
   `probarLectura` una vez para aceptar el permiso de Drive.
+- Mientras la carpeta de reglas no este en el `CARPETAS_LECTURA` del script **desplegado**, el paso
+  de reglas avisa y sigue en verde: es un redespliegue pendiente, no un fallo, y el barrido corre
+  tres veces al dia. Un timeout, un 500 o una clave rechazada si salen en rojo.
 - De la carpeta de reglas («08 Reglas y Optimizacion») solo devuelve las cinco columnas de
   `COLUMNAS_PERMITIDAS`: la «Instruccion Estrategica para la IA» de esa hoja esta escrita para la
   agencia y no sale de LR Suite, asi que el recorte se hace en el Apps Script y no aqui.

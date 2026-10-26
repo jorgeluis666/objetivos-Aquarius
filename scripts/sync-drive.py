@@ -560,7 +560,21 @@ def sync_reglas(folder_id, check):
         return 0
     try:
         files = list_with_script(folder_id, reader)
-    except (urllib.error.URLError, OSError, json.JSONDecodeError, KeyError, ValueError) as error:
+    except ValueError as error:
+        # «Carpeta no permitida» es lo que contesta el Apps Script cuando la carpeta de reglas
+        # todavia no esta en su CARPETAS_LECTURA: no es que algo se rompiera, es un redespliegue
+        # pendiente, y el barrido corre tres veces al dia. Avisa y sigue en verde, igual que cuando
+        # faltan los secretos; un CI rojo por algo esperado enseña a no mirarlo. Cualquier otra
+        # respuesta (la clave rechazada, una hoja que no se deja leer) sigue saliendo en rojo.
+        if normalize(str(error)).startswith("carpeta no permitida"):
+            print("[sync-reglas] la carpeta de reglas todavia no esta en la lista blanca del Apps "
+                  "Script: falta redesplegarlo (Implementar > Gestionar implementaciones > lapiz > "
+                  "Version: Nueva version). data/reglas.json se queda como esta.")
+            return 0
+        print(f"[sync-reglas] el Apps Script no entrego la carpeta de reglas ({error}); "
+              "data/reglas.json se queda como esta.")
+        return 1
+    except (urllib.error.URLError, OSError, json.JSONDecodeError, KeyError) as error:
         print(f"[sync-reglas] el Apps Script no entrego la carpeta de reglas ({error}); "
               "data/reglas.json se queda como esta.")
         return 1
