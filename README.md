@@ -520,6 +520,26 @@ sincronizacion) muestra los avisos del mes y, con un clic, abre el modulo donde 
 | Campanas que gastan sin conversaciones | alguna campana del mes gasto y no convirtio |
 | La campana que sostiene el mes | informativo: cuanta conversacion concentra y a que costo |
 
+**El Ciclo Mensual de Analisis y Optimizacion** (`data/reglas.json`) decide en que orden se leen
+esos avisos. Las cuatro reglas dicen, por el dia del mes que cubre el informe, en que semana del
+ciclo vamos; con eso el panel encabeza con una linea de contexto («Semana 3 del mes») y sube
+primero el aviso que toca mirar esa semana:
+
+| Semana | Acción | Qué sube primero |
+| --- | --- | --- |
+| 1 | `alerta_pacing` | el cierre del gasto frente al presupuesto |
+| 2 | `pausar_fatigados` | las campañas que gastan sin resultado |
+| 3 | `alerta_overlap` | la campaña que concentra el resultado |
+| 4 | `escalar_presupuesto` | el presupuesto que va a quedar sin usar |
+
+Ningun aviso se esconde: el que no toca esa semana baja de puesto, nada mas. La hoja `Reglas_Nexus_<Marca>` de la carpeta
+«08 Reglas y Optimizacion» del Drive de la marca es la raiz editable de estas reglas, pero todavia
+no hay barrido que la traiga hasta aca: por ahora manda lo que esta en el repositorio y el puente
+esta pendiente. Esa carpeta tiene los permisos restringidos al equipo, asi que el barrido tendra
+que leerla por el Web App del Apps Script, no por la vista publica de Drive. La **instruccion estrategica**
+de esa hoja no viaja aqui: esta escrita para la agencia y se queda en LR Suite. Sin
+`data/reglas.json` los avisos salen como siempre, sin ordenar y sin la linea de contexto.
+
 La ruedita del panel abre la lista de **correos de la alerta** (nombre opcional y correo, hasta 25).
 La lista vive en el Web App de `scripts/apps-script/alertas-destinatarios.gs` (propiedades del
 script, no en el repo): el tablero publicado la edita con la URL y la clave que el build deja dentro

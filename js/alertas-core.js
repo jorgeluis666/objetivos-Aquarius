@@ -37,6 +37,39 @@
   };
   const NIVEL_LABEL = { verde: 'En track', ambar: 'Atencion', rojo: 'Riesgo', gris: 'Sin referencia' };
 
+  // ── Ciclo Mensual de Analisis y Optimizacion ──────────────────────────────
+  // Las reglas de la marca (data/reglas.json) dicen en que parte del mes vamos. El hito no cambia
+  // ningun numero: cambia el orden en que se leen los avisos, que es el orden en que conviene
+  // mirarlos esa semana. Sin reglas sincronizadas no hay hito y los avisos salen como siempre.
+  //
+  // Lo que se le dice al cliente lo pone CONTEXTO_HITO, no la hoja: la instruccion estrategica de
+  // la hoja esta escrita para la agencia (habla del cliente en tercera persona) y se queda en LR
+  // Suite. Aca solo entra la accion, que es la que dice que toca mirar.
+  const CONTEXTO_HITO = {
+    alerta_pacing: 'Arranca el mes: se fija el ritmo de inversion y se proyecta en cuanto va a cerrar.',
+    pausar_fatigados: 'Toca mirar las piezas: cuales siguen trayendo resultados y cuales ya se agotaron.',
+    alerta_overlap: 'Toca mirar a quien le estamos hablando y abrir la segmentacion si el volumen se estanco.',
+    escalar_presupuesto: 'Ultima semana: exprimir lo que queda del presupuesto y medir el mes contra lo proyectado.',
+  };
+
+  // Que aviso conviene leer primero en cada hito. Los que no se nombran van despues, en su orden de
+  // siempre: el hito prioriza, no esconde.
+  const ORDEN_HITO = {
+    alerta_pacing: ['gasto', 'conversiones', 'cpa'],
+    pausar_fatigados: ['secas', 'lider', 'cpa'],
+    alerta_overlap: ['lider', 'secas', 'conversiones'],
+    escalar_presupuesto: ['gasto', 'lider', 'conversiones'],
+  };
+
+  const OPERADORES = {
+    '<': (left, right) => left < right,
+    '<=': (left, right) => left <= right,
+    '==': (left, right) => left === right,
+    '>=': (left, right) => left >= right,
+    '>': (left, right) => left > right,
+    '!=': (left, right) => left !== right,
+  };
+
   const num = value => (Number.isFinite(Number(value)) ? Number(value) : 0);
   const isNum = value => Number.isFinite(Number(value));
   const money = value => `S/. ${num(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -55,6 +88,25 @@
 
   // Hoy en Lima (UTC-5 todo el ano).
   const hoyLima = () => new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
+
+  // El operador se compara tal como esta escrito en la hoja: una celda con «mayor que» en lugar de
+  // «>» deja la regla sin aplicar, que es mejor que adivinar que se quiso decir.
+  function cumple(regla, dia) {
+    if (!regla || regla.metrica !== 'dias_mes') return false;
+    const comparar = OPERADORES[String(regla.operador || '').trim()];
+    const valor = Number(regla.valor);
+    return Boolean(comparar) && Number.isFinite(valor) && comparar(dia, valor);
+  }
+
+  // Los hitos se evaluan en el orden de la hoja y gana el primero que cumple: con «<= 7», «<= 14»,
+  // «<= 21» y «> 21», el dia 10 cae en el segundo y solo en el segundo. La semana sale de la
+  // posicion en la hoja y no del dia, para que siga siendo la correcta en una marca que movio su
+  // corte.
+  function hitoDe(reglas, dia) {
+    const lista = Array.isArray(reglas) ? reglas : ((reglas && reglas.reglas) || []);
+    const indice = lista.findIndex(regla => cumple(regla, dia));
+    return indice === -1 ? null : Object.assign({}, lista[indice], { semana: indice + 1 });
+  }
 
   // Meses con inversion, en orden, normalizados a un solo formato para los avisos y el correo.
   function meses(data) {
@@ -117,7 +169,7 @@
   }
 
   // Estado del ultimo mes con inversion: ritmo, cierre proyectado y como queda frente a sus referencias.
-  function estado(data) {
+  function estado(data, reglas) {
     const lista = meses(data);
     if (!lista.length) return null;
     const mes = lista[lista.length - 1];
@@ -156,6 +208,9 @@
       gasto, conv, cpa, diasRest, nivel, nivelLabel: NIVEL_LABEL[nivel],
       presupuesto: mes.presupuesto, gastoPct, convPct, cpaPct,
       corteLabel: corta(mes.corte) || `dia ${mes.dias}`,
+      // El hito se mide con el dia que cubre el informe, no con la fecha de quien mira: un mes
+      // cerrado se lee con su ultimo dia, que es el final del ciclo.
+      hito: hitoDe(reglas, mes.dias),
     };
   }
 
@@ -171,6 +226,7 @@
     if (e.presupuesto) {
       const sobra = e.presupuesto - gasto.cierre;
       items.push({
+        id: 'gasto',
         tone: e.gastoPct > LIMITES.gastoRojo ? 'red'
           : e.gastoPct > LIMITES.gastoAmbar || e.gastoPct < LIMITES.gastoFlojo ? 'amber' : 'green',
         titulo: sobra >= 0
@@ -191,6 +247,7 @@
     if (e.convPct != null) {
       const delta = e.convPct - 100;
       items.push({
+        id: 'conversiones',
         tone: e.convPct < LIMITES.convRojo ? 'red' : e.convPct < LIMITES.convAmbar ? 'amber' : 'green',
         titulo: `${V.convCap} al cierre: ${count(Math.round(conv.cierre))} · ${signedPct(delta)} vs ${previo.nombre.toLowerCase()}`,
         lineas: [
@@ -208,6 +265,7 @@
     if (e.cpaPct != null) {
       const delta = e.cpaPct - 100;
       items.push({
+        id: 'cpa',
         tone: tono(e.cpaPct, LIMITES.cpaAmbar, LIMITES.cpaRojo),
         titulo: `Cada ${V.conv1} sale ${pctTxt(Math.abs(delta))} ${delta >= 0 ? 'más cara' : 'más barata'} que en ${previo.nombre.toLowerCase()}`,
         lineas: [`${money(cpa.cierre)} proyectado al cierre contra ${money(cpa.previo)} de ${previo.nombre}.`],
@@ -221,6 +279,7 @@
     if (secas.length) {
       const perdido = secas.reduce((total, c) => total + c.gasto, 0);
       items.push({
+        id: 'secas',
         tone: perdido > gasto.real * 0.2 ? 'red' : 'amber',
         titulo: secas.length === 1
           ? `${secas[0].nombre} gasta sin ${V.conv}`
@@ -239,6 +298,7 @@
     if (lider && conv.real > 0) {
       const parte = (lider.conversiones / conv.real) * 100;
       items.push({
+        id: 'lider',
         tone: 'blue',
         titulo: `${lider.nombre} trae ${pctTxt(parte)} de las ${V.conv} del mes`,
         lineas: [`${count(Math.round(lider.conversiones))} de ${count(Math.round(conv.real))} ${V.conv} con ${money(lider.gasto)} invertidos, a ${money(lider.gasto / lider.conversiones)} cada una.`],
@@ -247,12 +307,41 @@
       });
     }
 
-    return items;
+    // Sin reglas sincronizadas los avisos salen como siempre: el tablero del cliente no explica
+    // que falta configurar, porque eso es cosa de la agencia.
+    if (!e.hito) return items;
+
+    // El hito ordena: primero lo que toca mirar esta semana y despues el resto, cada uno en su
+    // orden de siempre. Ningun aviso se esconde: un gasto disparado se sigue viendo en la semana
+    // de las creatividades, solo que mas abajo.
+    const orden = ORDEN_HITO[e.hito.accion] || [];
+    const peso = id => {
+      const puesto = orden.indexOf(id);
+      return puesto === -1 ? orden.length : puesto;
+    };
+    const ordenados = items
+      .map((item, entrada) => ({ item, entrada }))
+      .sort((a, b) => peso(a.item.id) - peso(b.item.id) || a.entrada - b.entrada)
+      .map(entry => entry.item);
+
+    // Una accion que este modulo no conoce ordena igual (por su orden de siempre) pero no encabeza
+    // con una linea inventada.
+    const contexto = CONTEXTO_HITO[e.hito.accion];
+    if (!contexto) return ordenados;
+
+    return [{
+      id: 'hito',
+      tone: 'blue',
+      titulo: `Semana ${e.hito.semana} del mes`,
+      lineas: [contexto],
+      badge: { valor: `dia ${mes.dias}`, etiqueta: `de ${mes.diasMes}` },
+      vista: 'view-projections',
+    }].concat(ordenados);
   }
 
   return {
-    MARCA, VOCAB, MESES, ABR, LIMITES, NIVEL_LABEL,
-    meses, estado, avisos, cierreDe, mesAnterior, hoyLima,
+    MARCA, VOCAB, MESES, ABR, LIMITES, NIVEL_LABEL, CONTEXTO_HITO, ORDEN_HITO,
+    meses, estado, avisos, cierreDe, mesAnterior, hoyLima, hitoDe, cumple,
     money, moneyCorto, count, decimal, pctTxt, signedPct, corta,
   };
 });

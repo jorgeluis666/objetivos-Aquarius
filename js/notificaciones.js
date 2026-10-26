@@ -119,7 +119,7 @@
   function render() {
     const zone = document.getElementById('notif-zone');
     if (!zone || !Core()) return;
-    const e = Core().estado(window.AQUARIUS_RETAIL_DATA);
+    const e = Core().estado(window.AQUARIUS_RETAIL_DATA, window.AQUARIUS_REGLAS);
     if (!e) { zone.hidden = true; return; }
     const items = Core().avisos(e);
     const open = state.open;
@@ -199,8 +199,23 @@
     }
   }
 
+  // Las reglas del Ciclo Mensual. En el tablero publicado las inyecta el build; en local se leen
+  // del repositorio. Si no estan, los avisos salen igual, solo que sin ordenar por hito: el
+  // tablero del cliente no se queda en blanco porque falte una sincronizacion de la agencia.
+  async function cargarReglas() {
+    if (window.AQUARIUS_REGLAS) return;
+    try {
+      const response = await fetch('data/reglas.json', { cache: 'no-store' });
+      if (!response.ok) return;
+      window.AQUARIUS_REGLAS = await response.json();
+    } catch (error) {
+      console.warn('[notificaciones] sin reglas del ciclo mensual:', error.message);
+    }
+  }
+
   // Llega al cargar y cada vez que se sincroniza Drive: los avisos se recalculan con la data nueva.
   window.addEventListener('aquarius:data-ready', () => render());
+  cargarReglas().then(render);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render);
   else render();
 
