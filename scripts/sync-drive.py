@@ -7,6 +7,14 @@ descarga (las hojas se exportan a CSV), los normaliza y actualiza
 data/aquarius-lima-retail-2026.json sin tocar las series diarias ya cargadas.
 Lee los numeros en formato espanol (99,46 y 1.894) o ingles (99.46 y 1,894).
 
+Con --reglas no toca esa data: lee la hoja Reglas_Nexus_<Marca> de la carpeta
+"08 Reglas y Optimizacion" (reglas.folderId en data/drive-config.json) y escribe
+data/reglas.json, los cuatro hitos del Ciclo Mensual de Analisis y Optimizacion
+que ordenan los avisos del tablero. Esa carpeta solo se deja leer por el Apps
+Script, y la columna "Instruccion Estrategica para la IA" no sale de ahi: la
+recorta el propio Apps Script (COLUMNAS_PERMITIDAS) y este script tampoco la
+guardaria.
+
 Descubrimiento de archivos, en orden:
 
 1. Apps Script de Aquarius (scripts/apps-script/sincronizar-aquarius.gs), si hay
@@ -21,6 +29,7 @@ Uso:
 
     python scripts/sync-drive.py            # sincroniza
     python scripts/sync-drive.py --check    # solo informa si hay cambios
+    python scripts/sync-drive.py --reglas   # solo las reglas del ciclo mensual
 """
 
 from __future__ import annotations
@@ -42,6 +51,7 @@ DATA = ROOT / "data" / "aquarius-lima-retail-2026.json"
 CONFIG = ROOT / "data" / "drive-config.json"
 MANIFEST = ROOT / "data" / "drive-manifest.json"
 BACKUPS = ROOT / "data" / "csv-backups" / "drive"
+REGLAS = ROOT / "data" / "reglas.json"
 
 TIMEOUT = 45
 USER_AGENT = "aquarius-dashboard-sync/1.0"
@@ -92,6 +102,32 @@ DELTA_FIELDS = {
     "costPerConversion": "costPerConversionDelta",
     "impressions": "impressionsDelta",
 }
+
+
+# ── Las reglas del ciclo mensual ────────────────────────────────────────────
+# Encabezados de la hoja Reglas_Nexus_<Marca> -> campo que evalua el tablero. La hoja tiene tres
+# columnas mas (Semana / Hito, Activar IA e Instruccion Estrategica para la IA) que no viajan al
+# repositorio: la instruccion es el metodo de trabajo de la agencia y se queda en LR Suite. El Apps
+# Script ya la recorta antes de responder; este mapa es la segunda red, por si alguna vez contesta
+# una version vieja del script.
+REGLAS_COLUMNS = {
+    "id regla": "id",
+    "metrica (trigger)": "metrica",
+    "metrica": "metrica",
+    "operador": "operador",
+    "valor": "valor",
+    "accion automatica": "accion",
+    "accion": "accion",
+}
+REGLAS_FIELDS = ("id", "metrica", "operador", "valor", "accion")
+REGLAS_COMENTARIO = (
+    "Ciclo Mensual de Analisis y Optimizacion. Dice en que parte del mes vamos y, con eso, en que "
+    "orden se leen los avisos del tablero. Lo genera scripts/sync-drive.py --reglas desde la hoja "
+    "{hoja} de la carpeta 08 Reglas y Optimizacion del Drive de la marca (permisos restringidos al "
+    "equipo), que es la raiz editable: lo que se cambie ahi manda y no conviene editar este archivo "
+    "a mano. La instruccion estrategica de la hoja no sale de LR Suite: la recorta el Apps Script "
+    "antes de responder."
+)
 
 
 def normalize(text):
@@ -441,6 +477,130 @@ def parse_campaign_report(text, name, exclude=frozenset()):
     return month_id, records, totals, summary
 
 
+def parse_corte(value):
+    """El corte de la regla, que es un dia del mes. Acepta 7 y 7,5 por igual.
+
+    Una celda vacia o con texto queda en None y el tablero salta esa regla, en lugar de aplicar un
+    corte inventado.
+    """
+    text = str(value or "").strip().replace(" ", "")
+    # En un numero tan chico una coma solo puede ser el separador decimal.
+    if "," in text and "." not in text:
+        text = text.replace(",", ".")
+    try:
+        number = float(text)
+    except ValueError:
+        return None
+    return int(number) if number.is_integer() else number
+
+
+def parse_reglas(text):
+    """Las reglas del ciclo mensual, con los cinco campos que evalua el tablero y ninguno mas."""
+    rows = list(csv.reader(io.StringIO(text)))
+    header_index = None
+    for index, row in enumerate(rows[:12]):
+        plain = [normalize(cell) for cell in row]
+        if "id regla" in plain and "operador" in plain:
+            header_index = index
+            break
+    if header_index is None:
+        return []
+
+    positions = {}
+    for position, cell in enumerate(rows[header_index]):
+        field = REGLAS_COLUMNS.get(normalize(cell))
+        if field and field not in positions:
+            positions[field] = position
+
+    reglas = []
+    for row in rows[header_index + 1:]:
+        def cell(field, row=row):
+            position = positions.get(field)
+            return row[position].strip() if position is not None and position < len(row) else ""
+
+        # Una fila sin ID o sin metrica no es una regla: suele ser una nota al pie de la hoja.
+        if not cell("id") or not cell("metrica"):
+            continue
+        reglas.append({
+            "id": cell("id"),
+            "metrica": cell("metrica"),
+            "operador": cell("operador"),
+            # Un corte vacio o con texto queda en null: el tablero salta esa regla en lugar de
+            # aplicar un corte inventado.
+            "valor": parse_corte(cell("valor")),
+            "accion": cell("accion"),
+        })
+    return reglas
+
+
+def dump_reglas(document):
+    """El JSON con una regla por linea, como estaba escrito a mano: un cambio se lee de un golpe."""
+    def pair(key, value):
+        return f"{json.dumps(key, ensure_ascii=False)}: {json.dumps(value, ensure_ascii=False)}"
+
+    head = ",\n".join(f"  {pair(key, document[key])}"
+                      for key in ("_comentario", "fuente", "lastSync"))
+    reglas = ",\n".join("    { " + ", ".join(pair(field, regla[field]) for field in REGLAS_FIELDS) + " }"
+                        for regla in document["reglas"])
+    return "{\n" + head + ',\n  "reglas": [\n' + reglas + "\n  ]\n}\n"
+
+
+def sync_reglas(folder_id, check):
+    """Trae data/reglas.json de la hoja de reglas de la marca, y solo por el Apps Script.
+
+    Esa carpeta tiene la herencia de permisos apagada (la de la marca la comparten cuentas del lado
+    del cliente), asi que ni la vista publica ni una API key llegan. Si algo falla, el archivo se
+    queda exactamente como estaba y se dice: un tablero sin reglas ordena los avisos como siempre,
+    pero perder las reglas por un fallo de red no es aceptable.
+    """
+    reader = script_reader()
+    if not reader:
+        print("[sync-reglas] sin AQ_DRIVE_SCRIPT_URL y AQ_DRIVE_READ_KEY: "
+              "data/reglas.json se queda como esta.")
+        return 0
+    try:
+        files = list_with_script(folder_id, reader)
+    except (urllib.error.URLError, OSError, json.JSONDecodeError, KeyError, ValueError) as error:
+        print(f"[sync-reglas] el Apps Script no entrego la carpeta de reglas ({error}); "
+              "data/reglas.json se queda como esta.")
+        return 1
+
+    hoja = next((item for item in files if normalize(item["name"]).startswith("reglas_nexus")), None)
+    if hoja is None:
+        print(f"[sync-reglas] la carpeta no trae la hoja Reglas_Nexus ({len(files)} archivos); "
+              "data/reglas.json se queda como esta.")
+        return 1
+
+    reglas = parse_reglas(script_csv(hoja["id"]) or "")
+    if not reglas:
+        print(f"[sync-reglas] {hoja['name']} no trae ninguna regla aplicable; "
+              "data/reglas.json se queda como esta.")
+        return 1
+
+    document = {
+        "_comentario": REGLAS_COMENTARIO.format(hoja=hoja["name"]),
+        "fuente": hoja["name"],
+        "lastSync": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "reglas": reglas,
+    }
+    try:
+        stored = json.loads(REGLAS.read_text(encoding="utf-8")) if REGLAS.exists() else {}
+    except json.JSONDecodeError:
+        stored = {}
+    # La hora no cuenta como cambio: si ninguna regla se movio, el paso no pide commit.
+    changed = any(document[key] != stored.get(key) for key in ("_comentario", "fuente", "reglas"))
+
+    if check:
+        print("[sync-reglas] hay cambios." if changed else "[sync-reglas] sin cambios.")
+        return 0
+
+    REGLAS.write_text(dump_reglas(document), encoding="utf-8")
+    print(f"[sync-reglas] {len(reglas)} reglas desde {hoja['name']}: "
+          f"{'hay cambios' if changed else 'sin cambios'}.")
+    report_to_actions(changed)
+    return 0
+
+
 def apply_deltas(months):
     """Calcula el porcentaje de variacion de cada campana contra el mes anterior."""
     previous = {}
@@ -554,12 +714,22 @@ def main():
     parser.add_argument("--check", action="store_true", help="Informa si hay cambios sin escribir el JSON")
     parser.add_argument("--folder", help="ID de la carpeta de Drive")
     parser.add_argument("--file", type=Path, help="Importa un informe de campana local en vez de leer Drive")
+    parser.add_argument("--reglas", action="store_true",
+                        help="Trae solo las reglas del ciclo mensual a data/reglas.json")
     args = parser.parse_args()
 
     if args.file:
         return import_file(args.file, args.check)
 
     config = load_config()
+
+    if args.reglas:
+        folder_id = args.folder or (config.get("reglas") or {}).get("folderId")
+        if not folder_id:
+            print("[sync-reglas] falta reglas.folderId en data/drive-config.json")
+            return 1
+        return sync_reglas(folder_id, args.check)
+
     folder_id = args.folder or config.get("folderId")
     if not folder_id:
         print("[sync-drive] falta folderId en data/drive-config.json")

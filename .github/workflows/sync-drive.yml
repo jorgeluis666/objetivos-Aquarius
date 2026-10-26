@@ -52,16 +52,17 @@ jobs:
         run: python3 scripts/sync-keywords.py
 
       # Las reglas del Ciclo Mensual de Analisis y Optimizacion viven en la carpeta
-      # "08 Reglas y Optimizacion" del Drive de la marca, restringida al equipo: la lee el Web App
-      # del Apps Script de LR Suite (AQ_REGLAS_URL) con su token. Mientras falten esos dos
-      # secretos el paso no falla: data/reglas.json se queda como esta y los avisos salen sin ordenar.
+      # "08 Reglas y Optimizacion" del Drive de la marca, restringida al equipo: la lee el mismo
+      # Apps Script de Aquarius que las otras dos carpetas, con la misma clave, asi que no hace falta
+      # ningun secreto nuevo. Si no responde, data/reglas.json se queda como esta y los avisos salen
+      # sin ordenar, como siempre.
       - name: Sincronizar las reglas del ciclo mensual
         id: reglas
         if: ${{ !cancelled() }}
         env:
-          AQ_REGLAS_URL: ${{ secrets.AQ_REGLAS_URL }}
-          AQ_REGLAS_TOKEN: ${{ secrets.AQ_REGLAS_TOKEN }}
-        run: python3 scripts/sync-reglas.py
+          AQ_DRIVE_SCRIPT_URL: ${{ secrets.AQ_SYNC_URL }}
+          AQ_DRIVE_READ_KEY: ${{ secrets.AQ_DRIVE_READ_KEY }}
+        run: python3 scripts/sync-drive.py --reglas
 
       - name: Guardar los datos nuevos
         if: ${{ !cancelled() && (steps.sync.outputs.changed == 'true' || steps.keywords.outputs.changed == 'true' || steps.reglas.outputs.changed == 'true') }}

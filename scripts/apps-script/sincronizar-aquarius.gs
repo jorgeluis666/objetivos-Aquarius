@@ -18,6 +18,9 @@
  * 7. Lectura privada de las carpetas (ver "Lectura de Drive" al final): Propiedades del script >
  *    LECTURA_CLAVE = la misma clave del secret AQ_DRIVE_READ_KEY. Luego Implementar > Gestionar
  *    implementaciones > editar (lapiz) > Version: Nueva version > Implementar, para que la URL siga igual.
+ * 8. Al agregar una carpeta a CARPETAS_LECTURA (la de reglas, por ejemplo) hay que repetir ese ultimo
+ *    paso: la implementacion sigue sirviendo la version anterior hasta que se publica una nueva. Y la
+ *    cuenta que ejecuta el script necesita acceso a esa carpeta, que esta restringida al equipo.
  *
  * El token y la clave nunca van en este archivo: viven solo en las Propiedades del script.
  */
@@ -104,14 +107,24 @@ function respuestaBoton_(body) {
 }
 
 // ── Lectura de Drive ────────────────────────────────────────────────────────
-// Las carpetas de informes ya no se comparten por enlace: el barrido de GitHub (scripts/sync-drive.py y
-// scripts/sync-keywords.py) las lee por aqui, con la cuenta duena del script. Solo responde con la clave de
-// LECTURA_CLAVE (enviada por POST, nunca en la URL) y solo para las carpetas de abajo. Devuelve cada hoja
-// exportada como CSV, igual que la exportaba Drive cuando la carpeta era publica.
+// Las carpetas de informes ya no se comparten por enlace: el barrido de GitHub (scripts/sync-drive.py,
+// con y sin --reglas, y scripts/sync-keywords.py) las lee por aqui, con la cuenta duena del script. Solo
+// responde con la clave de LECTURA_CLAVE (enviada por POST, nunca en la URL) y solo para las carpetas de
+// abajo. Devuelve cada hoja exportada como CSV, igual que la exportaba Drive cuando la carpeta era publica.
 // La de campanas es "02 Google Ads": se leen sus archivos, no sus subcarpetas (getFiles no las trae).
+// La de reglas es "08 Reglas y Optimizacion", y de ella solo salen cinco columnas: COLUMNAS_PERMITIDAS.
 const CARPETAS_LECTURA = {
   '1MBCTlit_mxS6wOXyGsXZL3HcS5SPTEIk': '02 Google Ads (campanas)',
-  '1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO': 'Google Ads Aquarius Keywords'
+  '1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO': 'Google Ads Aquarius Keywords',
+  '1juKN_tLi3JcYagAqBJve5h3fB2B6K_Sf': '08 Reglas y Optimizacion'
+};
+
+// La hoja de reglas trae una columna, "Instruccion Estrategica para la IA", que es el metodo de
+// trabajo de la agencia: habla del cliente en tercera persona y se queda en LR Suite. De esa
+// carpeta solo salen estas columnas, y el recorte se hace aca, antes de responder, no en el
+// repositorio que recibe: asi la instruccion no viaja a ningun sitio donde no deba estar.
+const COLUMNAS_PERMITIDAS = {
+  '1juKN_tLi3JcYagAqBJve5h3fB2B6K_Sf': ['ID Regla', 'Métrica (Trigger)', 'Operador', 'Valor', 'Acción Automática']
 };
 
 function leerCarpeta_(params) {
@@ -120,6 +133,7 @@ function leerCarpeta_(params) {
   const carpeta = String(params.carpeta || '');
   if (!CARPETAS_LECTURA[carpeta]) return respuestaBoton_({ ok: false, error: 'Carpeta no permitida.' });
   try {
+    const permitidas = COLUMNAS_PERMITIDAS[carpeta];
     const files = [];
     const iterador = DriveApp.getFolderById(carpeta).getFiles();
     while (iterador.hasNext()) {
@@ -127,11 +141,15 @@ function leerCarpeta_(params) {
       const tipo = file.getMimeType();
       const esHoja = tipo === MimeType.GOOGLE_SHEETS;
       if (!esHoja && !/\.csv$/i.test(file.getName())) continue;
+      // En una carpeta con columnas permitidas solo se leen hojas de Google: un CSV suelto no se
+      // puede recortar por nombre de columna con la misma garantia, y ahi no tiene nada que hacer.
+      if (permitidas && !esHoja) continue;
       files.push({
         id: file.getId(),
         name: file.getName(),
         modifiedTime: file.getLastUpdated().toISOString(),
-        csv: esHoja ? exportarCsv_(file.getId()) : file.getBlob().getDataAsString('UTF-8')
+        csv: permitidas ? exportarColumnas_(file.getId(), permitidas)
+          : esHoja ? exportarCsv_(file.getId()) : file.getBlob().getDataAsString('UTF-8')
       });
     }
     return respuestaBoton_({ ok: true, files: files });
@@ -151,7 +169,45 @@ function exportarCsv_(id) {
   return response.getContentText('UTF-8');
 }
 
-// Ejecutar una vez desde el editor para aceptar el permiso de Drive (y comprobar que lee las dos carpetas).
+// La primera pestana como CSV, pero solo con las columnas permitidas. Los valores se leen como se
+// ven en la hoja (getDisplayValues), que es lo que ya hacia el export de Sheets.
+function exportarColumnas_(id, columnas) {
+  const rango = SpreadsheetApp.openById(id).getSheets()[0].getDataRange();
+  return recortarFilas_(rango.getDisplayValues(), columnas)
+    .map(fila => fila.map(comillas_).join(','))
+    .join('\r\n');
+}
+
+// Deja de cada fila solo las columnas pedidas, en el orden en que se piden.
+function recortarFilas_(filas, columnas) {
+  if (!filas.length) return [];
+  const encabezado = filas[0].map(normalizarEncabezado_);
+  const indices = columnas
+    .map(nombre => encabezado.indexOf(normalizarEncabezado_(nombre)))
+    .filter(indice => indice >= 0);
+  // Si la hoja no trae ninguna de las columnas esperadas no se devuelve nada, en lugar de
+  // devolverla entera: un encabezado cambiado no puede destapar la instruccion estrategica.
+  if (!indices.length) return [];
+  return filas.map(fila => indices.map(indice => fila[indice] === undefined ? '' : fila[indice]));
+}
+
+// Los encabezados se comparan sin tildes ni mayusculas: "Métrica (Trigger)" y "metrica (trigger)"
+// son la misma columna.
+function normalizarEncabezado_(valor) {
+  const tildes = { 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ü': 'u', 'ñ': 'n' };
+  return String(valor === null || valor === undefined ? '' : valor)
+    .trim()
+    .toLowerCase()
+    .replace(/[áéíóúüñ]/g, letra => tildes[letra])
+    .replace(/\s+/g, ' ');
+}
+
+function comillas_(valor) {
+  const texto = String(valor === null || valor === undefined ? '' : valor);
+  return /[",\r\n]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto;
+}
+
+// Ejecutar una vez desde el editor para aceptar el permiso de Drive (y comprobar que lee las carpetas).
 function probarLectura() {
   Object.keys(CARPETAS_LECTURA).forEach(carpeta => {
     const nombres = [];
