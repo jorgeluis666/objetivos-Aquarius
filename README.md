@@ -450,14 +450,18 @@ este repositorio publico). El barrido las lee con la accion `leer` del mismo Web
 de Lima Retail:
 
 - Solo responde con la clave `LECTURA_CLAVE` de las Propiedades del script, enviada por POST (nunca en la
-  URL), y solo para las dos carpetas de `CARPETAS_LECTURA`. Devuelve cada hoja exportada como CSV; de
+  URL), y solo para las carpetas de `CARPETAS_LECTURA`. Devuelve cada hoja exportada como CSV; de
   "02 Google Ads" solo trae sus archivos, no las subcarpetas.
 - En GitHub la clave es el secret `AQ_DRIVE_READ_KEY` y la URL es la de `AQ_SYNC_URL`
   (`sync-drive.yml` la pasa como `AQ_DRIVE_SCRIPT_URL`).
 - Al editar el script hay que publicar una version nueva de la misma implementacion (Implementar >
   Gestionar implementaciones > lapiz > Version: Nueva version), para que la URL no cambie, y ejecutar
   `probarLectura` una vez para aceptar el permiso de Drive.
-- Para probar en local: `AQ_DRIVE_SCRIPT_URL=<url> AQ_DRIVE_READ_KEY=<clave> python scripts/sync-drive.py --check`.
+- De la carpeta de reglas («08 Reglas y Optimizacion») solo devuelve las cinco columnas de
+  `COLUMNAS_PERMITIDAS`: la «Instruccion Estrategica para la IA» de esa hoja esta escrita para la
+  agencia y no sale de LR Suite, asi que el recorte se hace en el Apps Script y no aqui.
+- Para probar en local: `AQ_DRIVE_SCRIPT_URL=<url> AQ_DRIVE_READ_KEY=<clave> python scripts/sync-drive.py --check`
+  (y lo mismo con `--reglas --check` para la hoja del ciclo mensual).
 
 ### Manual, desde el tablero
 
@@ -532,13 +536,14 @@ primero el aviso que toca mirar esa semana:
 | 3 | `alerta_overlap` | la campaña que concentra el resultado |
 | 4 | `escalar_presupuesto` | el presupuesto que va a quedar sin usar |
 
-Ningun aviso se esconde: el que no toca esa semana baja de puesto, nada mas. La hoja `Reglas_Nexus_<Marca>` de la carpeta
-«08 Reglas y Optimizacion» del Drive de la marca es la raiz editable de estas reglas, pero todavia
-no hay barrido que la traiga hasta aca: por ahora manda lo que esta en el repositorio y el puente
-esta pendiente. Esa carpeta tiene los permisos restringidos al equipo, asi que el barrido tendra
-que leerla por el Web App del Apps Script, no por la vista publica de Drive. La **instruccion estrategica**
-de esa hoja no viaja aqui: esta escrita para la agencia y se queda en LR Suite. Sin
-`data/reglas.json` los avisos salen como siempre, sin ordenar y sin la linea de contexto.
+Ningun aviso se esconde: el que no toca esa semana baja de puesto, nada mas. La hoja
+`Reglas_Nexus_Aquarius` de la carpeta «08 Reglas y Optimizacion» del Drive de la marca es la raiz
+editable de estas reglas: lo que el equipo cambie ahi llega al tablero en el siguiente barrido.
+`scripts/sync-drive.py --reglas` la lee con el Apps Script de la marca (esa carpeta tiene los
+permisos restringidos al equipo, asi que no se puede leer por la vista publica de Drive) y escribe
+`data/reglas.json`, que el workflow commitea solo cuando cambia una regla. La **instruccion
+estrategica** de esa hoja no viaja aqui: la recorta el propio Apps Script y se queda en LR Suite.
+Sin `data/reglas.json` los avisos salen como siempre, sin ordenar y sin la linea de contexto.
 
 La ruedita del panel abre la lista de **correos de la alerta** (nombre opcional y correo, hasta 25).
 La lista vive en el Web App de `scripts/apps-script/alertas-destinatarios.gs` (propiedades del

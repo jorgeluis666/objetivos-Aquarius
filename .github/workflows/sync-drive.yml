@@ -5,7 +5,9 @@ name: Sincronizar Drive
 # - carpeta "02 Google Ads": una hoja (o CSV) por mes con el informe de campana
 #   (Gasto Publicitario y Proyecciones);
 # - carpeta "Google Ads Aquarius Keywords": una hoja por mes con el informe de
-#   palabras clave (Analisis de Palabras Clave).
+#   palabras clave (Analisis de Palabras Clave);
+# - carpeta "08 Reglas y Optimizacion": la hoja Reglas_Nexus_<Marca> con los cuatro hitos del
+#   ciclo mensual, que ordenan los avisos del tablero (data/reglas.json).
 # Corre todos los dias a las 06:30, 13:30 y 18:30 de Lima: lo lanzan activadores de Google Apps
 # Script (scripts/apps-script/sincronizar-aquarius.gs) por workflow_dispatch, que
 # arranca al momento. No hay cron de GitHub: atrasaba varias horas y repetia el
@@ -49,8 +51,21 @@ jobs:
           AQ_DRIVE_API_KEY: ${{ secrets.AQ_DRIVE_API_KEY }}
         run: python3 scripts/sync-keywords.py
 
+      # Las reglas del Ciclo Mensual de Analisis y Optimizacion viven en la carpeta
+      # "08 Reglas y Optimizacion" del Drive de la marca, restringida al equipo: la lee el mismo
+      # Apps Script de Aquarius que las otras dos carpetas, con la misma clave, asi que no hace falta
+      # ningun secreto nuevo. Si no responde, data/reglas.json se queda como esta y los avisos salen
+      # sin ordenar, como siempre.
+      - name: Sincronizar las reglas del ciclo mensual
+        id: reglas
+        if: ${{ !cancelled() }}
+        env:
+          AQ_DRIVE_SCRIPT_URL: ${{ secrets.AQ_SYNC_URL }}
+          AQ_DRIVE_READ_KEY: ${{ secrets.AQ_DRIVE_READ_KEY }}
+        run: python3 scripts/sync-drive.py --reglas
+
       - name: Guardar los datos nuevos
-        if: ${{ !cancelled() && (steps.sync.outputs.changed == 'true' || steps.keywords.outputs.changed == 'true') }}
+        if: ${{ !cancelled() && (steps.sync.outputs.changed == 'true' || steps.keywords.outputs.changed == 'true' || steps.reglas.outputs.changed == 'true') }}
         run: |
           git config user.name "aquarius-sync[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -62,11 +77,11 @@ jobs:
       # Un push hecho con GITHUB_TOKEN no dispara otros workflows, asi que la
       # publicacion se pide a mano.
       - name: Publicar el tablero
-        if: ${{ !cancelled() && (steps.sync.outputs.changed == 'true' || steps.keywords.outputs.changed == 'true') }}
+        if: ${{ !cancelled() && (steps.sync.outputs.changed == 'true' || steps.keywords.outputs.changed == 'true' || steps.reglas.outputs.changed == 'true') }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh workflow run deploy-pages.yml --ref main
 
       - name: Sin novedades
-        if: ${{ !cancelled() && steps.sync.outputs.changed != 'true' && steps.keywords.outputs.changed != 'true' }}
+        if: ${{ !cancelled() && steps.sync.outputs.changed != 'true' && steps.keywords.outputs.changed != 'true' && steps.reglas.outputs.changed != 'true' }}
         run: echo "Las carpetas de Drive no trajeron datos nuevos; el tablero sigue igual."
