@@ -4634,7 +4634,7 @@
       "driveFileId": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
       "period": {
         "start": "2026-10-01",
-        "end": "2026-10-27"
+        "end": "2026-10-28"
       },
       "keywords": [
         {
@@ -5771,7 +5771,7 @@
           "campaign": "Campaña Abril 2024 - 2",
           "adGroup": "Gestión Logística",
           "status": "No apto",
-          "reasons": "CAMPAIGN_PAUSED, CAMPAIGN_ENDED, AD_GROUP_CRITERION_RARELY_SERVED",
+          "reasons": "CAMPAIGN_PAUSED, CAMPAIGN_ENDED",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -6503,7 +6503,7 @@
           "campaign": "Campaña Abril 2024 - 3",
           "adGroup": "Valuaciones Comerciales",
           "status": "No apto",
-          "reasons": "CAMPAIGN_PAUSED, CAMPAIGN_ENDED",
+          "reasons": "CAMPAIGN_PAUSED, CAMPAIGN_ENDED, AD_GROUP_CRITERION_RARELY_SERVED",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -8903,7 +8903,7 @@
           "campaign": "campaña junio 2024 -3",
           "adGroup": "Outsourcing de gestión de almacenes",
           "status": "No apto",
-          "reasons": "CAMPAIGN_PAUSED, CAMPAIGN_ENDED, AD_GROUP_CRITERION_RARELY_SERVED",
+          "reasons": "CAMPAIGN_PAUSED, CAMPAIGN_ENDED",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -10619,7 +10619,7 @@
           "campaign": "Campaña Abril 2024 - 4",
           "adGroup": "Outsourcing",
           "status": "No apto",
-          "reasons": "CAMPAIGN_PAUSED, CAMPAIGN_ENDED, AD_GROUP_CRITERION_RARELY_SERVED",
+          "reasons": "CAMPAIGN_PAUSED, CAMPAIGN_ENDED",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -16283,7 +16283,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_CL_SKAG",
           "adGroup": "IDG_AQUARIUSCONSULTING_CL_SKAG-ACTIVOSFIJOS",
           "status": "No apto",
-          "reasons": "CAMPAIGN_PAUSED",
+          "reasons": "CAMPAIGN_PAUSED, AD_GROUP_CRITERION_RARELY_SERVED",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -18686,9 +18686,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 69,
-          "cost": 16.04,
-          "clicks": 8,
+          "impressions": 70,
+          "cost": 17.83,
+          "clicks": 9,
           "conversions": 1.5
         },
         {
@@ -18920,7 +18920,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 236,
+          "impressions": 237,
           "cost": 64.6,
           "clicks": 32,
           "conversions": 4
@@ -19421,7 +19421,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "status": "Apto",
-          "impressions": 84,
+          "impressions": 86,
           "cost": 14.95,
           "clicks": 8,
           "conversions": 0
@@ -19703,7 +19703,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "status": "Apto",
-          "impressions": 2013,
+          "impressions": 2022,
           "cost": 89.28,
           "clicks": 100,
           "conversions": 0
@@ -20526,7 +20526,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_CL_SKAG-ACTIVOSFIJOS",
           "adGroup": "IDG_AQUARIUSCONSULTING_CL_SKAG-ACTIVOSFIJOS",
           "status": "No apto",
-          "reasons": "CAMPAIGN_PAUSED",
+          "reasons": "CAMPAIGN_PAUSED, AD_GROUP_CRITERION_RARELY_SERVED",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -20802,7 +20802,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_CL_SKAG-AVALUOCOMERCIAL",
           "adGroup": "IDG_AQUARIUSCONSULTING_CL_SKAG-AVALUOCOMERCIAL",
           "status": "No apto",
-          "reasons": "CAMPAIGN_PAUSED, AD_GROUP_CRITERION_RARELY_SERVED",
+          "reasons": "CAMPAIGN_PAUSED",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -22929,7 +22929,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "status": "Apto",
-          "impressions": 412,
+          "impressions": 411,
           "cost": 106.93,
           "clicks": 37,
           "conversions": 6
@@ -23079,7 +23079,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-DIAGNOSTICOSISTEMACONTROLINTERNOTICO",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-DIAGNOSTICOSISTEMACONTROLINTERNOTICO-GRUPO",
           "status": "En pausa",
-          "reasons": "CAMPAIGN_PAUSED, AD_GROUP_CRITERION_PAUSED",
+          "reasons": "CAMPAIGN_PAUSED, AD_GROUP_CRITERION_PAUSED, AD_GROUP_CRITERION_RARELY_SERVED",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -23163,7 +23163,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "status": "Apto",
-          "impressions": 34,
+          "impressions": 35,
           "cost": 0,
           "clicks": 0,
           "conversions": 0
@@ -23174,7 +23174,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "status": "Apto",
-          "impressions": 10,
+          "impressions": 12,
           "cost": 1.77,
           "clicks": 1,
           "conversions": 0
@@ -23484,7 +23484,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "status": "Apto",
-          "impressions": 18,
+          "impressions": 20,
           "cost": 17.08,
           "clicks": 2,
           "conversions": 0
@@ -23496,7 +23496,7 @@
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "status": "UNKNOWN",
           "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
-          "impressions": 36,
+          "impressions": 47,
           "cost": 24.84,
           "clicks": 2,
           "conversions": 0
@@ -24227,7 +24227,7 @@
   "drive": {
     "folderId": "1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO",
     "discovery": "apps script",
-    "lastSync": "2026-10-27T23:26:16Z",
+    "lastSync": "2026-10-28T11:29:39Z",
     "files": [
       {
         "id": "17oCEc4yhZfWSY8y_km3IPYb0hmH2VKHBXOi60LvHd0w",
@@ -24272,7 +24272,7 @@
       {
         "id": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
         "name": "Aquarius KW octubre 2026",
-        "modifiedTime": "2026-10-27T23:01:47.449Z"
+        "modifiedTime": "2026-10-28T11:01:46.238Z"
       },
       {
         "id": "1tJ7B5yQydbvGxOczu0XxnAoot8ew7_vZjFOJOU3cabw",
