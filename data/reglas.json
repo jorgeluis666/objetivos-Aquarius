@@ -1,7 +1,7 @@
 {
   "_comentario": "Ciclo Mensual de Analisis y Optimizacion. Dice en que parte del mes vamos y, con eso, en que orden se leen los avisos del tablero. Lo genera scripts/sync-drive.py --reglas desde la hoja Reglas_Nexus_Aquarius de la carpeta 08 Reglas y Optimizacion del Drive de la marca (permisos restringidos al equipo), que es la raiz editable: lo que se cambie ahi manda y no conviene editar este archivo a mano. La instruccion estrategica de la hoja no sale de LR Suite: la recorta el Apps Script antes de responder.",
   "fuente": "Reglas_Nexus_Aquarius",
-  "lastSync": "2026-10-30T23:26:15Z",
+  "lastSync": "2026-10-31T11:29:40Z",
   "reglas": [
     { "id": "R_01", "metrica": "dias_mes", "operador": "<=", "valor": 7, "accion": "alerta_pacing" },
     { "id": "R_02", "metrica": "dias_mes", "operador": "<=", "valor": 14, "accion": "pausar_fatigados" },
