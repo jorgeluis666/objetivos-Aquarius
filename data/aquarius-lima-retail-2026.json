@@ -3563,7 +3563,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "type": "Búsqueda",
           "cost": 0,
-          "impressions": 1,
+          "impressions": 2,
           "clicks": 0,
           "cpc": 0,
           "ctr": 0.0,
@@ -3576,26 +3576,26 @@
           "clicksDelta": -1.0,
           "conversionsDelta": -1.0,
           "costPerConversionDelta": -1.0,
-          "impressionsDelta": -0.9975247524752475
+          "impressionsDelta": -0.995049504950495
         },
         {
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "type": "Búsqueda",
-          "cost": 6.97,
-          "impressions": 549,
-          "clicks": 26,
+          "cost": 8.78,
+          "impressions": 588,
+          "clicks": 32,
           "cpc": 0.27,
-          "ctr": 0.047400000000000005,
+          "ctr": 0.054400000000000004,
           "conversions": 0,
           "costPerConversion": 0,
           "status": "Habilitada",
           "dailyBudget": 12.5,
-          "costDelta": -0.9583557387823385,
-          "ctrDelta": 0.14216867469879513,
-          "clicksDelta": -0.9462809917355371,
+          "costDelta": -0.9475413753958296,
+          "ctrDelta": 0.31084337349397595,
+          "clicksDelta": -0.9338842975206612,
           "conversionsDelta": -1.0,
           "costPerConversionDelta": -1.0,
-          "impressionsDelta": -0.9528714911151172
+          "impressionsDelta": -0.9495235642544424
         },
         {
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
@@ -3715,7 +3715,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "type": "Búsqueda",
           "cost": 0,
-          "impressions": 1,
+          "impressions": 2,
           "clicks": 0,
           "cpc": 0,
           "ctr": 0.0,
@@ -3728,7 +3728,7 @@
           "clicksDelta": -1.0,
           "conversionsDelta": -1.0,
           "costPerConversionDelta": -1.0,
-          "impressionsDelta": -0.9991525423728813
+          "impressionsDelta": -0.9983050847457627
         },
         {
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-DIAGNOSTICOSISTEMACONTROLINTERNOTICO",
@@ -3772,11 +3772,11 @@
       "sourceFile": "Aquarius - Noviembre 2026",
       "driveFileId": "1kvfVAUFZok8QZIoJd4gKWj-F8OH7VVSHbmHWOZTTTls",
       "totals": {
-        "cost": 6.97,
-        "impressions": 552,
-        "clicks": 26,
+        "cost": 8.78,
+        "impressions": 593,
+        "clicks": 32,
         "conversions": 0,
-        "ctr": 0.04710144927536232,
+        "ctr": 0.05396290050590219,
         "costPerConversion": null
       },
       "period": {
@@ -4183,7 +4183,7 @@
       "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
       "type": "Búsqueda",
       "cost": 0,
-      "impressions": 1,
+      "impressions": 2,
       "clicks": 0,
       "cpc": 0,
       "ctr": 0.0,
@@ -4196,26 +4196,26 @@
       "clicksDelta": -1.0,
       "conversionsDelta": -1.0,
       "costPerConversionDelta": -1.0,
-      "impressionsDelta": -0.9975247524752475
+      "impressionsDelta": -0.995049504950495
     },
     {
       "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
       "type": "Búsqueda",
-      "cost": 6.97,
-      "impressions": 549,
-      "clicks": 26,
+      "cost": 8.78,
+      "impressions": 588,
+      "clicks": 32,
       "cpc": 0.27,
-      "ctr": 0.047400000000000005,
+      "ctr": 0.054400000000000004,
       "conversions": 0,
       "costPerConversion": 0,
       "status": "Habilitada",
       "dailyBudget": 12.5,
-      "costDelta": -0.9583557387823385,
-      "ctrDelta": 0.14216867469879513,
-      "clicksDelta": -0.9462809917355371,
+      "costDelta": -0.9475413753958296,
+      "ctrDelta": 0.31084337349397595,
+      "clicksDelta": -0.9338842975206612,
       "conversionsDelta": -1.0,
       "costPerConversionDelta": -1.0,
-      "impressionsDelta": -0.9528714911151172
+      "impressionsDelta": -0.9495235642544424
     },
     {
       "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
@@ -4335,7 +4335,7 @@
       "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
       "type": "Búsqueda",
       "cost": 0,
-      "impressions": 1,
+      "impressions": 2,
       "clicks": 0,
       "cpc": 0,
       "ctr": 0.0,
@@ -4348,7 +4348,7 @@
       "clicksDelta": -1.0,
       "conversionsDelta": -1.0,
       "costPerConversionDelta": -1.0,
-      "impressionsDelta": -0.9991525423728813
+      "impressionsDelta": -0.9983050847457627
     },
     {
       "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-DIAGNOSTICOSISTEMACONTROLINTERNOTICO",
@@ -4392,17 +4392,17 @@
   "drive": {
     "folderId": "1MBCTlit_mxS6wOXyGsXZL3HcS5SPTEIk",
     "discovery": "apps script",
-    "lastSync": "2026-11-01T18:25:17Z",
+    "lastSync": "2026-11-01T23:26:01Z",
     "files": [
       {
         "id": "1kvfVAUFZok8QZIoJd4gKWj-F8OH7VVSHbmHWOZTTTls",
         "name": "Aquarius - Noviembre 2026",
-        "modifiedTime": "2026-11-01T18:02:51.767Z"
+        "modifiedTime": "2026-11-01T23:02:49.697Z"
       },
       {
         "id": "1k1IzR19ez6ROh4S5FCIX1Lj8vgYl1iIec1YbHqBQMjg",
         "name": "Aquarius - Octubre 2026",
-        "modifiedTime": "2026-11-01T18:02:40.577Z"
+        "modifiedTime": "2026-11-01T23:02:38.536Z"
       },
       {
         "id": "17AUvhI34ey74oozsuRuJzci3OpcFZ8W2CpoFdk4itB4",
