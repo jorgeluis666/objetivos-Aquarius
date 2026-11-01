@@ -38572,7 +38572,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 0,
+          "impressions": 1,
           "cost": 0,
           "clicks": 0,
           "conversions": 0
@@ -38854,7 +38854,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "status": "Apto",
-          "impressions": 0,
+          "impressions": 1,
           "cost": 0,
           "clicks": 0,
           "conversions": 0
@@ -39355,9 +39355,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "status": "Apto",
-          "impressions": 0,
-          "cost": 0,
-          "clicks": 0,
+          "impressions": 22,
+          "cost": 0.3,
+          "clicks": 2,
           "conversions": 0
         },
         {
@@ -42076,7 +42076,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "status": "Apto",
-          "impressions": 0,
+          "impressions": 1,
           "cost": 0,
           "clicks": 0,
           "conversions": 0
@@ -43935,7 +43935,7 @@
   "drive": {
     "folderId": "1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO",
     "discovery": "apps script",
-    "lastSync": "2026-11-01T11:29:38Z",
+    "lastSync": "2026-11-01T18:25:30Z",
     "files": [
       {
         "id": "17oCEc4yhZfWSY8y_km3IPYb0hmH2VKHBXOi60LvHd0w",
@@ -43980,12 +43980,12 @@
       {
         "id": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
         "name": "Aquarius KW noviembre 2026",
-        "modifiedTime": "2026-11-01T11:04:10.999Z"
+        "modifiedTime": "2026-11-01T18:03:18.518Z"
       },
       {
         "id": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
         "name": "Aquarius KW octubre 2026",
-        "modifiedTime": "2026-11-01T11:03:50.665Z"
+        "modifiedTime": "2026-11-01T18:03:06.798Z"
       },
       {
         "id": "1tJ7B5yQydbvGxOczu0XxnAoot8ew7_vZjFOJOU3cabw",
