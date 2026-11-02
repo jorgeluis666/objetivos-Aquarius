@@ -71,6 +71,8 @@ COLUMNS = {
     "conv.": ("conversions", "number"),
     "% impr. parte sup. busqueda": ("topShare", "share"),
     "% impr. perdidas de la busqueda (ranking)": ("lostRank", "share"),
+    # Nivel de calidad (1 a 10) de la palabra clave; "--" cuando Google Ads no lo calcula.
+    "nivel de calidad": ("qualityScore", "int"),
 }
 NUMERIC = ("impressions", "clicks", "cost", "conversions")
 

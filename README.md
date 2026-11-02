@@ -266,35 +266,53 @@ Contenido descifrado:
 
 ## Generacion de Reporte
 
-Pestana **Generacion de Reporte** del panel lateral: el "Reporte de Publicidad" del mes con el diseño del modelo
-de Aquarius (`Modelo Reporte Aquarius`), laminas 16:9 con fondo claro, tarjetas blancas de borde fino y acentos en
-azul. El modulo es `js/report-week.js`; sus estilos y los de impresion estan al final de `css/dashboard.css`. El
-template es propio de Aquarius: cada tablero de marca tiene el suyo, adaptado por la marca.
+Pestana **Generacion de Reporte** del panel lateral: el "Reporte de Publicidad" del mes con el diseño del template
+de Aquarius (`Modelo Reporte Aquarius.pdf`), laminas 16:9 con fondo claro, tarjetas blancas de borde fino, acentos
+en azul y la fecha del periodo arriba a la derecha. El modulo es `js/report-week.js`; sus estilos y los de impresion
+estan en `css/dashboard.css` (el ultimo bloque, "template Modelo Reporte Aquarius"). El template es propio de
+Aquarius: cada tablero de marca tiene el suyo, adaptado por la marca. "Leads" son las conversiones de Google Ads y
+"CPL" su costo.
 
 | Pagina | Contenido |
 | --- | --- |
-| Portada | Logo de Lima Retail, "Reporte de Publicidad", cliente (Aquarius Consulting), periodo ("1 – 18 Octubre 2026 \| Google Ads · Search") y fecha de emision. |
-| Contenido | Resumen del mes, Campanas, Palabras clave y Conclusiones, con su numero de pagina. |
-| Resumen del mes | Inversion, conversiones, costo por conversion, clics, impresiones, CPC medio, CTR y tasa de conversion, con su variacion; clics y conversiones por dia. |
-| Rendimiento por campana | Hasta 6 campanas por inversion (coste, clics, conv., costo/conv., CTR), el total y el recuadro "Analisis". |
-| Palabras clave que convierten | Hasta 6 terminos por conversiones, recuadro "Clave" y tarjeta "Analisis". |
-| Conclusiones del periodo | Tres tarjetas (evolucion del mes, servicios que mandan y lo que no cierra) y, en un mes en curso, la nota de que las metricas se consolidan al cierre. |
+| Portada | Logo de Lima Retail, "Reporte de Publicidad", cliente, periodo ("Octubre 2026 · Periodo 1 – 31 oct \| Google Ads") y fecha de emision. |
+| Contenido | Las secciones en dos columnas, con su pagina (el detalle por campana, con su rango de paginas). |
+| Resumen de leads | Inversion, leads, CPL, tasa de conversion, CPC e impresiones con su variacion contra el mes previo; evolucion de leads y CPL **por semana** (dos paneles, cada punto con su valor, la ultima semana resaltada); cierre del mes (o proyeccion de cierre si esta en curso) con el presupuesto sin usar; "Destacado" y "Analisis". |
+| Distribucion de inversion | Inversion total, campana lider, top de servicios y CPL promedio; dona y tabla por campana (inversion, % inv., leads, CPL o "Sin leads", presupuesto usado) con el total; "Destacado". |
+| Desempeno por campana | Mejor CPL con demanda, mas leads, mejor CTR y "A optimizar"; una tarjeta por campana (hasta 8) con su color, nivel de calidad, leads, CPL, lectura, inversion, clics, CTR (verde bueno, rojo bajo) y CPC. |
+| Detalle por campana | **Una lamina por campana con gasto**: KPIs (inversion y su parte del total, leads, CPL contra la cuenta o "Sin leads", clics, CTR con su lectura, presupuesto del mes con lo usado y lo que queda), clics y leads por dia, sus palabras clave (hasta 5) y el analisis: que funciona, que no y que hacemos (o la alerta si no convierte). |
+| Palabras clave y calidad | Hasta 8 terminos por leads con su campana, nivel de calidad, CPL, inversion, clics, CTR y lectura; con nivel de calidad, barras por termino y su lectura; "La que mas convierte", "Funcionan mejor" y "Gastan sin convertir". |
+| Conclusiones y proximos pasos | Tres tarjetas (el mes, los servicios que lideran y la oportunidad), dos proximos pasos y la nota del periodo. |
 | Cierre | Logo y firma de Lima Retail. |
 
 - **De donde salen los numeros:** de Gasto Publicitario, que los expone en `window.AquariusGasto`
   (`js/objectives.js`): el periodo del mes, sus totales, la variacion contra el mes anterior (prorrateado a los
-  mismos dias si el mes esta en curso, o su tramo real cuando haya informe por dia; "vs período ant."), las
-  campanas y las palabras clave del mes. Cada
-  sincronizacion lo actualiza solo; las palabras clave llegan despues (`aquarius:keywords-ready`).
-- **Palabras clave:** la misma palabra en varias campanas o con dos concordancias va en una sola fila. Si el costo
-  de las palabras no cuadra con el de las campanas (mas de 20% por encima), no se muestra y el pie de la tabla lo
-  avisa: hoy el informe de palabras clave trae el costo con los decimales corridos ("15,53" como 1553).
-- **Grafico por dia:** usa el informe por dia y campana del mes (`months[].detail`). Mientras no llegue, el grafico
-  avisa que falta subirlo.
-- **Textos:** la linea del grafico, los analisis, el recuadro "Clave" y las conclusiones vienen propuestos con lo
-  que dicen los numeros. Se editan con un clic sobre la lamina (`**texto**` va en negrita) y quedan guardados por
-  mes en el navegador (`aquarius_report_notes_v1`); no se publican con el tablero. "Restablecer textos" vuelve a
-  los propuestos, sin dialogo de confirmacion.
+  mismos dias si el mes esta en curso, o su tramo real cuando haya informe por dia), las campanas (y cada una en
+  el mes anterior, `previousCampaign`) y las palabras clave del mes. Cada sincronizacion lo actualiza solo; las
+  palabras clave llegan despues (`aquarius:keywords-ready`).
+- **Lecturas:** una campana *Funciona* si su CPL no pasa en mas de 10% al de la cuenta, *CPL alto* si lo pasa y
+  *Sin leads* si gasto sin convertir. Una palabra clave se lee igual contra el CPL de su campana (en su lamina) o
+  el de la cuenta (en Palabras clave y calidad). CTR: bueno desde 6%, aceptable desde 3%, bajo por debajo.
+  "Mejor CPL con demanda" es el menor CPL entre las campanas con al menos el promedio de leads; "Funcionan mejor"
+  pide al menos 2 leads. Contra un mes previo casi en cero (+52519%) la variacion no se muestra.
+- **Presupuesto:** el presupuesto diario de cada campana (el vigente al exportar el informe) por los dias del mes.
+  En un mes cerrado se dice cuanto quedo sin usar; en uno en curso, cuanto queda.
+- **Palabras clave:** una fila por palabra clave (texto y concordancia) y campana: la misma palabra en dos campanas
+  va en dos filas. Si el costo de las palabras no cuadra con el de las campanas (mas de 20% por encima), no se
+  muestra y el pie de la tabla lo avisa. Si las palabras clave del informe explican menos del 80% de los leads de
+  una campana, su analisis lo dice (el resto llega por otras busquedas).
+- **Nivel de calidad:** sale de la columna "Nivel de calidad" del informe de palabras clave
+  (`scripts/sync-keywords.py` la guarda como `qualityScore`; por campana y por termino es el promedio ponderado por
+  impresiones). Hoy la hoja de Aquarius que escribe Nexus no la trae: mientras tanto el reporte muestra "—" en la
+  calidad de cada campana y, solo en pantalla, un aviso; la columna y las barras aparecen solas cuando llegue.
+- **Graficos:** el semanal usa el informe por dia y campana del mes (`months[].detail`, semanas de 7 dias; un
+  resto de menos de 4 dias a fin de mes se suma a la ultima semana) y el de cada campana, sus dias. Cada valor
+  lleva su etiqueta y ninguna se pisa: la que choca con otra prueba el otro lado del punto y luego se aleja; los
+  dias en cero van sin etiqueta. Sin ese informe, el grafico avisa que falta subirlo.
+- **Textos:** el destacado, los analisis (de la cuenta y de cada campana), las conclusiones y los proximos pasos
+  vienen propuestos con lo que dicen los numeros. Se editan con un clic sobre la lamina (`**texto**` va en
+  negrita) y quedan guardados por mes en el navegador (`aquarius_report_notes_v1`); no se publican con el tablero.
+  "Restablecer textos" vuelve a los propuestos, sin dialogo de confirmacion.
 - **Descargar PDF** abre el dialogo de impresion con las laminas solas, una por hoja de 13.33 x 7.5 in (el tamaño
   del modelo), y el nombre del archivo ya armado. Activar "Graficos de fondo" si el navegador no lo hace solo.
 
