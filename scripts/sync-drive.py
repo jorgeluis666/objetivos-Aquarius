@@ -638,11 +638,12 @@ def day_of_month(value):
 
 
 def parse_daily_report(text, name, exclude=frozenset()):
-    """Normaliza el informe por dia y campana al contrato months[].detail del tablero.
+    """Normaliza el informe por dia y campana: de el salen el detalle diario y los totales del mes.
 
-    Lo lee objectives.js (detailRows): columns da el orden de cada fila, campaigns es la lista de
-    nombres y cada fila guarda el indice de su campana para no repetir el nombre una vez por dia.
-    Sin impresiones a proposito: el informe por dia no las trae y el tablero las prorratea.
+    El detalle lo lee objectives.js (detailRows): columns da el orden de cada fila, campaigns es la
+    lista de nombres y cada fila guarda el indice de su campana para no repetir el nombre una vez por
+    dia. Los totales son la suma de esas mismas filas por campana, asi que un mes se sostiene con este
+    archivo solo: es lo que permite que Nexus publique una sola vez y no haya nada que subir a mano.
     """
     rows = list(csv.reader(io.StringIO(text)))
     header_index = None
@@ -663,11 +664,16 @@ def parse_daily_report(text, name, exclude=frozenset()):
             columns[mapped[0]] = (position, mapped[1])
     if "campaign" not in columns:
         return None, None
+    # El estado de la campana no esta en COLUMNS sino en BUDGET_COLUMNS, como en el informe mensual.
+    status_position = next((position for position, cell in enumerate(header)
+                            if BUDGET_COLUMNS.get(cell) == "status"), None)
 
     comma = uses_decimal_comma(rows[header_index + 1:])
     campaigns = []
     index_by_name = {}
     table_rows = []
+    sumas = {}
+    excluded = {}
     month_id = None
 
     def value(row, field):
@@ -675,6 +681,12 @@ def parse_daily_report(text, name, exclude=frozenset()):
             return 0
         position, kind = columns[field]
         return PARSERS[kind](row[position] if position < len(row) else None, comma) or 0
+
+    def texto(row, field):
+        if field not in columns:
+            return ""
+        position = columns[field][0]
+        return str(row[position] or "").strip() if position < len(row) else ""
 
     for row in rows[header_index + 1:]:
         if not row or not any(cell.strip() for cell in row):
@@ -685,21 +697,63 @@ def parse_daily_report(text, name, exclude=frozenset()):
         if not day:
             continue
         month_id = month_id or month
-        position = columns["campaign"][0]
-        campaign = str(row[position] or "").strip() if position < len(row) else ""
-        if not campaign or normalize(campaign) in exclude:
+        campaign = texto(row, "campaign")
+        if not campaign:
+            continue
+        medidas = {campo: value(row, campo)
+                   for campo in ("cost", "impressions", "clicks", "conversions")}
+        if normalize(campaign) in exclude:
+            acumulado = excluded.setdefault(campaign, dict(campaign=campaign, cost=0, impressions=0,
+                                                           clicks=0, conversions=0))
+            for campo, medida in medidas.items():
+                acumulado[campo] += medida
             continue
         if campaign not in index_by_name:
             index_by_name[campaign] = len(campaigns)
             campaigns.append(campaign)
+            sumas[campaign] = dict(campaign=campaign, type=texto(row, "type"), status="",
+                                   cost=0, impressions=0, clicks=0, conversions=0)
+        acumulado = sumas[campaign]
+        for campo, medida in medidas.items():
+            acumulado[campo] += medida
+        # El estado cambia a lo largo del mes: vale el del ultimo dia, que es el vigente.
+        if status_position is not None and status_position < len(row):
+            acumulado["status"] = str(row[status_position] or "").strip() or acumulado["status"]
         table_rows.append([day, index_by_name[campaign],
-                           value(row, "cost"), value(row, "clicks"), value(row, "conversions")])
+                           medidas["cost"], medidas["clicks"], medidas["conversions"]])
 
     if not table_rows:
         return None, None
     table = {"columns": ["d", "campaign", "cost", "clicks", "conversions"],
              "campaigns": campaigns, "rows": table_rows}
-    return month_id or month_from_text(name), {"table": table, "sourceFile": name}
+
+    records = [sumas[campaign] for campaign in campaigns]
+    for record in records:
+        record["cost"] = round(record["cost"], 2)
+        record["impressions"] = int(record["impressions"])
+        record["clicks"] = int(record["clicks"])
+        record["cpc"] = round(record["cost"] / record["clicks"], 2) if record["clicks"] else None
+        record["ctr"] = record["clicks"] / record["impressions"] if record["impressions"] else None
+        record["costPerConversion"] = (round(record["cost"] / record["conversions"], 2)
+                                       if record["conversions"] else None)
+    totals = {campo: sum(record[campo] for record in records)
+              for campo in ("cost", "impressions", "clicks", "conversions")}
+    totals["cost"] = round(totals["cost"], 2)
+    totals["ctr"] = totals["clicks"] / totals["impressions"] if totals["impressions"] else None
+    totals["costPerConversion"] = (round(totals["cost"] / totals["conversions"], 2)
+                                   if totals["conversions"] else None)
+
+    month_id = month_id or month_from_text(name)
+    # El rango de la cabecera manda, como en el informe mensual; si no viene, los dias del archivo.
+    periodo = next((period_from_text(" ".join(row)) for row in rows[:header_index]
+                    if period_from_text(" ".join(row))), None)
+    if not periodo and month_id:
+        dias = sorted({row[0] for row in table_rows})
+        periodo = {"start": f"{month_id}-{dias[0]:02d}", "end": f"{month_id}-{dias[-1]:02d}"}
+    # Sin clave dailyBudget: el informe por dia no trae Presupuesto y store_report borraria el que haya.
+    summary = {"period": periodo, "excluded": list(excluded.values()) or None}
+    return month_id, {"table": table, "sourceFile": name,
+                      "records": records, "totals": totals, "summary": summary}
 
 
 def apply_deltas(months):
@@ -800,16 +854,16 @@ def import_file(path, check):
         store_report(months, month_id, records, totals, summary, path.name)
         resumen = f"{len(records)} campanas"
     else:
-        # El informe por dia necesita que su mes ya tenga el informe de campana.
-        month_id, detail = parse_daily_report(text, path.name, exclude)
+        month_id, payload = parse_daily_report(text, path.name, exclude)
         if not month_id:
             print(f"[sync-drive] {path.name} no parece un informe de campana ni un informe por dia.")
             return 1
-        if month_id not in months:
-            print(f"[sync-drive] {month_label(month_id)}: falta su informe de campana; el detalle no entra.")
-            return 1
-        months[month_id]["detail"] = detail
-        resumen = f"{len(detail['table']['rows'])} filas por dia"
+        month = months.get(month_id)
+        if month is None or not month.get("records"):
+            store_report(months, month_id, payload["records"], payload["totals"], payload["summary"],
+                         payload["sourceFile"])
+        months[month_id]["detail"] = {"table": payload["table"], "sourceFile": payload["sourceFile"]}
+        resumen = f"{len(payload['table']['rows'])} filas por dia"
     finish_document(document, months)
     changed = comparable(document) != before
     if check:
@@ -870,11 +924,11 @@ def main():
         if not month_id or not records:
             # No es el informe de campana, pero puede ser el informe por dia: de ahi sale la evolucion
             # diaria del tablero y del reporte, que hasta ahora salia siempre vacia.
-            day_month, detail = parse_daily_report(text, item["name"], exclude)
+            day_month, payload = parse_daily_report(text, item["name"], exclude)
             if day_month:
-                pending_detail[day_month] = detail
+                pending_detail[day_month] = (payload, item)
                 print(f"[sync-drive] {month_label(day_month)}: "
-                      f"{len(detail['table']['rows'])} filas por dia desde {item['name']}")
+                      f"{len(payload['table']['rows'])} filas por dia desde {item['name']}")
             else:
                 print(f"[sync-drive] omito {item['name']}: no parece un informe de campana.")
             continue
@@ -890,13 +944,17 @@ def main():
         (BACKUPS / backup).write_text(text, encoding="utf-8", newline="")
         print(f"[sync-drive] {month_label(month_id)}: {len(records)} campanas")
 
-    # El detalle se pega al final y solo a meses que traen informe de campana: un mes con detalle pero
-    # sin campanas apareceria en el filtro con todo a cero.
-    for month_id, detail in sorted(pending_detail.items()):
-        if month_id in months:
-            months[month_id]["detail"] = detail
-        else:
-            print(f"[sync-drive] {month_label(month_id)}: hay informe por dia pero no el de campana; queda fuera.")
+    # El detalle se pega al final, cuando ya se leyeron todos los informes de campana. Si el mes no
+    # trae uno, el informe por dia aporta tambien campanas y totales: es el caso al que vamos, con
+    # Nexus publicando un solo archivo por dia y nada que subir a mano.
+    for month_id, (payload, item) in sorted(pending_detail.items()):
+        month = months.get(month_id)
+        if month is None or not month.get("records"):
+            store_report(months, month_id, payload["records"], payload["totals"], payload["summary"],
+                         payload["sourceFile"], item.get("id"))
+            print(f"[sync-drive] {month_label(month_id)}: {len(payload['records'])} campanas "
+                  "sumadas del informe por dia")
+        months[month_id]["detail"] = {"table": payload["table"], "sourceFile": payload["sourceFile"]}
 
     finish_document(document, months)
     changed = comparable(document) != before
