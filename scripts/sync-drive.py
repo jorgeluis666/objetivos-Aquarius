@@ -615,6 +615,93 @@ def sync_reglas(folder_id, check):
     return 0
 
 
+# Columnas de fecha del informe por dia. Google Ads exporta "Dia"; una hoja hecha a mano suele poner "Fecha".
+DAY_COLUMNS = {"dia", "fecha", "day", "date"}
+
+
+def day_of_month(value):
+    """(mes 'YYYY-MM', dia del mes) de una celda de fecha, o (None, None) si no se reconoce."""
+    text = str(value or "").strip()
+    iso = re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})", text)
+    if iso:
+        return f"{iso.group(1)}-{int(iso.group(2)):02d}", int(iso.group(3))
+    largo = re.match(r"^(\d{1,2})\s*(?:de\s+)?([^\W\d_]+)\.?\s*(?:de\s+)?(\d{4})$", text, re.UNICODE)
+    if largo:
+        palabra = normalize(largo.group(2))
+        number = MONTH_BY_NAME.get(palabra) or MONTH_PREFIX.get(palabra[:3])
+        if number:
+            return f"{largo.group(3)}-{number:02d}", int(largo.group(1))
+    barras = re.match(r"^(\d{1,2})/(\d{1,2})/(\d{4})$", text)
+    if barras:
+        return f"{barras.group(3)}-{int(barras.group(2)):02d}", int(barras.group(1))
+    return None, None
+
+
+def parse_daily_report(text, name, exclude=frozenset()):
+    """Normaliza el informe por dia y campana al contrato months[].detail del tablero.
+
+    Lo lee objectives.js (detailRows): columns da el orden de cada fila, campaigns es la lista de
+    nombres y cada fila guarda el indice de su campana para no repetir el nombre una vez por dia.
+    Sin impresiones a proposito: el informe por dia no las trae y el tablero las prorratea.
+    """
+    rows = list(csv.reader(io.StringIO(text)))
+    header_index = None
+    for index, row in enumerate(rows[:12]):
+        plain = [normalize(cell) for cell in row]
+        if "campana" in plain and any(cell in DAY_COLUMNS for cell in plain):
+            header_index = index
+            break
+    if header_index is None:
+        return None, None
+
+    header = [normalize(cell) for cell in rows[header_index]]
+    day_position = next(position for position, cell in enumerate(header) if cell in DAY_COLUMNS)
+    columns = {}
+    for position, cell in enumerate(header):
+        mapped = COLUMNS.get(cell)
+        if mapped and mapped[0] not in columns:
+            columns[mapped[0]] = (position, mapped[1])
+    if "campaign" not in columns:
+        return None, None
+
+    comma = uses_decimal_comma(rows[header_index + 1:])
+    campaigns = []
+    index_by_name = {}
+    table_rows = []
+    month_id = None
+
+    def value(row, field):
+        if field not in columns:
+            return 0
+        position, kind = columns[field]
+        return PARSERS[kind](row[position] if position < len(row) else None, comma) or 0
+
+    for row in rows[header_index + 1:]:
+        if not row or not any(cell.strip() for cell in row):
+            continue
+        if normalize(row[0]).startswith("total"):
+            continue
+        month, day = day_of_month(row[day_position] if day_position < len(row) else "")
+        if not day:
+            continue
+        month_id = month_id or month
+        position = columns["campaign"][0]
+        campaign = str(row[position] or "").strip() if position < len(row) else ""
+        if not campaign or normalize(campaign) in exclude:
+            continue
+        if campaign not in index_by_name:
+            index_by_name[campaign] = len(campaigns)
+            campaigns.append(campaign)
+        table_rows.append([day, index_by_name[campaign],
+                           value(row, "cost"), value(row, "clicks"), value(row, "conversions")])
+
+    if not table_rows:
+        return None, None
+    table = {"columns": ["d", "campaign", "cost", "clicks", "conversions"],
+             "campaigns": campaigns, "rows": table_rows}
+    return month_id or month_from_text(name), {"table": table, "sourceFile": name}
+
+
 def apply_deltas(months):
     """Calcula el porcentaje de variacion de cada campana contra el mes anterior."""
     previous = {}
@@ -704,14 +791,25 @@ def import_file(path, check):
     traiga un CSV del mismo mes, que entonces lo reemplaza.
     """
     text = path.read_text(encoding="utf-8-sig")
-    month_id, records, totals, summary = parse_campaign_report(text, path.name, excluded_campaigns())
-    if not month_id or not records:
-        print(f"[sync-drive] {path.name} no parece un informe de campana.")
-        return 1
+    exclude = excluded_campaigns()
+    month_id, records, totals, summary = parse_campaign_report(text, path.name, exclude)
     document = load_document()
     before = comparable(document)
     months = {month["id"]: month for month in document["months"]}
-    store_report(months, month_id, records, totals, summary, path.name)
+    if month_id and records:
+        store_report(months, month_id, records, totals, summary, path.name)
+        resumen = f"{len(records)} campanas"
+    else:
+        # El informe por dia necesita que su mes ya tenga el informe de campana.
+        month_id, detail = parse_daily_report(text, path.name, exclude)
+        if not month_id:
+            print(f"[sync-drive] {path.name} no parece un informe de campana ni un informe por dia.")
+            return 1
+        if month_id not in months:
+            print(f"[sync-drive] {month_label(month_id)}: falta su informe de campana; el detalle no entra.")
+            return 1
+        months[month_id]["detail"] = detail
+        resumen = f"{len(detail['table']['rows'])} filas por dia"
     finish_document(document, months)
     changed = comparable(document) != before
     if check:
@@ -719,7 +817,7 @@ def import_file(path, check):
         return 0
     (BACKUPS.parent / path.name).write_text(text, encoding="utf-8")
     DATA.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[sync-drive] {month_label(month_id)}: {len(records)} campanas desde {path.name}")
+    print(f"[sync-drive] {month_label(month_id)}: {resumen} desde {path.name}")
     return 0
 
 
@@ -763,13 +861,22 @@ def main():
     exclude = excluded_campaigns()
 
     loaded = {}
+    pending_detail = {}
     for item in sorted(csv_files, key=lambda entry: entry["name"]):
         text = download(item["id"], item["name"])
         if text is None:
             continue
         month_id, records, totals, summary = parse_campaign_report(text, item["name"], exclude)
         if not month_id or not records:
-            print(f"[sync-drive] omito {item['name']}: no parece un informe de campana.")
+            # No es el informe de campana, pero puede ser el informe por dia: de ahi sale la evolucion
+            # diaria del tablero y del reporte, que hasta ahora salia siempre vacia.
+            day_month, detail = parse_daily_report(text, item["name"], exclude)
+            if day_month:
+                pending_detail[day_month] = detail
+                print(f"[sync-drive] {month_label(day_month)}: "
+                      f"{len(detail['table']['rows'])} filas por dia desde {item['name']}")
+            else:
+                print(f"[sync-drive] omito {item['name']}: no parece un informe de campana.")
             continue
         # Dos informes del mismo mes: gana el que llega mas lejos en el mes.
         end = (summary.get("period") or {}).get("end") or ""
@@ -782,6 +889,14 @@ def main():
         backup = item["name"] if item["name"].lower().endswith(".csv") else f"{item['name']}.csv"
         (BACKUPS / backup).write_text(text, encoding="utf-8", newline="")
         print(f"[sync-drive] {month_label(month_id)}: {len(records)} campanas")
+
+    # El detalle se pega al final y solo a meses que traen informe de campana: un mes con detalle pero
+    # sin campanas apareceria en el filtro con todo a cero.
+    for month_id, detail in sorted(pending_detail.items()):
+        if month_id in months:
+            months[month_id]["detail"] = detail
+        else:
+            print(f"[sync-drive] {month_label(month_id)}: hay informe por dia pero no el de campana; queda fuera.")
 
     finish_document(document, months)
     changed = comparable(document) != before

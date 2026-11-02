@@ -163,7 +163,8 @@
           daily: dailyRows(month),
           period: month.period || null,
           dailyBudget: isNum(month.dailyBudget) ? Number(month.dailyBudget) : null,
-          // Informe por dia y campana (opcional, ver detailRows): hoy no llega.
+          // Informe por dia y campana (opcional, ver detailRows). Llega cuando la carpeta de Drive
+          // trae el export por dia: sync-drive.py lo reconoce por su columna Dia.
           detail: month.detail || null,
           // Campanas de excludeCampaigns que traia el informe: el tablero las avisa.
           excluded: Array.isArray(month.excluded) ? month.excluded : []
@@ -908,7 +909,8 @@
   }
 
   // Informe por dia y campana (months[].detail.table: columns, rows y la lista de campanas por indice).
-  // Hoy no llega; con el, los cuadros ofrecen Por dia y el mes en curso se compara con el tramo real.
+  // Lo escribe sync-drive.py desde el export por dia de Drive; con el, los cuadros ofrecen Por dia y
+  // el mes en curso se compara con el tramo real.
   function detailRows(month) {
     const table = month.detail && month.detail.table;
     if (!table || !Array.isArray(table.columns) || !Array.isArray(table.rows)) return null;
