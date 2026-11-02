@@ -2,9 +2,9 @@ name: Alerta semanal de Google Ads
 
 # Correo con el estado del mes de Google Ads (scripts/alertas.js), con la estetica del tablero.
 on:
-  # Todos los lunes a las 6:00 p. m. de Lima (23:00 UTC).
+  # Todos los lunes a las 7:00 a. m. de Lima (12:00 UTC).
   schedule:
-    - cron: '0 23 * * 1'
+    - cron: '0 12 * * 1'
 
   # Despues de cada barrido de Drive: solo manda si cambiaron las cifras del mes. El barrido commitea
   # con GITHUB_TOKEN, que no dispara workflows por push, asi que se encadena con workflow_run

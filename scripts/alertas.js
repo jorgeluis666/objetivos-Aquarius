@@ -2,7 +2,7 @@
 /* ============================================================
    scripts/alertas.js — Alerta de Google Ads de Aquarius.
 
-   Sale los lunes a las 6:00 p. m. de Lima (ALERTA_MOTIVO=lunes, una vez por semana) y cada vez que
+   Sale los lunes a las 7:00 a. m. de Lima (ALERTA_MOTIVO=lunes, una vez por semana) y cada vez que
    entran datos nuevos al repositorio (ALERTA_MOTIVO=datos: solo si cambiaron las cifras del mes
    frente al ultimo envio).
 
@@ -141,6 +141,8 @@ avisos.forEach(a => console.log(`   · [${a.tone}] ${a.titulo}`));
 // marca. Todo va en tablas y estilos en linea para que Gmail y Outlook lo respeten.
 const MARCA = Core.MARCA;
 const LOGO  = new URL('assets/aquarius-isotipo.png', config.url_dashboard).href;
+// El boton del correo lleva directo a Generacion de Reporte: la ancla la resuelve js/navigation.js.
+const REPORTE_URL = config.url_dashboard.replace(/#.*$/, '').replace(/\/?$/, '/') + '#view-week';
 const C = {
   bg: '#f6fbff', card: '#ffffff', border: '#dbeafe', head: '#f8fafc',
   text: '#0f172a', text2: '#52647d', muted: '#94a3b8', brand: '#2563eb', track: '#e2e8f0',
@@ -335,10 +337,13 @@ const htmlEmail = `<!DOCTYPE html>
 
     <!-- Botón y pie -->
     <tr><td align="center" style="padding:22px 0 8px;">
-      <a href="${config.url_dashboard}" style="display:inline-block;background:${C.brand};color:#ffffff;text-decoration:none;padding:11px 22px;border-radius:9px;font-size:14px;font-weight:600;font-family:${FONT};">Ver el tablero de ${MARCA}</a>
+      <a href="${REPORTE_URL}" style="display:inline-block;background:${C.brand};color:#ffffff;text-decoration:none;padding:11px 22px;border-radius:9px;font-size:14px;font-weight:600;font-family:${FONT};">Ver el reporte de ${MARCA}</a>
+    </td></tr>
+    <tr><td align="center" style="padding:10px 0 0;font-size:12px;font-family:${FONT};">
+      <a href="${config.url_dashboard}" style="color:${C.muted};text-decoration:underline;">o abrir el tablero completo</a>
     </td></tr>
     <tr><td align="center" style="padding:8px 0 0;font-size:11px;line-height:1.6;color:${C.muted};font-family:${FONT};">
-      ${config.workspace} · alerta automática (${weekKey}): los lunes a las 6:00 p. m. y cada vez que entran datos nuevos.<br>
+      ${config.workspace} · alerta automática (${weekKey}): los lunes a las 7:00 a. m. y cada vez que entran datos nuevos.<br>
       Informes de Google Ads de las carpetas de Drive de ${MARCA}; el cierre proyectado usa el ritmo del mes, como el módulo Proyecciones.
     </td></tr>
 

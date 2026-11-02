@@ -84,11 +84,22 @@
     window.setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
   }
 
+  // Un enlace con ancla abre su modulo directamente: es lo que usa el boton del correo semanal
+  // (…/#view-week) para caer en Generacion de Reporte y no en la vista que el navegador recuerde.
+  function hashView() {
+    const id = (window.location.hash || '').replace(/^#/, '');
+    return VIEW_META[id] ? id : null;
+  }
+
   function initNavigation() {
     document.querySelectorAll('[data-view-target]').forEach(button => {
       button.addEventListener('click', () => showView(button.dataset.viewTarget));
     });
-    showView(storedView());
+    showView(hashView() || storedView());
+    window.addEventListener('hashchange', () => {
+      const id = hashView();
+      if (id) showView(id);
+    });
   }
 
   if (document.readyState === 'loading') {
