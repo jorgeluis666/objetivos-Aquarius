@@ -19386,7 +19386,8 @@
           "matchType": "Concordancia amplia",
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
-          "status": "Apto",
+          "status": "UNKNOWN",
+          "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -19453,7 +19454,8 @@
           "matchType": "Concordancia de frase",
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
-          "status": "Apto",
+          "status": "UNKNOWN",
+          "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -24286,7 +24288,7 @@
       "driveFileId": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
       "period": {
         "start": "2026-11-01",
-        "end": "2026-11-01"
+        "end": "2026-11-02"
       },
       "keywords": [
         {
@@ -39038,7 +39040,8 @@
           "matchType": "Concordancia amplia",
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
-          "status": "Apto",
+          "status": "UNKNOWN",
+          "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
           "impressions": 1,
           "cost": 0,
           "clicks": 0,
@@ -39105,7 +39108,8 @@
           "matchType": "Concordancia de frase",
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
-          "status": "Apto",
+          "status": "UNKNOWN",
+          "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -39355,7 +39359,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "status": "Apto",
-          "impressions": 59,
+          "impressions": 67,
           "cost": 2.11,
           "clicks": 8,
           "conversions": 0
@@ -42077,8 +42081,8 @@
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "status": "Apto",
           "impressions": 2,
-          "cost": 0,
-          "clicks": 0,
+          "cost": 1.24,
+          "clicks": 1,
           "conversions": 0
         },
         {
@@ -43935,7 +43939,7 @@
   "drive": {
     "folderId": "1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO",
     "discovery": "apps script",
-    "lastSync": "2026-11-01T23:26:17Z",
+    "lastSync": "2026-11-02T11:29:40Z",
     "files": [
       {
         "id": "17oCEc4yhZfWSY8y_km3IPYb0hmH2VKHBXOi60LvHd0w",
@@ -43980,12 +43984,12 @@
       {
         "id": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
         "name": "Aquarius KW noviembre 2026",
-        "modifiedTime": "2026-11-01T23:03:13.554Z"
+        "modifiedTime": "2026-11-02T11:03:14.936Z"
       },
       {
         "id": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
         "name": "Aquarius KW octubre 2026",
-        "modifiedTime": "2026-11-01T23:03:01.398Z"
+        "modifiedTime": "2026-11-02T11:03:02.795Z"
       },
       {
         "id": "1tJ7B5yQydbvGxOczu0XxnAoot8ew7_vZjFOJOU3cabw",
