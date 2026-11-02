@@ -30,6 +30,7 @@
     FOTOGRAMETRIACONDRONES: 'Fotogrametría con drones',
     FOTOGRAMETRÍACONDRONES: 'Fotogrametría con drones',
     ALMACENAMIENTO: 'Almacenamiento',
+    ESTUDIOTECNICODEMERMAS: 'Estudio técnico de mermas',
     ACTIVOSFIJOS: 'Activos fijos',
     PRODUCTOSTI: 'Productos TI',
     OUTSOURCINGDEALMACENES: 'Outsourcing de almacenes'
@@ -1104,9 +1105,15 @@
         if (!byCampaign.has(cKey)) byCampaign.set(cKey, new Map());
         const group = byCampaign.get(cKey);
         const key = keywordKey(row);
-        if (!group.has(key)) group.set(key, { key, keyword: row.keyword, matchType: row.matchType || '', campaign: row.campaign, impressions: 0, clicks: 0, cost: 0, conversions: 0 });
+        if (!group.has(key)) group.set(key, { key, keyword: row.keyword, matchType: row.matchType || '', campaign: row.campaign, impressions: 0, clicks: 0, cost: 0, conversions: 0, qsSum: 0, qsWeight: 0 });
         const entry = group.get(key);
         SUMS.forEach(field => { entry[field] += Number(row[field]) || 0; });
+        // Nivel de calidad (1 a 10), cuando el informe lo trae: promedio ponderado por impresiones.
+        if (isNum(row.qualityScore)) {
+          const weight = Math.max(Number(row.impressions) || 0, 1);
+          entry.qsSum += Number(row.qualityScore) * weight;
+          entry.qsWeight += weight;
+        }
       });
       months.set(id, {
         id, name: MONTH_NAMES[number - 1], shortName: SHORT_NAMES[number - 1], year, month: number,
@@ -1123,12 +1130,14 @@
       if (onlyCampaign && cKey !== onlyCampaign) return;
       entries.forEach(entry => {
         const id = `${cKey}|${entry.key}`;
-        if (!byId.has(id)) byId.set(id, { id, key: entry.key, campaignKey: cKey, campaign: entry.campaign, keyword: entry.keyword, matchType: entry.matchType, impressions: 0, clicks: 0, cost: 0, conversions: 0 });
+        if (!byId.has(id)) byId.set(id, { id, key: entry.key, campaignKey: cKey, campaign: entry.campaign, keyword: entry.keyword, matchType: entry.matchType, impressions: 0, clicks: 0, cost: 0, conversions: 0, qsSum: 0, qsWeight: 0 });
         const row = byId.get(id);
         SUMS.forEach(field => { row[field] += entry[field]; });
+        row.qsSum += entry.qsSum || 0;
+        row.qsWeight += entry.qsWeight || 0;
       });
     }));
-    return [...byId.values()].map(derive);
+    return [...byId.values()].map(row => Object.assign(derive(row), { qualityScore: row.qsWeight ? row.qsSum / row.qsWeight : null }));
   }
 
   // Meses del periodo con informe de palabras clave.
@@ -2076,6 +2085,7 @@
     totals: periodTotals,
     previous: previousTotals,
     campaigns: periodCampaigns,
+    previousCampaign,
     keywords: period => (gasto.kwMonths && gasto.kwMonths.size ? keywordRows(keywordScope(period).months) : null),
     keywordLabel: period => (gasto.kwMonths && gasto.kwMonths.size ? keywordScope(period).label : ''),
     campaignLabel
