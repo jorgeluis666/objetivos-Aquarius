@@ -37592,7 +37592,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
           "status": "Apto",
-          "impressions": 0,
+          "impressions": 2,
           "cost": 0,
           "clicks": 0,
           "conversions": 0
@@ -37603,9 +37603,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
           "status": "Apto",
-          "impressions": 0,
-          "cost": 0,
-          "clicks": 0,
+          "impressions": 3,
+          "cost": 1.49,
+          "clicks": 1,
           "conversions": 0
         },
         {
@@ -38473,9 +38473,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 22,
-          "cost": 5.37,
-          "clicks": 2,
+          "impressions": 35,
+          "cost": 9.64,
+          "clicks": 4,
           "conversions": 0
         },
         {
@@ -38574,7 +38574,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 6,
+          "impressions": 7,
           "cost": 0,
           "clicks": 0,
           "conversions": 0
@@ -38879,9 +38879,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "status": "Apto",
-          "impressions": 0,
-          "cost": 0,
-          "clicks": 0,
+          "impressions": 5,
+          "cost": 4.6,
+          "clicks": 2,
           "conversions": 0
         },
         {
@@ -39076,9 +39076,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "status": "Apto",
-          "impressions": 6,
-          "cost": 0,
-          "clicks": 0,
+          "impressions": 12,
+          "cost": 2.13,
+          "clicks": 1,
           "conversions": 0
         },
         {
@@ -39087,9 +39087,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "status": "Apto",
-          "impressions": 12,
-          "cost": 0,
-          "clicks": 0,
+          "impressions": 19,
+          "cost": 1.9,
+          "clicks": 1,
           "conversions": 0
         },
         {
@@ -39359,9 +39359,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "status": "Apto",
-          "impressions": 143,
-          "cost": 2.34,
-          "clicks": 10,
+          "impressions": 171,
+          "cost": 2.39,
+          "clicks": 11,
           "conversions": 0
         },
         {
@@ -42080,9 +42080,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "status": "Apto",
-          "impressions": 46,
-          "cost": 15.82,
-          "clicks": 6,
+          "impressions": 58,
+          "cost": 17.8,
+          "clicks": 7,
           "conversions": 0
         },
         {
@@ -42569,7 +42569,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "status": "Apto",
-          "impressions": 5,
+          "impressions": 10,
           "cost": 0,
           "clicks": 0,
           "conversions": 0
@@ -42637,9 +42637,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "status": "Apto",
-          "impressions": 31,
-          "cost": 7.99,
-          "clicks": 3,
+          "impressions": 41,
+          "cost": 10.3,
+          "clicks": 4,
           "conversions": 0
         },
         {
@@ -43939,7 +43939,7 @@
   "drive": {
     "folderId": "1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO",
     "discovery": "apps script",
-    "lastSync": "2026-11-03T18:25:36Z",
+    "lastSync": "2026-11-03T23:26:18Z",
     "files": [
       {
         "id": "17oCEc4yhZfWSY8y_km3IPYb0hmH2VKHBXOi60LvHd0w",
@@ -43984,12 +43984,12 @@
       {
         "id": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
         "name": "Aquarius KW noviembre 2026",
-        "modifiedTime": "2026-11-03T18:03:26.569Z"
+        "modifiedTime": "2026-11-03T23:03:14.987Z"
       },
       {
         "id": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
         "name": "Aquarius KW octubre 2026",
-        "modifiedTime": "2026-11-03T18:03:11.821Z"
+        "modifiedTime": "2026-11-03T23:03:03.314Z"
       },
       {
         "id": "1tJ7B5yQydbvGxOczu0XxnAoot8ew7_vZjFOJOU3cabw",
