@@ -1,0 +1,22 @@
+name: Pruebas
+
+# Corre npm test en cada PR (hoy, las del Recalculo de inversion: tests/recalculo-inversion.test.js).
+# No usa secretos ni publica nada.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      - name: Pruebas
+        run: npm test

@@ -144,6 +144,47 @@ El mes se toma de la linea de rango del informe. Queda en el JSON como cualquier
 Drive lo conserva hasta que la carpeta traiga un informe del mismo mes, que entonces lo reemplaza. Lo ideal
 es actualizar la hoja del mes en la carpeta (`Aquarius GA - <mes> <ano>`) cada vez que cambie.
 
+### Recalculo de inversion
+
+Boton **Recalculo de inversion** arriba del modulo Proyecciones. Dice cuanto deberia gastar por dia cada campana,
+de hoy a fin de mes, para cerrar en su presupuesto. Solo recomienda: no cambia nada en Google Ads.
+
+- **Fecha de corte**: ayer en Lima. Si el gasto no llega a ayer, el ultimo dia con datos y el aviso
+  "Gasto disponible hasta DD/MM".
+- **Gasto acumulado**: con el informe por dia del mes (`months[].detail`), la suma del dia 1 al corte. Sin el (hoy
+  noviembre no lo tiene; octubre si), el total del mes del informe de campanas. Si ese informe llega a hoy, el
+  panel avisa que el acumulado puede incluir lo que va del dia.
+- **Dias restantes**: de hoy al ultimo dia del mes, ambos incluidos (minimo 1).
+- **Por gastar** = presupuesto efectivo - gasto acumulado. **Diario recomendado** = por gastar / dias restantes,
+  a 2 decimales. Con por gastar <= 0 el diario es 0 y la campana queda en "Presupuesto agotado".
+- **Saldo mes anterior** (interruptor): saldo = presupuesto del mes anterior - su gasto real, y efectivo =
+  presupuesto del mes + saldo, nunca menos de 0. Un saldo negativo se marca "Sobregasto mes anterior: S/ X"; una
+  campana sin presupuesto del mes anterior no suma saldo y lo dice.
+- **Total del diario recomendado**: suma de los diarios ya redondeados, que es lo que queda cargado en Google Ads.
+- **Alertas por campana**: "Finalizada / pausada" (no esta habilitada y le queda saldo); "No consume presupuesto"
+  (gasto por dia menor que la mitad de su diario en los ultimos 7 dias; sin informe por dia de esos dias, el
+  promedio del mes); "Tope mensual de Google Ads" (Google cobra a lo mas el diario promedio del mes x 30.4: el
+  aviso sale cuando ese tope, con el diario recomendado, no alcanza el presupuesto efectivo; en la practica, en
+  los meses de 31 dias).
+- **Presupuesto del mes por campana**: lo carga el equipo en el boton **Presupuestos** del panel (el del mes y
+  el del mes anterior, para el saldo). No viene de Google Ads: el diario de Ads es "Diario actual".
+- **Copiar** deja la tabla en el portapapeles separada por tabulaciones (se pega directo en Sheets o Excel);
+  **Exportar CSV** la descarga. Las dos llevan el encabezado: cliente, mes, fecha de corte, dias restantes y modo.
+- **Historial**: cada recalculo con presupuesto se guarda al generarlo (cliente, fecha de corte, modo,
+  responsable y, por campana, las entradas y el resultado). Uno identico a otro ya guardado no se repite.
+
+El calculo es una funcion pura en `js/recalculo-inversion.js` (`recalcular` y `entradaDesdeDatos`), sin DOM ni
+hora del sistema; `js/recalculo-panel.js` arma la entrada, pinta y guarda. Las pruebas (`npm test`) cubren el
+caso Aquarius del 05/11/2026 en los dos modos, el primer y el ultimo dia del mes, un sobregasto que deja el
+efectivo en 0 y la falta de gasto de ayer.
+
+**Donde se guarda**: en la misma hoja privada del CRM de Leads, pestanas "Presupuesto por campana" (una fila por
+mes y campana) y "Recalculos de inversion" (una fila por campana de cada recalculo). Sin el Web App conectado, o
+mientras el Apps Script publicado no tenga estas acciones, se guarda solo en el navegador y el panel lo avisa.
+Para activarlo: pegar la version nueva de `scripts/apps-script/crm-leads.gs` en el Apps Script de la hoja y
+publicar una version nueva (Implementar > Gestionar implementaciones > editar > Version: Nueva version). La URL y
+el token no cambian; las pestanas se crean solas con el primer guardado.
+
 ## Analisis de Palabras Clave
 
 Pestana **Palabras Clave** del panel lateral. Lee el informe de palabras clave de busqueda de Google Ads de la
@@ -604,6 +645,9 @@ muestran los mismos numeros.
 ```bash
 npm.cmd run build
 ```
+
+Pruebas (Node 20 o mas, sin dependencias): `npm.cmd test`. Hoy cubren el Recalculo de inversion
+(`tests/recalculo-inversion.test.js`).
 
 El resultado se genera en `dist/`: `index.html` (CSS, JS y datos incrustados), `assets/` y `CNAME`.
 Nada mas: `data/` (incluido `data/csv-backups`), `scripts/` y `docs/` no se publican.
