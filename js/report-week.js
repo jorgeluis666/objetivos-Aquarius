@@ -85,7 +85,17 @@
   const change = (current, previous) => (isNum(current) && isNum(previous) && Number(previous) !== 0 ? (Number(current) - Number(previous)) / Number(previous) : null);
   const pct0 = value => `${value >= 0 ? '+' : '-'}${Math.abs(Math.round(value * 100))}%`;
   const pageNumber = value => String(value).padStart(2, '0');
+  const leadCount = value => `${leads(value)} ${leads(value) === '1' ? 'lead' : 'leads'}`;
+  // "8 de los 80 leads" o "0 de 1 lead"; si son todos, "los 5 leads" o "el único lead".
+  const partOf = (part, total) => {
+    if (!(Number(total) > 0)) return leadCount(part);
+    const one = leads(total) === '1';
+    if (leads(part) !== leads(total)) return `${leads(part)} de ${one ? '1 lead' : `los ${leadCount(total)}`}`;
+    return one ? 'el único lead' : `los ${leadCount(total)}`;
+  };
   const list = items => (items.length > 1 ? `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}` : items[0] || '');
+  // Los primeros de una serie mas larga: "a, b y 3 más", sin dos "y" seguidas.
+  const listMore = (items, more) => (more > 0 ? `${items.join(', ')} y ${more} más` : list(items));
   const sum = (rows, field) => rows.reduce((total, row) => total + (Number(row[field]) || 0), 0);
   const bold = text => `**${text}**`;
   // El informe trae la concordancia en el texto ("control de mermas" entre comillas es de frase, [..] exacta):
@@ -362,9 +372,9 @@
 
     const leaders = read.leaders;
     let analysis = current.conversions > 0
-      ? `**Qué pasó:** ${leads(current.conversions)} leads a ${money(current.cpl)} cada uno, con tasa de conversión del ${share(current.conversionRate)}.`
+      ? `**Qué pasó:** ${leadCount(current.conversions)} a ${money(current.cpl)} cada uno, con tasa de conversión del ${share(current.conversionRate)}.`
       : `**Qué pasó:** ${money(current.cost)} de inversión y ${count(current.clicks)} clics${daysLabel(report)}, todavía sin leads.`;
-    if (leaders.length > 1) analysis += ` ${['', '', 'Dos', 'Tres', 'Cuatro'][leaders.length]} servicios concentran ${leads(sum(leaders, 'conversions'))} de los ${leads(read.totalLeads)} leads.`;
+    if (leaders.length > 1) analysis += ` ${['', '', 'Dos', 'Tres', 'Cuatro'][leaders.length]} servicios concentran ${partOf(sum(leaders, 'conversions'), read.totalLeads)}.`;
     if (read.none.length) analysis += ` **Qué no funcionó:** ${list(read.none.map(row => row.name))} ${read.none.length > 1 ? 'gastaron' : 'gastó'} ${money(sum(read.none, 'cost'))} sin leads.`;
     else if (read.high.length) analysis += ` **Qué no funcionó:** ${list(read.high.map(row => `${row.name} (CPL ${money1(row.cpl)})`))} ${read.high.length > 1 ? 'convierten' : 'convierte'} caro.`;
     analysis += ` **Acción:** sostener la inversión en los servicios que convierten${read.none.length || read.high.length ? ' y corregir o pausar lo que no cierra' : ''}.`;
@@ -376,7 +386,7 @@
     if (projected && current.conversions > 0) {
       closing = {
         title: `Proyección de cierre: ~${count(projected.leads)} leads`,
-        text: `Con el ritmo actual (${leads(current.conversions)} leads en ${periodDays(report)} días) y manteniendo el CPL, ${report.item.month.name.toLowerCase()} cerraría en ~${count(projected.leads)} leads y ~${money(projected.cost)} de inversión. Es una estimación, no un resultado asegurado.`,
+        text: `Con el ritmo actual (${leadCount(current.conversions)} en ${periodDays(report)} días) y manteniendo el CPL, ${report.item.month.name.toLowerCase()} cerraría en ~${count(projected.leads)} leads y ~${money(projected.cost)} de inversión. Es una estimación, no un resultado asegurado.`,
       };
     } else if (projected) {
       closing = {
@@ -386,8 +396,8 @@
     } else {
       const budget = report.budget;
       closing = {
-        title: `Cierre de ${report.item.month.name.toLowerCase()}: ${leads(current.conversions)} leads`,
-        text: `${report.item.month.name} cerró con ${leads(current.conversions)} leads y ${money(current.cost)} de inversión (CPL ${money1(current.cpl)}).${budget ? ` Se usó el ${share(budget.used)} del presupuesto disponible (${money(budget.month)}): quedaron ${money(budget.left)} sin invertir.` : ''}`,
+        title: `Cierre de ${report.item.month.name.toLowerCase()}: ${leadCount(current.conversions)}`,
+        text: `${report.item.month.name} cerró con ${leadCount(current.conversions)} y ${money(current.cost)} de inversión (CPL ${money1(current.cpl)}).${budget ? ` Se usó el ${share(budget.used)} del presupuesto disponible (${money(budget.month)}): quedaron ${money(budget.left)} sin invertir.` : ''}`,
       };
     }
     return { sub, highlight: highlight.trim(), analysis, closing };
@@ -397,7 +407,7 @@
     const { read } = report;
     const parts = [];
     if (read.leaders.length) {
-      parts.push(`${list(read.leaders.map(row => row.name))} ${read.leaders.length > 1 ? 'concentran' : 'concentra'} el ${share(sum(read.leaders, 'cost') / (report.current.cost || 1))} del presupuesto y ${read.leaders.length > 1 ? 'traen' : 'trae'} ${leads(sum(read.leaders, 'conversions'))} de los ${leads(read.totalLeads)} leads.`);
+      parts.push(`${list(read.leaders.map(row => row.name))} ${read.leaders.length > 1 ? 'concentran' : 'concentra'} el ${share(sum(read.leaders, 'cost') / (report.current.cost || 1))} del presupuesto y ${read.leaders.length > 1 ? 'traen' : 'trae'} ${partOf(sum(read.leaders, 'conversions'), read.totalLeads)}.`);
     }
     if (read.none.length) parts.push(`${list(read.none.map(row => row.name))} ${read.none.length > 1 ? 'gastaron' : 'gastó'} ${money(sum(read.none, 'cost'))} sin leads${read.target ? `: mover ese presupuesto a ${read.target}` : ''}.`);
     if (read.high.length) parts.push(`${list(read.high.map(row => `${row.name} (CPL ${money1(row.cpl)})`))} ${read.high.length > 1 ? 'convierten' : 'convierte'} caro.`);
@@ -426,12 +436,12 @@
     const lines = [];
 
     if (campaign.conversions > 0) {
-      let works = `${leads(campaign.conversions)} leads (${share(campaign.conversions / (read.totalLeads || 1))} del total) con el ${share(campaign.share)} de la inversión${ctrText ? `; ${ctrText}` : ''}.`;
+      let works = `${leadCount(campaign.conversions)} (${share(campaign.conversions / (read.totalLeads || 1))} del total) con el ${share(campaign.share)} de la inversión${ctrText ? `; ${ctrText}` : ''}.`;
       if (strong.length) works += ` ${quote(strong[0])} trae ${leads(strong[0].conversions)}${isNum(strong[0].cpl) ? ` a ${money2(strong[0].cpl)}` : ''}.`;
       if (uncovered) works += ` Las palabras clave del informe explican ${leads(keywordLeads)} de esos ${leads(campaign.conversions)}: el resto llega por otras búsquedas de la campaña.`;
       lines.push(`**Qué funciona:** ${works}`);
     } else {
-      lines.push(`**Qué funciona:** ${level && level.tone !== 'bad' ? `el anuncio atrae clics (${ctrText}), pero ninguno terminó en lead.` : 'todavía nada: no hubo leads.'}`);
+      lines.push(`**Qué funciona:** ${level && level.tone !== 'bad' ? `el anuncio atrae clics (CTR ${percent(campaign.ctr)}, ${level.label.toLowerCase()}), pero ninguno terminó en lead.` : 'todavía nada: no hubo leads.'}`);
     }
 
     const fails = [];
@@ -442,7 +452,7 @@
       fails.push(`cada lead cuesta ${money2(campaign.cpl)}, ${pct0(campaign.cpl / accountCpl - 1)} sobre la cuenta (${money2(accountCpl)}).`);
     }
     if (costly.length) fails.push(`${list(costly.slice(0, 2).map(row => `${quote(row)} (CPL ${money2(row.cpl)})`))} ${costly.length > 1 ? 'convierten' : 'convierte'} caro.`);
-    if (wasted.length && campaign.conversions > 0) fails.push(`${list(wasted.slice(0, 2).map(quote))}${wasted.length > 2 ? ` y ${wasted.length - 2} más` : ''} ${wasted.length > 1 ? 'gastaron' : 'gastó'} ${money(sum(wasted, 'cost'))} sin leads.`);
+    if (wasted.length && campaign.conversions > 0) fails.push(`${listMore(wasted.slice(0, 2).map(quote), wasted.length - 2)} ${wasted.length > 1 ? 'gastaron' : 'gastó'} ${money(sum(wasted, 'cost'))} sin leads.`);
     if (lowQuality.length) fails.push(`${list(lowQuality.slice(0, 2).map(row => `${quote(row)} (${Math.round(row.qualityScore)}/10)`))} con nivel de calidad bajo.`);
     if (level && level.tone === 'bad') fails.push(`el CTR es bajo (${percent(campaign.ctr)}): el anuncio no engancha con la búsqueda.`);
     // Tres hallazgos como mucho: la tarjeta tiene el alto justo para leerse en la lamina.
@@ -483,20 +493,20 @@
     const ranked = (proven.length ? proven : converting.filter(row => isNum(row.cpl))).sort((left, right) => left.cpl - right.cpl).slice(0, 3);
     let best = 'Sin costo por lead confiable para comparar.';
     if (ranked.length) {
-      best = `${list(ranked.map(row => `${named(row)}: ${leads(row.conversions)} leads a ${money2(row.cpl)}${isNum(row.qualityScore) ? `, calidad ${Math.round(row.qualityScore)}/10` : ''}`))}.`;
+      best = `${list(ranked.map(row => `${named(row)}: ${leadCount(row.conversions)} a ${money2(row.cpl)}${isNum(row.qualityScore) ? `, calidad ${Math.round(row.qualityScore)}/10` : ''}`))}.`;
       best += ` ${proven.length ? `El menor CPL con al menos ${MIN_KEYWORD_LEADS} leads` : 'El menor CPL'}: subir su puja.`;
     }
     const wasted = rows.filter(spentWithout).sort(byCost);
     let waste = 'Todas las palabras clave con gasto trajeron leads.';
     if (wasted.length) {
-      waste = `${list(wasted.slice(0, 3).map(row => `${named(row)} ${money(row.cost)}`))}${wasted.length > 3 ? ` y ${wasted.length - 3} más` : ''}: ${money(sum(wasted, 'cost'))} sin leads. Pausarlas o cerrar su concordancia.`;
+      waste = `${listMore(wasted.slice(0, 3).map(row => `${named(row)} ${money(row.cost)}`), wasted.length - 3)}:${money(sum(wasted, 'cost'))} sin leads. Pausarlas o cerrar su concordancia.`;
     }
     let quality = '';
     const scored = rows.filter(row => isNum(row.qualityScore));
     if (scored.length) {
       const high = scored.filter(row => row.qualityScore >= 7).sort(byCost);
       const low = scored.filter(row => row.qualityScore <= 5 && row.conversions > 0).sort(byLeads);
-      quality = `**Qué pasó:** ${high.length ? `${list(high.slice(0, 3).map(quote))} ${high.length > 1 ? 'están' : 'está'} en calidad 7/10 o más` : 'ningún término llega a calidad 7/10'}${low.length ? `; ${quote(low[0])}, que trae ${leads(low[0].conversions)} leads, está en ${Math.round(low[0].qualityScore)}/10 y tiene margen` : ''}. **Acción:** alinear títulos y landing de los términos con calidad baja para bajar el CPC y captar más leads.`;
+      quality = `**Qué pasó:** ${high.length ? `${list(high.slice(0, 3).map(quote))} ${high.length > 1 ? 'están' : 'está'} en calidad 7/10 o más` : 'ningún término llega a calidad 7/10'}${low.length ? `; ${quote(low[0])}, que trae ${leadCount(low[0].conversions)}, está en ${Math.round(low[0].qualityScore)}/10 y tiene margen` : ''}. **Acción:** alinear títulos y landing de los términos con calidad baja para bajar el CPC y captar más leads.`;
     }
     return { top, best, waste, quality };
   }
@@ -509,7 +519,7 @@
     const projected = projection(report);
     cards.push({
       icon: 'briefcase',
-      title: current.conversions > 0 ? `${leads(current.conversions)} leads a ${money(current.cpl)} cada uno` : `${money(current.cost)} invertidos, sin leads aún`,
+      title: current.conversions > 0 ? `${leadCount(current.conversions)} a ${money(current.cpl)} cada uno` : `${money(current.cost)} invertidos, sin leads aún`,
       text: `${leadChange !== null ? `Los leads ${leadChange >= 0 ? 'subieron' : 'bajaron'} ${pct0(leadChange)} frente al mes previo` : 'Primer mes con datos para comparar'}${cplChange !== null ? ` y el costo por lead ${cplChange <= 0 ? 'bajó' : 'subió'} ${pct0(cplChange)}` : ''}.${projected ? ` Con este ritmo, ${report.item.month.name.toLowerCase()} cerraría en ~${count(projected.leads)} leads.` : ''}`,
     });
     if (read.leaders.length) {
@@ -517,7 +527,7 @@
       cards.push({
         icon: 'layers',
         title: `${['', 'Un servicio lidera', 'Dos servicios lideran', 'Tres servicios lideran', 'Cuatro servicios lideran'][read.leaders.length]}`,
-        text: `${list(read.leaders.map(row => row.name))} ${read.leaders.length > 1 ? 'traen' : 'trae'} ${leads(sum(read.leaders, 'conversions'))} de los ${leads(read.totalLeads)} leads${cpls.length ? ` a CPL de ${cpls.length > 1 ? `${money(Math.min(...cpls))}–${Math.round(Math.max(...cpls))}` : money(cpls[0])}` : ''}. Se sostendrá y escalará la inversión en ${read.leaders.length > 1 ? 'estos servicios' : 'este servicio'}.`,
+        text: `${list(read.leaders.map(row => row.name))} ${read.leaders.length > 1 ? 'traen' : 'trae'} ${partOf(sum(read.leaders, 'conversions'), read.totalLeads)}${cpls.length ? ` a CPL de ${cpls.length > 1 ? `${money(Math.min(...cpls))}–${Math.round(Math.max(...cpls))}` : money(cpls[0])}` : ''}. Se sostendrá y escalará la inversión en ${read.leaders.length > 1 ? 'estos servicios' : 'este servicio'}.`,
       });
     }
     if (read.optimize) {
@@ -968,7 +978,7 @@
     const n = report.detailed.length;
     const cards = [
       kpi({ label: 'Inversión total', value: money(current.cost), foot: `${n} ${n === 1 ? 'campaña' : 'campañas'} SKAG` }),
-      kpi({ label: 'Campaña líder', value: leader ? esc(leader.name) : '—', foot: leader ? `${share(leader.share)} del presupuesto · ${leads(leader.conversions)} leads` : '', className: 'rp-kpi-name' }),
+      kpi({ label: 'Campaña líder', value: leader ? esc(leader.name) : '—', foot: leader ? `${share(leader.share)} del presupuesto · ${leadCount(leader.conversions)}` : '', className: 'rp-kpi-name' }),
       kpi({ label: `Top ${read.leaders.length || 1} servicios`, value: share(sum(read.leaders, 'cost') / (current.cost || 1)), foot: `del presupuesto · ${share(sum(read.leaders, 'conversions') / (read.totalLeads || 1))} de leads` }),
       kpi({ label: 'CPL promedio', value: money1(current.cpl), foot: 'Inversión ÷ leads' }),
     ];
@@ -1019,7 +1029,7 @@
     const ctr = read.bestCtr;
     const fix = read.optimize;
     const cards = [
-      kpi({ label: 'Mejor CPL con demanda', value: best ? money1(best.cpl) : '—', foot: best ? `${esc(best.name)} · ${leads(best.conversions)} leads` : 'Sin leads', badge: best ? '<span class="rp-pill">Más eficiente</span>' : '' }),
+      kpi({ label: 'Mejor CPL con demanda', value: best ? money1(best.cpl) : '—', foot: best ? `${esc(best.name)} · ${leadCount(best.conversions)}` : 'Sin leads', badge: best ? '<span class="rp-pill">Más eficiente</span>' : '' }),
       kpi({ label: 'Más leads', value: most ? leads(most.conversions) : '0', foot: most ? esc(most.name) : 'Sin leads en el período' }),
       kpi({ label: 'Mejor CTR', value: ctr ? percent1(ctr.ctr) : '—', foot: ctr ? esc(ctr.name) : '', badge: ctr ? tag(ctrLevel(ctr.ctr).tone, ctrLevel(ctr.ctr).label) : '' }),
       kpi({
@@ -1134,7 +1144,7 @@
     }
     const wasted = data.rows.filter(spentWithout);
     const foot = data.rows.length
-      ? `${data.rows.length} palabras clave con actividad; suman ${leads(data.total)} de los ${leads(report.current.conversions)} leads de las campañas${wasted.length && data.costOk ? ` y ${wasted.length} gastaron ${money(sum(wasted, 'cost'))} sin leads` : ''}. Lectura frente al CPL de la cuenta (${money1(report.current.cpl)}). Informe de ${data.label || 'Google Ads'}.${data.costOk ? '' : ' El costo por palabra del informe no cuadra con el de las campañas (revisar la importación), así que no se muestra.'}`
+      ? `${data.rows.length} palabras clave con actividad; suman ${partOf(data.total, report.current.conversions)} de las campañas${wasted.length && data.costOk ? ` y ${wasted.length} gastaron ${money(sum(wasted, 'cost'))} sin leads` : ''}. Lectura frente al CPL de la cuenta (${money1(report.current.cpl)}). Informe de ${data.label || 'Google Ads'}.${data.costOk ? '' : ' El costo por palabra del informe no cuadra con el de las campañas (revisar la importación), así que no se muestra.'}`
       : `Sin informe de palabras clave para ${report.item.month.name} ${report.item.month.year}.`;
     const text = suggestKeywords(report);
     let qualityCard = '';
