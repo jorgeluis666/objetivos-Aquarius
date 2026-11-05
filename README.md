@@ -303,8 +303,9 @@ Aquarius: cada tablero de marca tiene el suyo, adaptado por la marca. "Leads" so
   una campana, su analisis lo dice (el resto llega por otras busquedas).
 - **Nivel de calidad:** sale de la columna "Nivel de calidad" del informe de palabras clave
   (`scripts/sync-keywords.py` la guarda como `qualityScore`; por campana y por termino es el promedio ponderado por
-  impresiones). Hoy la hoja de Aquarius que escribe Nexus no la trae: mientras tanto el reporte muestra "—" en la
-  calidad de cada campana y, solo en pantalla, un aviso; la columna y las barras aparecen solas cuando llegue.
+  impresiones). Nexus la escribe en la columna X de la hoja de Aquarius desde el 5 de noviembre de 2026 ("--" cuando
+  Google Ads no la calcula). Un mes sin ese dato muestra "—" en la calidad de cada campana y, solo en pantalla, un
+  aviso; la columna y las barras aparecen solas cuando el informe la trae.
 - **Graficos:** el semanal usa el informe por dia y campana del mes (`months[].detail`, semanas de 7 dias; un
   resto de menos de 4 dias a fin de mes se suma a la ultima semana) y el de cada campana, sus dias. Cada valor
   lleva su etiqueta y ninguna se pisa: la que choca con otra prueba el otro lado del punto y luego se aleja; los
