@@ -18,6 +18,8 @@
     historial: 'aquarius_recalculos',
     saldo: 'aquarius_recalculo_saldo',
     responsable: 'aquarius_responsable',
+    // Lo guardado en este navegador que la hoja del CRM todavía no tiene: se sube cuando vuelve.
+    pendientes: 'aquarius_recalculo_pendientes',
   };
   const MAX_LOCAL = 60;
   const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -130,6 +132,53 @@
     return { presupuestos: leerJson(KEYS.presupuestos, {}), nombres: leerJson(KEYS.nombres, {}) };
   }
 
+  // Pendientes de subir: presupuestos por 'mes|clave' (el último cambio, con su hora) y recálculos completos.
+  function leerPendientes() {
+    const pendientes = leerJson(KEYS.pendientes, {});
+    return {
+      presupuestos: pendientes.presupuestos && typeof pendientes.presupuestos === 'object' ? pendientes.presupuestos : {},
+      recalculos: Array.isArray(pendientes.recalculos) ? pendientes.recalculos : [],
+    };
+  }
+  function escribirPendientes(pendientes) {
+    escribir(KEYS.pendientes, JSON.stringify(pendientes));
+  }
+  function anotarPresupuestos(cambios, at) {
+    const pendientes = leerPendientes();
+    cambios.forEach(({ mes, key, nombre, presupuesto }) => {
+      pendientes.presupuestos[`${mes}|${key}`] = { mes, key, nombre, presupuesto, at };
+    });
+    escribirPendientes(pendientes);
+  }
+  function anotarRecalculo(entrada) {
+    const pendientes = leerPendientes();
+    if (!pendientes.recalculos.some(item => item.id === entrada.id)) pendientes.recalculos.unshift(entrada);
+    pendientes.recalculos = pendientes.recalculos.slice(0, MAX_LOCAL);
+    escribirPendientes(pendientes);
+  }
+
+  // Sube a la hoja lo que quedó en este navegador. Cada cosa sale de pendientes solo cuando la hoja la acepta;
+  // un recálculo repetido no se duplica porque la hoja descarta un id que ya tiene.
+  async function subirPendientes() {
+    const pendientes = leerPendientes();
+    const presupuestos = Object.values(pendientes.presupuestos);
+    if (presupuestos.length) {
+      await callCrm('presupuestos-save', { rows: presupuestos.map(({ mes, nombre, presupuesto }) => ({ mes, campana: nombre, presupuesto })) });
+      const ahora = leerPendientes();
+      presupuestos.forEach(item => {
+        const id = `${item.mes}|${item.key}`;
+        if (ahora.presupuestos[id] && ahora.presupuestos[id].at === item.at) delete ahora.presupuestos[id];
+      });
+      escribirPendientes(ahora);
+    }
+    for (const entrada of pendientes.recalculos.slice().reverse()) {
+      await callCrm('recalculos-save', { recalculo: entrada });
+      const ahora = leerPendientes();
+      ahora.recalculos = ahora.recalculos.filter(item => item.id !== entrada.id);
+      escribirPendientes(ahora);
+    }
+  }
+
   async function cargar() {
     if (state.cargado) return;
     state.cargado = true;
@@ -142,17 +191,42 @@
       const [presupuestos, recalculos] = await Promise.all([callCrm('presupuestos-list', {}), callCrm('recalculos-list', {})]);
       state.presupuestos = {};
       state.nombres = {};
+      const actualizado = {};
       (presupuestos.rows || []).forEach(row => {
         const key = R().clave(row.campana);
         state.presupuestos[row.mes] = state.presupuestos[row.mes] || {};
         state.presupuestos[row.mes][key] = row.presupuesto;
         state.nombres[key] = row.campana;
+        actualizado[`${row.mes}|${key}`] = row.actualizado || '';
       });
       state.historial = agrupar(recalculos.rows);
+
+      // Lo que se guardó en este navegador mientras la hoja no respondía se suma a lo de la hoja, en vez de
+      // perderse. Un presupuesto pendiente gana, salvo que la hoja tenga un cambio posterior (de otra persona).
+      const pendientes = leerPendientes();
+      Object.entries(pendientes.presupuestos).forEach(([id, item]) => {
+        if (actualizado[id] && actualizado[id] > item.at) { delete pendientes.presupuestos[id]; return; }
+        state.presupuestos[item.mes] = state.presupuestos[item.mes] || {};
+        if (item.presupuesto == null) delete state.presupuestos[item.mes][item.key];
+        else state.presupuestos[item.mes][item.key] = item.presupuesto;
+        state.nombres[item.key] = item.nombre;
+      });
+      const ids = new Set(state.historial.map(item => item.id));
+      pendientes.recalculos.forEach(entrada => { if (!ids.has(entrada.id)) state.historial.push(entrada); });
+      state.historial.sort((a, b) => String(b.guardado).localeCompare(String(a.guardado)));
+      escribirPendientes(pendientes);
+      // La copia de este navegador queda al día por si la hoja vuelve a fallar.
+      escribir(KEYS.presupuestos, JSON.stringify(state.presupuestos));
+      escribir(KEYS.nombres, JSON.stringify(state.nombres));
+      escribir(KEYS.historial, JSON.stringify(state.historial.slice(0, MAX_LOCAL)));
       state.origen = 'remoto';
+      state.detalle = '';
+      await subirPendientes();
     } catch (error) {
-      // Se trabaja con lo de este navegador para no dejar el panel vacío, y se avisa.
-      Object.assign(state, local, { historial: leerJson(KEYS.historial, []), origen: 'error', detalle: motivo(error) });
+      // Se trabaja con lo de este navegador para no dejar el panel vacío, y se avisa. Lo pendiente sigue anotado.
+      if (state.origen !== 'remoto') Object.assign(state, local, { historial: leerJson(KEYS.historial, []) });
+      state.origen = 'error';
+      state.detalle = motivo(error);
     }
   }
 
@@ -173,12 +247,20 @@
     });
     escribir(KEYS.presupuestos, JSON.stringify(locales.presupuestos));
     escribir(KEYS.nombres, JSON.stringify(locales.nombres));
-    if (!isRemote() || !cambios.length) return null;
+    if (!cambios.length) return null;
+    const at = new Date().toISOString();
+    // Sin hoja (o mientras falla) el cambio queda anotado para subirlo cuando la hoja responda.
+    if (!isRemote() || state.origen === 'error') {
+      anotarPresupuestos(cambios, at);
+      if (!isRemote()) return null;
+    }
     try {
-      await callCrm('presupuestos-save', { rows: cambios.map(({ mes, nombre, presupuesto }) => ({ mes, campana: nombre, presupuesto })) });
+      if (state.origen === 'error') await subirPendientes();
+      else await callCrm('presupuestos-save', { rows: cambios.map(({ mes, nombre, presupuesto }) => ({ mes, campana: nombre, presupuesto })) });
       if (state.origen === 'error') { state.origen = 'remoto'; state.detalle = ''; }
       return null;
     } catch (error) {
+      anotarPresupuestos(cambios, at);
       state.origen = 'error';
       state.detalle = motivo(error);
       return state.detalle;
@@ -209,6 +291,11 @@
   async function guardarEnHistorial(resultado) {
     const filas = resultado.filas.filter(fila => fila.presupuestoMes != null);
     if (!filas.length) { state.guardado = null; return; }
+    // Sin responsable no se guarda: se guarda al escribirlo (ver el change de #recalculo-responsable).
+    if (!state.responsable.trim()) {
+      state.guardado = { estado: 'falta-responsable', texto: 'Escribe tu nombre en Responsable para guardar este recálculo en el historial.' };
+      return;
+    }
     const entrada = {
       id: `rc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
       guardado: new Date().toISOString(),
@@ -235,6 +322,7 @@
     };
     if (!isRemote()) {
       guardarLocal();
+      anotarRecalculo(entrada);
       state.guardado = { estado: 'local', texto: 'Guardado en el historial de este navegador.' };
       return;
     }
@@ -245,6 +333,7 @@
       state.guardado = { estado: 'ok', texto: 'Guardado en el historial (hoja del CRM).' };
     } catch (error) {
       guardarLocal();
+      anotarRecalculo(entrada);
       // El motivo lo dice el pie (pieOrigen), una sola vez.
       state.origen = 'error';
       state.detalle = motivo(error);
@@ -371,7 +460,7 @@
     const sinPpto = resultado.filas.filter(fila => fila.presupuestoMes == null).length;
     const responsable = `
       <div class="recalculo-responsable"><dt><label for="recalculo-responsable">Responsable</label></dt>
-        <dd><input id="recalculo-responsable" type="text" maxlength="80" autocomplete="name" placeholder="Tu nombre" value="${esc(state.responsable)}"></dd></div>`;
+        <dd><input id="recalculo-responsable" type="text" maxlength="80" autocomplete="name" placeholder="Tu nombre" value="${esc(state.responsable)}"${state.guardado && state.guardado.estado === 'falta-responsable' ? ' class="falta" aria-describedby="recalculo-pie"' : ''}></dd></div>`;
     const faltan = sinPpto
       ? `<div class="data-notice recalculo-faltan"><strong>${sinPpto === resultado.filas.length ? 'Falta cargar el presupuesto del mes' : `${sinPpto} ${sinPpto === 1 ? 'campaña no tiene' : 'campañas no tienen'} presupuesto del mes`}</strong>
           Sin presupuesto no hay diario recomendado. <button type="button" class="gasto-tool-link" data-recalculo="presupuestos">Cargar presupuestos »</button></div>`
@@ -382,7 +471,7 @@
       ${faltan}
       ${tabla(resultado)}
       <p class="projection-note">Diario recomendado = por gastar ÷ ${resultado.diasRestantes} ${resultado.diasRestantes === 1 ? 'día restante' : 'días restantes'} (de hoy al ${R().daysInMonth(resultado.mes)} de ${MESES[Number(resultado.mes.slice(5, 7)) - 1].toLowerCase()}, ambos incluidos). El total es la suma de los diarios redondeados, lo que queda cargado en Google Ads. ${resultado.conSaldo ? 'Saldo mes anterior = presupuesto del mes anterior − su gasto real; el efectivo nunca baja de 0.' : ''} Solo recomienda: no cambia nada en Google Ads.</p>
-      <p class="projection-note recalculo-pie">${pieTabla()}</p>`;
+      <p class="projection-note recalculo-pie" id="recalculo-pie">${pieTabla()}</p>`;
   }
 
   function pieTabla() {
@@ -660,7 +749,12 @@
       if (accion === 'cerrar') { state.abierto = false; pintar(); document.getElementById('recalculo-open')?.focus(); return; }
       if (accion === 'copiar') { copiar(boton); return; }
       if (accion === 'csv') { exportarCsv(); return; }
-      if (accion === 'recalcular') { recalcular(); return; }
+      if (accion === 'recalcular') {
+        // Si la hoja había fallado, se vuelve a leer y se sube lo pendiente antes de recalcular.
+        if (isRemote() && state.origen === 'error') { state.cargado = false; cargar().then(recalcular); return; }
+        recalcular();
+        return;
+      }
       if (accion === 'rellenar' || accion === 'copiar-anterior') { rellenar(panel, accion); return; }
       if (accion === 'guardar-presupuestos') { guardarEditor(panel, boton); return; }
       if (accion === 'ver') { state.verId = boton.dataset.id; state.vista = 'detalle'; pintar(); return; }
@@ -678,6 +772,10 @@
       if (event.target.id === 'recalculo-responsable') {
         state.responsable = event.target.value.trim().slice(0, 80);
         escribir(KEYS.responsable, state.responsable);
+        // El recálculo que esperaba un responsable se guarda ahora, con su nombre.
+        if (state.responsable && state.vista === 'tabla' && state.resultado && state.guardado && state.guardado.estado === 'falta-responsable') {
+          guardarEnHistorial(state.resultado).then(pintar);
+        }
       }
     });
     panel.addEventListener('keydown', event => {

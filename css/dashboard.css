@@ -8897,6 +8897,15 @@ button.topbar-pill {
   color: #b91c1c;
 }
 
+.recalculo-guardado.falta-responsable {
+  color: #b45309;
+}
+
+.recalculo-responsable input.falta {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
 /* Carga de presupuestos */
 .recalculo-editor > .panel-sub {
   margin: 0 0 12px;

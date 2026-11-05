@@ -171,7 +171,8 @@ de hoy a fin de mes, para cerrar en su presupuesto. Solo recomienda: no cambia n
 - **Copiar** deja la tabla en el portapapeles separada por tabulaciones (se pega directo en Sheets o Excel);
   **Exportar CSV** la descarga. Las dos llevan el encabezado: cliente, mes, fecha de corte, dias restantes y modo.
 - **Historial**: cada recalculo con presupuesto se guarda al generarlo (cliente, fecha de corte, modo,
-  responsable y, por campana, las entradas y el resultado). Uno identico a otro ya guardado no se repite.
+  responsable y, por campana, las entradas y el resultado). Sin nombre en Responsable no se guarda: se guarda
+  al escribirlo, y el navegador lo recuerda para la proxima vez. Uno identico a otro ya guardado no se repite.
 
 El calculo es una funcion pura en `js/recalculo-inversion.js` (`recalcular` y `entradaDesdeDatos`), sin DOM ni
 hora del sistema; `js/recalculo-panel.js` arma la entrada, pinta y guarda. Las pruebas (`npm test`) cubren el
@@ -181,6 +182,8 @@ efectivo en 0 y la falta de gasto de ayer.
 **Donde se guarda**: en la misma hoja privada del CRM de Leads, pestanas "Presupuesto por campana" (una fila por
 mes y campana) y "Recalculos de inversion" (una fila por campana de cada recalculo). Sin el Web App conectado, o
 mientras el Apps Script publicado no tenga estas acciones, se guarda solo en el navegador y el panel lo avisa.
+Lo guardado asi queda anotado como pendiente y se sube a la hoja cuando vuelve a responder (al abrir el panel o
+con Recalcular); un presupuesto pendiente no pisa un cambio posterior que otra persona hizo en la hoja.
 Para activarlo: pegar la version nueva de `scripts/apps-script/crm-leads.gs` en el Apps Script de la hoja y
 publicar una version nueva (Implementar > Gestionar implementaciones > editar > Version: Nueva version). La URL y
 el token no cambian; las pestanas se crean solas con el primer guardado.
