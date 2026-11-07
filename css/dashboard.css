@@ -8602,3 +8602,376 @@ button.topbar-pill {
     display: none !important;
   }
 }
+
+/* ── Recálculo de inversión (Proyecciones · js/recalculo-panel.js) ────────── */
+.recalculo-launch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 16px 0 0;
+}
+
+.recalculo-launch > span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.recalculo-launch .messages-btn {
+  font-size: 11px;
+}
+
+.recalculo-panel {
+  margin-top: 16px;
+  scroll-margin-top: 16px;
+}
+
+.recalculo-head {
+  flex-wrap: wrap;
+}
+
+.recalculo-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.recalculo-tools .gasto-tool-btn:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.recalculo-cerrar {
+  min-width: 34px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Interruptor «Saldo mes anterior» */
+.recalculo-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #475569;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.recalculo-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.recalculo-switch-track {
+  position: relative;
+  width: 28px;
+  height: 16px;
+  border-radius: 99px;
+  background: #cbd5e1;
+  transition: background .15s ease;
+}
+
+.recalculo-switch-track::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .25);
+  content: "";
+  transition: transform .15s ease;
+}
+
+.recalculo-switch input:checked + .recalculo-switch-track {
+  background: var(--brand);
+}
+
+.recalculo-switch input:checked + .recalculo-switch-track::after {
+  transform: translateX(12px);
+}
+
+.recalculo-switch:has(input:checked) {
+  border-color: var(--brand);
+  color: var(--brand-text);
+  background: var(--brand-soft);
+}
+
+.recalculo-switch:has(input:focus-visible) {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .25);
+}
+
+.recalculo-switch:has(input:disabled) {
+  opacity: .45;
+  cursor: default;
+}
+
+/* Encabezado: cliente, mes, fecha de corte, días restantes, modo y responsable */
+.recalculo-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.recalculo-meta > div {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.recalculo-meta dt {
+  color: #526987;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.recalculo-meta dd {
+  margin: 5px 0 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.recalculo-responsable input {
+  width: 100%;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: var(--ink);
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.recalculo-responsable input:focus,
+.recalculo-input:focus {
+  border-color: var(--brand);
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .10);
+}
+
+.recalculo-avisos {
+  margin: 0 0 14px;
+  padding: 10px 14px 10px 30px;
+  border: 1px solid #fde68a;
+  border-radius: 9px;
+  color: #92400e;
+  background: #fffbeb;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.recalculo-faltan {
+  margin: 0 0 14px;
+}
+
+/* Tabla */
+.recalculo-table td {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.recalculo-table .campaign-name {
+  min-width: 170px;
+}
+
+/* Encabezados en dos líneas y la campaña fija al desplazar la tabla. */
+.recalculo-table thead th,
+.recalculo-table thead th.num {
+  min-width: 78px;
+  white-space: normal;
+  vertical-align: bottom;
+}
+
+.recalculo-table th:first-child,
+.recalculo-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #fff;
+  box-shadow: 1px 0 0 var(--border);
+}
+
+.recalculo-table thead th:first-child,
+.recalculo-table tfoot td:first-child {
+  background: #f8fafc;
+}
+
+.recalculo-table th.recalculo-saldo-col,
+.recalculo-table td.recalculo-saldo-col {
+  background: #f8fbff;
+}
+
+.recalculo-table .recalculo-recomendado {
+  color: var(--brand-text);
+  font-weight: 800;
+}
+
+.recalculo-neg {
+  color: var(--red);
+}
+
+.recalculo-vacio {
+  color: #94a3b8;
+}
+
+.recalculo-estado .status-pill {
+  margin: 2px 4px 2px 0;
+}
+
+.recalculo-alertas {
+  min-width: 280px;
+  max-width: 360px;
+}
+
+.recalculo-badge {
+  display: inline-flex;
+  margin: 2px 4px 2px 0;
+  padding: 3px 8px;
+  border-radius: 99px;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.recalculo-badge.amber {
+  color: #b45309;
+  background: #fffbeb;
+}
+
+.recalculo-badge.red {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.recalculo-badge.muted {
+  color: #64748b;
+  background: #f1f5f9;
+}
+
+.recalculo-table tfoot td {
+  border-top: 2px solid #cbd5e1;
+  color: var(--ink);
+  background: #f8fafc;
+  font-weight: 800;
+}
+
+.recalculo-table tfoot td.recalculo-saldo-col {
+  background: #f1f5f9;
+}
+
+.recalculo-pie {
+  margin-top: 6px;
+}
+
+.recalculo-guardado {
+  color: var(--brand-text);
+  font-weight: 700;
+}
+
+.recalculo-guardado.ok {
+  color: var(--green-text);
+}
+
+.recalculo-guardado.error {
+  color: #b91c1c;
+}
+
+.recalculo-guardado.falta-responsable {
+  color: #b45309;
+}
+
+.recalculo-responsable input.falta {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+/* Carga de presupuestos */
+.recalculo-editor > .panel-sub {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.recalculo-editor-tools,
+.recalculo-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.recalculo-editor-actions {
+  margin: 12px 0 0;
+}
+
+.recalculo-input {
+  width: 116px;
+  height: 32px;
+  padding: 0 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  color: var(--ink);
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.recalculo-input[aria-invalid="true"] {
+  border-color: var(--red);
+  background: #fef2f2;
+}
+
+.recalculo-error {
+  min-height: 0;
+  margin: 8px 0 0;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.recalculo-error:empty {
+  display: none;
+}
+
+.recalculo-detalle-head {
+  margin: 0 0 12px;
+}
+
+@media (max-width: 760px) {
+  .recalculo-head {
+    flex-direction: column;
+  }
+
+  .recalculo-tools {
+    justify-content: flex-start;
+  }
+}
+
+@media print {
+  .recalculo-launch,
+  .recalculo-tools {
+    display: none !important;
+  }
+}

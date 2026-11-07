@@ -27,6 +27,10 @@ jobs:
         with:
           node-version: 20
 
+      # Con una prueba en rojo no se publica (hoy, las del Recalculo de inversion).
+      - name: Pruebas
+        run: npm test
+
       - name: Build
         env:
           AQ_PAGE_PASSWORD: ${{ secrets.AQ_PAGE_PASSWORD }}
