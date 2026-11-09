@@ -189,9 +189,40 @@ test('no avisado: la anterior quedó en verde', async () => {
   assert.equal(gh.pedidas.length, 1, 'con una corrida en verde no hace falta mirar sus pasos');
 });
 
-test('no avisado: la anterior falló en el envío, así que el correo no salió y se reintenta', async () => {
-  const gh = github({ corridas: [{ id: 8, event: 'schedule', conclusion: 'failure' }], pasos: { 8: envioFallido } });
+test('no avisado: la anterior falló en el envío del primer aviso, así que se reintenta', async () => {
+  const gh = github({
+    corridas: [
+      { id: 8, event: 'schedule', conclusion: 'failure' },
+      { id: 7, event: 'workflow_run', conclusion: 'success' },
+    ],
+    pasos: { 8: envioFallido },
+  });
   assert.equal(await check.yaAvisado(gh, 9), false);
+  assert.equal(await check.yaAvisado(github({ corridas: [{ id: 8, event: 'schedule', conclusion: 'failure' }], pasos: { 8: envioFallido } }), 9), false);
+});
+
+test('si falla el envío del aviso de vuelta, la caída sigue abierta y se reintenta', async () => {
+  // 7 avisó la caída; 8 vio el dato al día pero no pudo mandar el correo de vuelta.
+  const gh = github({
+    corridas: [
+      { id: 8, event: 'workflow_run', conclusion: 'failure' },
+      { id: 7, event: 'schedule', conclusion: 'failure' },
+    ],
+    pasos: { 8: envioFallido, 7: rojo },
+  });
+  assert.equal(await check.yaAvisado(gh, 9), true);
+});
+
+test('las corridas canceladas no deciden nada', async () => {
+  const gh = github({
+    corridas: [
+      { id: 8, event: 'workflow_run', conclusion: 'cancelled' },
+      { id: 7, event: 'schedule', conclusion: 'failure' },
+    ],
+    pasos: { 7: rojo },
+  });
+  assert.equal(await check.yaAvisado(gh, 9), true);
+  assert.ok(!gh.pedidas.includes('/actions/runs/8/jobs'));
 });
 
 test('las corridas manuales (simulación o prueba) no cuentan como memoria', async () => {

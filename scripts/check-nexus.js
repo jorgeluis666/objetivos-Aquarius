@@ -194,19 +194,28 @@ async function ultimoBarrido(gh) {
 }
 
 /**
- * true si la corrida automática anterior ya avisó: terminó en rojo y fue en el paso PASO_ROJO.
- * Un rojo en otro paso (el envío falló, por ejemplo) no cuenta: el correo no salió.
+ * true si hay una caída avisada y todavía abierta: la última corrida automática que decidió algo
+ * terminó en rojo en el paso PASO_ROJO. Una en verde la cierra (o nunca hubo caída).
+ *
+ * Las que fallaron en otro paso (el envío o la API de GitHub) o se cancelaron no deciden nada: el
+ * correo que intentaron no salió. Se saltan y se mira la anterior, así se reintenta tanto el aviso
+ * de caída como el de vuelta. Si el de vuelta falla, la caída sigue abierta hasta que salga.
  */
 async function yaAvisado(gh, propio) {
   const datos = await gh(`/actions/workflows/${WORKFLOW}/runs?status=completed&per_page=20`);
-  const anterior = ((datos && datos.workflow_runs) || []).find(
+  const corridas = ((datos && datos.workflow_runs) || []).filter(
     r => String(r.id) !== String(propio || '') && AUTOMATICAS.has(r.event),
   );
-  if (!anterior || anterior.conclusion !== 'failure') return false;
-  const trabajos = await gh(`/actions/runs/${anterior.id}/jobs`);
-  return ((trabajos && trabajos.jobs) || []).some(trabajo =>
-    (trabajo.steps || []).some(paso => paso.name === PASO_ROJO && paso.conclusion === 'failure'),
-  );
+  for (const corrida of corridas) {
+    if (corrida.conclusion === 'success') return false;
+    if (corrida.conclusion !== 'failure') continue;
+    const trabajos = await gh(`/actions/runs/${corrida.id}/jobs`);
+    const marcada = ((trabajos && trabajos.jobs) || []).some(trabajo =>
+      (trabajo.steps || []).some(paso => paso.name === PASO_ROJO && paso.conclusion === 'failure'),
+    );
+    if (marcada) return true;
+  }
+  return false;
 }
 
 // ── Correo ────────────────────────────────────────────────────────────────────────────────────────

@@ -626,7 +626,8 @@ lanza el barrido ni la alerta semanal: solo lee el repositorio y la API de Actio
 **Un solo correo por caída.** Cuando el dato está atrasado, la corrida termina en rojo en el paso
 «Dato atrasado». La corrida automática siguiente ve ese rojo y no repite el correo. Cuando el dato
 vuelve, manda otro diciendo que se recuperó. Si lo que falló fue el envío (rojo en otro paso), la
-corrida siguiente lo vuelve a intentar.
+corrida siguiente lo vuelve a intentar, sea el aviso de caída o el de vuelta: esas corridas no
+cuentan como memoria.
 
 **Destinatarios.** `destinatarios_tecnicos` de `data/alertas-config.json` (hoy, Jorge Luis), o el
 secret opcional `AQ_ALERTAS_TECNICAS` con correos separados por comas, que manda sobre el archivo.
