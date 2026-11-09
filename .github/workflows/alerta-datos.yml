@@ -1,0 +1,89 @@
+name: Aviso de datos atrasados
+
+# Avisa por correo al equipo (nunca al cliente) cuando los informes de Google Ads dejan de llegar
+# al tablero.
+#
+# El 4/11/2026 Nexus no escribió ninguna hoja en todo el día y el tablero se quedó con la captura
+# del 3/11 a las 18:00. El barrido de Drive salió en verde las tres veces, porque no había nada
+# nuevo que copiar, y nadie se enteró hasta el día siguiente. scripts/check-nexus.js mira hasta qué
+# día llegan los informes: desde las 07:00 de Lima tienen que llegar hasta hoy.
+#
+# Corre detrás de cada barrido de Drive, que es cuando el dato acaba de cambiar, aunque el barrido
+# haya fallado: el dato que quedó es el que se revisa. El cron diario es la red de abajo: si los
+# activadores del Apps Script que lanzan el barrido se caen, nadie llamaría a este workflow y la
+# caída volvería a pasar inadvertida. Aquí un retraso de GitHub no importa.
+#
+# Este workflow no lanza el barrido ni la alerta semanal: solo lee el repositorio y la API de Actions.
+#
+# Una corrida en rojo en el paso «Dato atrasado» significa «el dato está atrasado», y es a propósito:
+# el script mira ese rojo en la corrida anterior para no repetir el correo mientras la caída siga.
+# Verde es que todo llega. Un rojo en otro paso es un error de verdad (el envío, por ejemplo) y la
+# corrida siguiente vuelve a intentarlo.
+on:
+  workflow_run:
+    workflows: ["Sincronizar Drive"]
+    types: [completed]
+    branches: [main]
+
+  # 08:00 de Lima (13:00 UTC).
+  schedule:
+    - cron: '0 13 * * *'
+
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Simulación (solo imprime el diagnóstico, no envía correo)'
+        type: boolean
+        default: true
+      probar_envio:
+        description: 'Mandar un correo de prueba aunque el dato esté al día (requiere desmarcar la simulación)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read   # para ver el último barrido y cómo terminó la corrida anterior
+
+# Dos corridas a la vez verían las dos que la anterior estaba en verde y mandarían dos correos.
+concurrency:
+  group: alerta-datos
+  cancel-in-progress: false
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      # El repo no lleva package-lock.json: se instala solo lo que el envío necesita.
+      - name: Instalar nodemailer
+        run: npm install nodemailer@6.10.1 --no-save --no-audit --no-fund
+
+      - name: Revisar la frescura del dato
+        id: revisar
+        run: node scripts/check-nexus.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Correos del equipo, separados por comas. Si el secret no está, salen de
+          # destinatarios_tecnicos en data/alertas-config.json. Nunca la lista del cliente.
+          AQ_ALERTAS_TECNICAS: ${{ secrets.AQ_ALERTAS_TECNICAS }}
+          # Correo del hosting (alertas@limaretail.com). Si faltan, se usa Resend.
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
+          PROBAR_ENVIO: ${{ github.event_name == 'workflow_dispatch' && inputs.probar_envio && 'true' || 'false' }}
+
+      # El nombre de este paso es la memoria del aviso: scripts/check-nexus.js lo busca (PASO_ROJO).
+      - name: Dato atrasado
+        if: steps.revisar.outputs.atrasado == 'true'
+        run: |
+          echo "Los informes de Google Ads están atrasados; el correo ya salió."
+          echo "Este rojo evita repetirlo en la corrida siguiente."
+          exit 1

@@ -599,6 +599,47 @@ muestran los mismos numeros.
 | `RESEND_API_KEY` | alternativa si no hay SMTP |
 | variable `DASHBOARD_URL` | opcional, si el enlace del correo debe ser otro que el de `data/alertas-config.json` |
 
+## Aviso de datos atrasados (solo para el equipo)
+
+El 4/11/2026 Nexus no escribió ninguna hoja en todo el día y el tablero se quedó con la captura del
+3/11 a las 18:00 sin que nadie se enterara: el barrido de Drive salió en verde, porque no había nada
+nuevo que copiar. `.github/workflows/alerta-datos.yml` corre `scripts/check-nexus.js`, que manda un
+correo **al equipo, nunca al cliente**, cuando los informes dejan de avanzar.
+
+**Qué mira.** Nexus escribe las hojas de Aquarius a las 06:00, 13:00 y 18:00 de Lima, y cada informe
+llega hasta el día en que se escribe. Desde las **07:00 de Lima** el mes más nuevo de los dos archivos
+que alimenta Nexus tiene que llegar hasta hoy (antes de esa hora, hasta ayer):
+
+- `data/aquarius-lima-retail-2026.json`: informe de campañas (`months[].period.end`);
+- `data/aquarius-palabras-clave-2026.json`: palabras clave (`months[].period.end`).
+
+Mira el día del informe y no la hora de la hoja porque el barrido solo commitea cuando cambian las
+cifras. Si faltan solo las capturas de 13:00 o 18:00, se nota a la mañana siguiente. El correo dice
+también **dónde mirar**: si el barrido de Drive corre bien y no trae nada nuevo, es Nexus (el cron
+del hosting); si el barrido no corre hace más de 13 horas o falló, son los activadores del Apps Script
+de `scripts/apps-script/sincronizar-aquarius.gs`.
+
+**Cuándo corre.** Detrás de cada barrido de Drive (workflow "Sincronizar Drive") y, como red por si
+los activadores del Apps Script se caen, todos los días a las 08:00 de Lima por cron de GitHub. No
+lanza el barrido ni la alerta semanal: solo lee el repositorio y la API de Actions.
+
+**Un solo correo por caída.** Cuando el dato está atrasado, la corrida termina en rojo en el paso
+«Dato atrasado». La corrida automática siguiente ve ese rojo y no repite el correo. Cuando el dato
+vuelve, manda otro diciendo que se recuperó. Si lo que falló fue el envío (rojo en otro paso), la
+corrida siguiente lo vuelve a intentar, sea el aviso de caída o el de vuelta: esas corridas no
+cuentan como memoria.
+
+**Destinatarios.** `destinatarios_tecnicos` de `data/alertas-config.json` (hoy, Jorge Luis), o el
+secret opcional `AQ_ALERTAS_TECNICAS` con correos separados por comas, que manda sobre el archivo.
+Nunca usa `destinatarios` ni la lista de la ruedita del tablero, que son las del cliente. El envío usa
+los mismos secrets `SMTP_*` (o `RESEND_API_KEY`) de la alerta semanal: no hace falta crear ninguno.
+
+**A mano.** `Actions > Aviso de datos atrasados > Run workflow`: con «Simulación» (marcada por
+defecto) solo imprime el diagnóstico; desmarcándola y marcando «Mandar un correo de prueba», manda
+uno a los destinatarios técnicos para comprobar que el envío funciona. En local,
+`node scripts/check-nexus.js --dry-run` imprime el diagnóstico (sin `GITHUB_TOKEN` nunca envía).
+Las pruebas están en `tests/check-nexus.test.js` y corren con `npm test`.
+
 ## Build
 
 ```bash
