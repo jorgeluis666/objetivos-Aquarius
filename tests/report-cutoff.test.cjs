@@ -69,6 +69,9 @@ test('Recovered November snapshot renders the report and matching keyword data',
   assert.match(select.innerHTML, /1–8 \(en curso\)/);
   assert.match(host.innerHTML, /Periodo 1 – 8/);
   assert.match(host.innerHTML, /Captura:/);
+  assert.match(host.innerHTML, /Resultados por servicio/);
+  assert.match(host.innerHTML, /S\/ 465\.10/);
+  assert.doesNotMatch(host.innerHTML, /rp-empty rp-chart-empty/);
   assert.doesNotMatch(host.innerHTML, /Reporte pendiente de datos|NaN|undefined/);
   assert.equal(print.disabled, false);
 });

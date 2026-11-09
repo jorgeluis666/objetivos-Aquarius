@@ -955,10 +955,17 @@
           <div class="rp-split-2">
             <div class="rp-card rp-chart-card">
               <div class="rp-card-row">
-                <div><div class="rp-card-title">Evolución de leads y costo por lead</div><div class="rp-card-sub">Por ${daily ? 'día' : 'semana'}</div></div>
-                ${legends([[BLUE, 'Leads'], [RED, 'Costo/lead']])}
+                <div><div class="rp-card-title">${evolution.length ? 'Evolución de leads y costo por lead' : 'Resultados por servicio'}</div><div class="rp-card-sub">${evolution.length ? `Por ${daily ? 'día' : 'semana'}` : esc(report.labels.period)}</div></div>
+                ${evolution.length ? legends([[BLUE, 'Leads'], [RED, 'Costo/lead']]) : ''}
               </div>
-              ${weekChart(evolution, daily)}
+              ${evolution.length ? weekChart(evolution, daily) : `
+                <table class="rp-table" style="margin-top:14px;table-layout:fixed">
+                  <colgroup><col style="width:48%"><col style="width:20%"><col style="width:12%"><col style="width:20%"></colgroup>
+                  <thead><tr><th>Servicio</th><th class="num">Inversión</th><th class="num">Leads</th><th class="num">CPL</th></tr></thead>
+                  <tbody>${report.detailed.map(row => `<tr><td style="white-space:normal;font-size:12px">${esc(row.name)}</td><td class="num">${money2(row.cost)}</td><td class="num">${leads(row.conversions)}</td><td class="num">${row.conversions > 0 ? money2(row.cpl) : '—'}</td></tr>`).join('')}
+                  <tr class="rp-total"><td>Total</td><td class="num">${money2(current.cost)}</td><td class="num">${leads(current.conversions)}</td><td class="num">${money2(current.cpl)}</td></tr></tbody>
+                </table>
+                <p class="rp-card-sub" style="margin-top:12px">Acumulado del período. La fuente no incluye detalle diario para mostrar una evolución semanal.</p>`}
             </div>
             <div class="rp-stack">
               <div class="rp-projection">
