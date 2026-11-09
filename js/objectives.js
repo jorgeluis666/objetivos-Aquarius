@@ -274,9 +274,9 @@
   function nextSyncLabel() {
     const now = new Date();
     const lima = new Date(now.getTime() - 5 * 3600000);
-    const candidates = SYNC_HOURS_LIMA.map(hour => new Date(Date.UTC(lima.getUTCFullYear(), lima.getUTCMonth(), lima.getUTCDate(), hour + 5)));
+    const candidates = SYNC_HOURS_LIMA.map(hour => new Date(Date.UTC(lima.getUTCFullYear(), lima.getUTCMonth(), lima.getUTCDate(), hour + 5, 30)));
     const next = candidates.find(date => date > now) || new Date(candidates[0].getTime() + 86400000);
-    return `${stampLabel(next, false)} · 06:00, 13:00 y 18:00 (Lima). Publicación después del barrido de Drive, aprox. 30 min más tarde`;
+    return `${stampLabel(next, false)} · Barrido de Drive: 06:30, 13:30 y 18:30 Lima (aprox.). Nexus: 06:00, 13:00 y 18:00. Publicación al terminar`;
   }
 
   // Ultima ejecucion del barrido. Se consulta al cargar y al abrir el detalle (como mucho cada 10 minutos).
