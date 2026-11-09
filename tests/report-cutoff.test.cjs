@@ -52,7 +52,7 @@ test('Closed months preserve the complete reporting period', () => {
 
 test('Recovered November snapshot renders the report and matching keyword data', () => {
   const { api, context } = setup();
-  context.window.AQUARIUS_REPORT_SNAPSHOTS = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/report-snapshots.json'), 'utf8'));
+  context.window.AQUARIUS_REPORT_SNAPSHOTS = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/report-snapshots-before-daily.json'), 'utf8'));
   const period = api.reportPeriod('2026-11');
   assert.equal(period.unavailable, undefined);
   assert.equal(api.totals(period).cost, 465.1);
@@ -79,7 +79,7 @@ test('Recovered November snapshot renders the report and matching keyword data',
 
 function matchingDailyCapture() {
   const result = setup();
-  result.context.window.AQUARIUS_REPORT_SNAPSHOTS = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/report-snapshots.json'), 'utf8'));
+  result.context.window.AQUARIUS_REPORT_SNAPSHOTS = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/report-snapshots-before-daily.json'), 'utf8'));
   const saved = result.api.reportPeriod('2026-11').month;
   result.month.campaigns = saved.campaigns;
   // Synthetic reconciliation fixture, never written to production data.

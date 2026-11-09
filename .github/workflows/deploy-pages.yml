@@ -28,7 +28,9 @@ jobs:
           node-version: 20
 
       - name: Verificar reporte
-        run: npm test
+        run: |
+          npm test
+          python3 -m unittest discover -s tests -p 'test*.py'
 
       - name: Build
         env:

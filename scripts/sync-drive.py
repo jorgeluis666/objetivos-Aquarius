@@ -720,11 +720,11 @@ def parse_daily_report(text, name, exclude=frozenset()):
         if status_position is not None and status_position < len(row):
             acumulado["status"] = str(row[status_position] or "").strip() or acumulado["status"]
         table_rows.append([day, index_by_name[campaign],
-                           medidas["cost"], medidas["clicks"], medidas["conversions"]])
+                           medidas["cost"], medidas["clicks"], medidas["conversions"], medidas["impressions"]])
 
     if not table_rows:
         return None, None
-    table = {"columns": ["d", "campaign", "cost", "clicks", "conversions"],
+    table = {"columns": ["d", "campaign", "cost", "clicks", "conversions", "impressions"],
              "campaigns": campaigns, "rows": table_rows}
 
     records = [sumas[campaign] for campaign in campaigns]
@@ -862,7 +862,7 @@ def import_file(path, check):
         if month is None or not month.get("records"):
             store_report(months, month_id, payload["records"], payload["totals"], payload["summary"],
                          payload["sourceFile"])
-        months[month_id]["detail"] = {"table": payload["table"], "sourceFile": payload["sourceFile"]}
+        months[month_id]["detail"] = {"table": payload["table"], "sourceFile": payload["sourceFile"], "period": payload["summary"]["period"]}
         resumen = f"{len(payload['table']['rows'])} filas por dia"
     finish_document(document, months)
     changed = comparable(document) != before
@@ -954,7 +954,7 @@ def main():
                          payload["sourceFile"], item.get("id"))
             print(f"[sync-drive] {month_label(month_id)}: {len(payload['records'])} campanas "
                   "sumadas del informe por dia")
-        months[month_id]["detail"] = {"table": payload["table"], "sourceFile": payload["sourceFile"]}
+        months[month_id]["detail"] = {"table": payload["table"], "sourceFile": payload["sourceFile"], "period": payload["summary"]["period"]}
 
     finish_document(document, months)
     changed = comparable(document) != before

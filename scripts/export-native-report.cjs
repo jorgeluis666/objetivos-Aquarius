@@ -15,6 +15,16 @@ const server=http.createServer((req,res)=>{let p=path.resolve(root,'.'+decodeURI
 let snapshotCommit=null;
 function selectClosedSnapshot(){
  if(!config.periodSource)return;
+ // Prefer the verified daily reconstruction retained by the normal Drive sync.
+ if(config.kind==='aquarius'){
+  const archive=JSON.parse(fs.readFileSync(path.join(root,'data/report-snapshots.json'),'utf8'));
+  const saved=archive.snapshots?.find(s=>s.month?.period?.end===end&&s.month?.detail?.table?.rows?.length);
+  if(saved){
+   const file=path.join(root,config.periodSource),data=JSON.parse(fs.readFileSync(file,'utf8'));
+   data.months=data.months.map(m=>m.id===saved.month.id?saved.month:m);
+   fs.writeFileSync(file,JSON.stringify(data));return;
+  }
+ }
  const matches=text=>{const d=JSON.parse(text);let m;if(config.kind==='tlm')m=d.months?.[Number(end.slice(5,7))-1];else m=d.months?.find(m=>m.id===end.slice(0,7));return config.kind==='tlm'?m?.lastDay===end:config.kind==='royal'?m?.meta?.coverage?.end===end&&m?.google?.coverage?.end===end:m?.period?.end===end;};
  if(matches(fs.readFileSync(path.join(root,config.periodSource),'utf8')))return;
  // Use the latest published snapshot for the requested closing date, never relabel today's totals.
