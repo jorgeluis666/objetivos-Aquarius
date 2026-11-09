@@ -1,0 +1,11 @@
+{
+  "kind": "aquarius",
+  "data": "AquariusGasto",
+  "module": "AquariusReport",
+  "brand": "aquarius",
+  "periodSource": "data/aquarius-lima-retail-2026.json",
+  "snapshotFiles": [
+    "data/aquarius-lima-retail-2026.json",
+    "data/aquarius-palabras-clave-2026.json"
+  ]
+}
