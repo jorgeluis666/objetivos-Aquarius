@@ -1018,6 +1018,45 @@
     return { month, months: [month], year: month.year, closed, compare, label: dayRange(month, month.firstDay, month.lastDay) };
   }
 
+  // El PDF acumula desde el dia 1 hasta el ultimo domingo terminado en Lima.
+  // Nunca asignar a ese corte los totales de un informe que incluye dias posteriores.
+  function reportPeriod(key) {
+    const source = gastoMonthByKey(key);
+    const original = periodOf(source);
+    if (!original || original.closed) return original;
+    const today = limaToday();
+    const yesterday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - 1));
+    const end = new Date(Math.min(Date.UTC(source.year, source.month - 1, source.lastDay), yesterday.getTime()));
+    end.setUTCDate(end.getUTCDate() - end.getUTCDay());
+    const to = end.getUTCFullYear() === source.year && end.getUTCMonth() === source.month - 1 ? end.getUTCDate() : 0;
+    const month = Object.assign({}, source, { firstDay: 1, lastDay: to });
+    const snapshot = (window.AQUARIUS_REPORT_SNAPSHOTS?.snapshots || []).find(entry =>
+      entry.month.id === key && entry.month.period.start === `${key}-01` &&
+      entry.month.period.end === `${key}-${String(to).padStart(2, '0')}`);
+    if (snapshot) {
+      const saved = gastoMonth(normalizeMonths({ months: [snapshot.month] })[0]);
+      const period = periodOf(saved);
+      period.reportCutoff = true;
+      period.capturedAt = snapshot.capturedAt;
+      if (snapshot.keywords) period.reportKeywords = buildKeywordMonths({ months: [snapshot.keywords] }, window.AQUARIUS_DRIVE_CONFIG).get(key);
+      return period;
+    }
+    const period = periodOf(month);
+    period.reportCutoff = true;
+    if (!to) {
+      period.unavailable = 'Todavía no hay un domingo cerrado con datos de este mes.';
+    } else if (source.firstDay !== 1 || to !== source.lastDay) {
+      if (!source.detail || source.detailFirst > 1 || source.detailLast < to) {
+        period.unavailable = `Se necesita el informe del 1 al ${to} o el detalle diario de Google Ads para generar este reporte.`;
+      } else {
+        const sums = campaignKey => Object.assign(Object.fromEntries(SUMS.map(field => [field, null])), detailTramo(source, 1, to, campaignKey));
+        month.totals = sums();
+        month.campaigns = source.campaigns.map(campaign => Object.assign({}, campaign, sums(campaign.key)));
+      }
+    }
+    return period;
+  }
+
   // Anual: acumulado de los meses del ano con informe, sin comparacion (no hay informes del ano anterior).
   function yearPeriod(year) {
     const months = gasto.months.filter(month => month.hasData && month.year === year);
@@ -1142,7 +1181,8 @@
 
   // Meses del periodo con informe de palabras clave.
   function keywordScope(period) {
-    const months = period.months.map(month => gasto.kwMonths.get(month.key)).filter(Boolean);
+    const months = period.months.map(month => period.reportKeywords || gasto.kwMonths.get(month.key)).filter(Boolean)
+      .filter(month => !period.reportCutoff || (month.firstDay === period.month.firstDay && month.lastDay === period.month.lastDay));
     let label = '';
     if (period.annual) label = months.map(month => month.shortName).join(', ');
     else if (months.length) label = months[0].complete ? `${months[0].name} ${months[0].year}` : `${dayRange(months[0], months[0].firstDay, months[0].lastDay)} ${months[0].year}`;
@@ -2006,6 +2046,10 @@
     try {
       wireStatusCard();
       wireEvents();
+      if (!window.AQUARIUS_REPORT_SNAPSHOTS) {
+        const snapshots = await fetch('data/report-snapshots.json', { cache: 'no-store' });
+        if (snapshots.ok) window.AQUARIUS_REPORT_SNAPSHOTS = await snapshots.json();
+      }
       loadKeywords();
       state.data = window.AQUARIUS_RETAIL_DATA;
       if (!state.data) {
@@ -2082,12 +2126,13 @@
   window.AquariusGasto = {
     months: () => gasto.months.filter(month => month.hasData),
     period: key => periodOf(gastoMonthByKey(key)),
+    reportPeriod,
     totals: periodTotals,
     previous: previousTotals,
     campaigns: periodCampaigns,
     previousCampaign,
-    keywords: period => (gasto.kwMonths && gasto.kwMonths.size ? keywordRows(keywordScope(period).months) : null),
-    keywordLabel: period => (gasto.kwMonths && gasto.kwMonths.size ? keywordScope(period).label : ''),
+    keywords: period => (period.reportKeywords || (gasto.kwMonths && gasto.kwMonths.size) ? keywordRows(keywordScope(period).months) : null),
+    keywordLabel: period => (period.reportKeywords || (gasto.kwMonths && gasto.kwMonths.size) ? keywordScope(period).label : ''),
     campaignLabel
   };
 

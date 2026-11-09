@@ -106,9 +106,10 @@
   // ── El mes del reporte ─────────────────────────────────────────────────
   function months() {
     if (!G()) return [];
-    return G().months().slice().reverse().map(month => {
-      const period = G().period(month.key);
+    return G().months().slice().reverse().map(source => {
+      const period = G().reportPeriod(source.key);
       if (!period) return null;
+      const month = period.month;
       const from = month.firstDay;
       const to = month.lastDay;
       const short = month.shortName.toLowerCase();
@@ -119,11 +120,11 @@
         period,
         from,
         to,
-        option: `${month.name} ${month.year}${period.closed ? '' : ` · ${from}–${to} (en curso)`}`,
+        option: `${month.name} ${month.year}${period.closed ? '' : to ? ` · ${from}–${to} (en curso)` : ' · pendiente de cierre semanal'}`,
         labels: {
           range,
           cover: `${month.name} ${month.year} · Periodo ${from} – ${to} ${short}`,
-          source: `Fuente: Google Ads · ${range}`,
+          source: `Fuente: Google Ads · ${range}${period.capturedAt ? ` · Captura: ${new Date(period.capturedAt).toLocaleString('es-PE', { timeZone: 'America/Lima', dateStyle: 'short', timeStyle: 'short' })} (Lima)` : ''}`,
           analysisSource: `Fuente: análisis Lima Retail sobre Google Ads · ${BRAND} · ${month.name.toLowerCase()} ${month.year}`,
           footer: `${BRAND} · Reporte Google Ads · ${month.name} ${month.year}`,
           period: `${from} – ${to} de ${month.name.toLowerCase()} de ${month.year}`,
@@ -1261,6 +1262,12 @@
     if (select) {
       select.innerHTML = available.map(entry => `<option value="${esc(entry.id)}"${entry.id === state.month ? ' selected' : ''}>${esc(entry.option)}</option>`).join('');
     }
+    const print = document.getElementById('week-print');
+    if (print) print.disabled = Boolean(item.period.unavailable);
+    if (item.period.unavailable) {
+      host.innerHTML = `<div class="panel"><div class="empty-state"><strong>Reporte pendiente de datos al cierre semanal</strong><span>${esc(item.period.unavailable)}</span></div></div>`;
+      return;
+    }
     const report = buildReport(item);
     const notes = readNotes()[item.id] || {};
     // Portada, contenido, resumen, distribucion, desempeño, una por campaña, palabras clave, conclusiones y cierre.
@@ -1291,7 +1298,7 @@
   // El nombre del PDF lo pone el navegador con el titulo del documento: se cambia solo mientras imprime.
   function printReport() {
     const item = months().find(entry => entry.id === state.month);
-    if (!item) return;
+    if (!item || item.period.unavailable) return;
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     const title = document.title;
     document.title = `Reporte_Aquarius_${item.labels.file}`;
