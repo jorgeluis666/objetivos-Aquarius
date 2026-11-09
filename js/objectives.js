@@ -1035,6 +1035,22 @@
       entry.month.period.end === `${key}-${String(to).padStart(2, '0')}`);
     if (snapshot) {
       const saved = gastoMonth(normalizeMonths({ months: [snapshot.month] })[0]);
+      // A summary-only capture may precede the automatic daily import. Enrich it
+      // only when the complete daily interval reconciles with the saved capture.
+      if (!saved.detail?.length && source.detail?.length && source.detailFirst <= 1 && source.detailLast >= to) {
+        const matches = (expected, actual) => ['cost', 'clicks', 'conversions'].every(field =>
+          Number.isFinite(expected[field]) && Number.isFinite(actual[field]) &&
+          Math.abs(expected[field] - actual[field]) <= (field === 'cost' ? 0.02 : 0.000001));
+        const campaignKeys = new Set(saved.campaigns.map(campaign => campaign.key));
+        const rows = source.detail.filter(row => row.d >= 1 && row.d <= to);
+        if (rows.every(row => campaignKeys.has(row.campaignKey)) &&
+            matches(saved.totals, detailTramo(source, 1, to)) &&
+            saved.campaigns.every(campaign => matches(campaign, detailTramo(source, 1, to, campaign.key)))) {
+          saved.detail = rows;
+          saved.detailFirst = 1;
+          saved.detailLast = to;
+        }
+      }
       const period = periodOf(saved);
       period.reportCutoff = true;
       period.capturedAt = snapshot.capturedAt;

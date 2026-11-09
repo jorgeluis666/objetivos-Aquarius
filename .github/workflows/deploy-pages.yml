@@ -27,6 +27,9 @@ jobs:
         with:
           node-version: 20
 
+      - name: Verificar reporte
+        run: npm test
+
       - name: Build
         env:
           AQ_PAGE_PASSWORD: ${{ secrets.AQ_PAGE_PASSWORD }}

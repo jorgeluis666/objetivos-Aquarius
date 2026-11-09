@@ -702,9 +702,9 @@
 
   // Evolucion de leads y costo por lead por semana, en dos paneles con su escala (como el template): cada punto
   // con su valor y la ultima semana resaltada.
-  function weekChart(weeks) {
+  function weekChart(weeks, daily = false) {
     if (!weeks.length) {
-      return '<p class="rp-empty rp-chart-empty">El informe por día de este mes todavía no está en el tablero: la evolución semanal aparece cuando se suba a Drive el informe de campaña por día.</p>';
+      return '<p class="rp-empty rp-chart-empty">El detalle diario del período todavía no está disponible en la sincronización automática.</p>';
     }
     const width = 620;
     const height = 300;
@@ -744,13 +744,13 @@
         ${placed.map(item => labelText(item, item.last ? panel.color : '#475569', item.last ? 'rp-label big strong' : 'rp-label big')).join('')}`;
     }).join('');
     return `
-      <svg class="rp-chart rp-chart-week" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Evolución de leads y costo por lead por semana">
+      <svg class="rp-chart rp-chart-week" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Evolución de leads y costo por lead por ${daily ? 'día' : 'semana'}">
         <rect x="${(x(last) - slot * 0.42).toFixed(1)}" y="${panels[0].cap + 8}" width="${(slot * 0.84).toFixed(1)}" height="${panels[1].bottom + 28 - panels[0].cap}" rx="6" fill="#eef4ff"/>
         <line x1="${left}" x2="${right}" y1="${panels[1].bottom + 28}" y2="${panels[1].bottom + 28}" class="rp-grid"/>
         ${body}
         ${weeks.map((week, index) => `
           <text x="${x(index).toFixed(1)}" y="${height - 22}" text-anchor="middle" class="rp-axis big${index === last ? ' strong' : ''}">${week.label}</text>
-          <text x="${x(index).toFixed(1)}" y="${height - 6}" text-anchor="middle" class="rp-tick big">${week.from}–${week.to}</text>`).join('')}
+          <text x="${x(index).toFixed(1)}" y="${height - 6}" text-anchor="middle" class="rp-tick big">${daily ? '' : `${week.from}–${week.to}`}</text>`).join('')}
       </svg>`;
   }
 
@@ -929,6 +929,12 @@
   }
 
   function summaryPage(report, notes, page, total) {
+    // An eight-day cutoff collapses to one weekly bucket. Show actual days so
+    // the line still communicates evolution instead of a single isolated dot.
+    const daily = report.weeks.length < 2;
+    const evolution = daily ? dailySeries(report.item).map(day => ({ ...day,
+      label: String(day.d), cpl: day.conversions > 0 ? day.cost / day.conversions : null,
+    })) : report.weeks;
     const { current, previous } = report;
     const prev = key => (previous ? previous[key] : null);
     const text = suggestSummary(report);
@@ -949,10 +955,10 @@
           <div class="rp-split-2">
             <div class="rp-card rp-chart-card">
               <div class="rp-card-row">
-                <div><div class="rp-card-title">Evolución de leads y costo por lead</div><div class="rp-card-sub">Por semana</div></div>
+                <div><div class="rp-card-title">Evolución de leads y costo por lead</div><div class="rp-card-sub">Por ${daily ? 'día' : 'semana'}</div></div>
                 ${legends([[BLUE, 'Leads'], [RED, 'Costo/lead']])}
               </div>
-              ${weekChart(report.weeks)}
+              ${weekChart(evolution, daily)}
             </div>
             <div class="rp-stack">
               <div class="rp-projection">
