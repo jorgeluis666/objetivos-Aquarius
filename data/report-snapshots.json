@@ -785,7 +785,7 @@
             "conversions": 13,
             "costPerConversion": 7.297404692307692,
             "status": "Habilitada",
-            "dailyBudget": 32.27
+            "dailyBudget": 34.89
           },
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
@@ -798,7 +798,7 @@
             "conversions": 10,
             "costPerConversion": 8.4737103,
             "status": "Habilitada",
-            "dailyBudget": 37.04
+            "dailyBudget": 40.9
           },
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
@@ -811,7 +811,7 @@
             "conversions": 4,
             "costPerConversion": 21.28186,
             "status": "Habilitada",
-            "dailyBudget": 12.59
+            "dailyBudget": 14.23
           },
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
@@ -824,7 +824,7 @@
             "conversions": 8,
             "costPerConversion": 9.56263375,
             "status": "Habilitada",
-            "dailyBudget": 10.17
+            "dailyBudget": 10.07
           },
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
@@ -837,7 +837,7 @@
             "conversions": 0,
             "costPerConversion": null,
             "status": "Habilitada",
-            "dailyBudget": 13.46
+            "dailyBudget": 13.24
           },
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
@@ -850,7 +850,7 @@
             "conversions": 0,
             "costPerConversion": null,
             "status": "Habilitada",
-            "dailyBudget": 12.97
+            "dailyBudget": 12.82
           },
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
@@ -863,7 +863,7 @@
             "conversions": 1,
             "costPerConversion": 16.896354,
             "status": "Habilitada",
-            "dailyBudget": 27.85
+            "dailyBudget": 34.07
           },
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
@@ -876,7 +876,7 @@
             "conversions": 0,
             "costPerConversion": null,
             "status": "Habilitada",
-            "dailyBudget": 3.45
+            "dailyBudget": 3.4
           }
         ],
         "sourceFile": "Aquarius diario - Noviembre 2026",
@@ -893,7 +893,7 @@
           "start": "2026-11-01",
           "end": "2026-11-08"
         },
-        "dailyBudget": 149.8,
+        "dailyBudget": 163.62,
         "excluded": [
           {
             "campaign": "Website traffic-Search-33",
@@ -21080,7 +21080,7 @@
           }
         ]
       },
-      "capturedAt": "2026-11-10T11:29:28Z"
+      "capturedAt": "2026-11-10T23:26:07Z"
     }
   ]
 }
