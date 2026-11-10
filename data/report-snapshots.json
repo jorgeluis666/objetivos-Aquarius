@@ -777,26 +777,26 @@
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
             "type": "Búsqueda",
-            "cost": 95.773231,
+            "cost": 94.866261,
             "impressions": 1705,
-            "clicks": 159,
-            "cpc": 0.6023473647798742,
-            "ctr": 0.09325513196480939,
+            "clicks": 157,
+            "cpc": 0.6042437006369427,
+            "ctr": 0.09208211143695015,
             "conversions": 13,
-            "costPerConversion": 7.367171615384615,
+            "costPerConversion": 7.297404692307692,
             "status": "Habilitada",
             "dailyBudget": 32.27
           },
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
             "type": "Búsqueda",
-            "cost": 84.77792099999999,
+            "cost": 84.737103,
             "impressions": 2263,
-            "clicks": 161,
-            "cpc": 0.5265709378881988,
-            "ctr": 0.07114449845338047,
+            "clicks": 160,
+            "cpc": 0.52960689375,
+            "ctr": 0.07070260715863898,
             "conversions": 10,
-            "costPerConversion": 8.477792099999998,
+            "costPerConversion": 8.4737103,
             "status": "Habilitada",
             "dailyBudget": 37.04
           },
@@ -882,12 +882,12 @@
         "sourceFile": "Aquarius diario - Noviembre 2026",
         "driveFileId": "1kvfVAUFZok8QZIoJd4gKWj-F8OH7VVSHbmHWOZTTTls",
         "totals": {
-          "cost": 477.1,
-          "clicks": 605,
+          "cost": 476.15,
+          "clicks": 602,
           "conversions": 36,
           "impressions": 9488,
-          "ctr": 0.06376475548060709,
-          "costPerConversion": 13.252777777777778
+          "ctr": 0.06344856661045531,
+          "costPerConversion": 13.226388888888888
         },
         "period": {
           "start": "2026-11-01",
@@ -983,8 +983,8 @@
               [
                 8,
                 0,
-                18.072861,
-                43,
+                17.165891,
+                41,
                 2,
                 509
               ],
@@ -1047,8 +1047,8 @@
               [
                 8,
                 1,
-                18.73519,
-                43,
+                18.694372,
+                42,
                 3,
                 753
               ],
@@ -21080,7 +21080,7 @@
           }
         ]
       },
-      "capturedAt": "2026-11-09T23:19:08Z"
+      "capturedAt": "2026-11-10T11:29:28Z"
     }
   ]
 }

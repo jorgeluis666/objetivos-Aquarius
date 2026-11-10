@@ -22288,11 +22288,13 @@
           "matchType": "Concordancia de frase",
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
-          "status": "Apto",
+          "status": "UNKNOWN",
+          "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
-          "conversions": 0
+          "conversions": 0,
+          "qualityScore": 1
         },
         {
           "keyword": "Reseñas",
@@ -22334,11 +22336,13 @@
           "matchType": "Concordancia amplia",
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
-          "status": "Apto",
+          "status": "UNKNOWN",
+          "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
-          "conversions": 0
+          "conversions": 0,
+          "qualityScore": 1
         },
         {
           "keyword": "\"inventario de materias primas\"",
@@ -24269,7 +24273,7 @@
       "driveFileId": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
       "period": {
         "start": "2026-11-01",
-        "end": "2026-11-09"
+        "end": "2026-11-10"
       },
       "keywords": [
         {
@@ -37577,7 +37581,7 @@
           "impressions": 27,
           "cost": 2.42,
           "clicks": 1,
-          "conversions": 0,
+          "conversions": 1,
           "qualityScore": 3
         },
         {
@@ -38206,9 +38210,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 22,
-          "cost": 0.46,
-          "clicks": 1,
+          "impressions": 23,
+          "cost": 1.1,
+          "clicks": 2,
           "conversions": 0
         },
         {
@@ -38467,7 +38471,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 97,
+          "impressions": 100,
           "cost": 24.86,
           "clicks": 14,
           "conversions": 1
@@ -38568,7 +38572,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 49,
+          "impressions": 51,
           "cost": 9.63,
           "clicks": 5,
           "conversions": 4
@@ -39842,9 +39846,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "status": "Apto",
-          "impressions": 27,
-          "cost": 3.88,
-          "clicks": 3,
+          "impressions": 28,
+          "cost": 5.57,
+          "clicks": 4,
           "conversions": 0,
           "qualityScore": 5
         },
@@ -39912,7 +39916,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "status": "Apto",
-          "impressions": 25,
+          "impressions": 27,
           "cost": 6.29,
           "clicks": 2,
           "conversions": 0
@@ -41923,11 +41927,13 @@
           "matchType": "Concordancia de frase",
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
-          "status": "Apto",
+          "status": "UNKNOWN",
+          "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
           "impressions": 1,
           "cost": 0,
           "clicks": 0,
-          "conversions": 0
+          "conversions": 0,
+          "qualityScore": 1
         },
         {
           "keyword": "Reseñas",
@@ -41969,11 +41975,13 @@
           "matchType": "Concordancia amplia",
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
-          "status": "Apto",
+          "status": "UNKNOWN",
+          "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
           "impressions": 1,
           "cost": 0,
           "clicks": 0,
-          "conversions": 0
+          "conversions": 0,
+          "qualityScore": 1
         },
         {
           "keyword": "\"inventario de materias primas\"",
@@ -42530,7 +42538,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "status": "Apto",
-          "impressions": 44,
+          "impressions": 46,
           "cost": 5.12,
           "clicks": 3,
           "conversions": 1,
@@ -43901,7 +43909,7 @@
   "drive": {
     "folderId": "1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO",
     "discovery": "apps script",
-    "lastSync": "2026-11-09T23:19:16Z",
+    "lastSync": "2026-11-10T11:29:41Z",
     "files": [
       {
         "id": "17oCEc4yhZfWSY8y_km3IPYb0hmH2VKHBXOi60LvHd0w",
@@ -43946,12 +43954,12 @@
       {
         "id": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
         "name": "Aquarius KW noviembre 2026",
-        "modifiedTime": "2026-11-09T23:03:28.156Z"
+        "modifiedTime": "2026-11-10T11:03:26.340Z"
       },
       {
         "id": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
         "name": "Aquarius KW octubre 2026",
-        "modifiedTime": "2026-11-09T23:03:16.344Z"
+        "modifiedTime": "2026-11-10T11:03:14.734Z"
       },
       {
         "id": "1tJ7B5yQydbvGxOczu0XxnAoot8ew7_vZjFOJOU3cabw",
