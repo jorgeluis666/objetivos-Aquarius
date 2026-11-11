@@ -8602,3 +8602,217 @@ button.topbar-pill {
     display: none !important;
   }
 }
+/* ===== 01 - Gasto Publicitario | el cuadro de campana con sus palabras clave y su pie ===== */
+/* Los indicadores del periodo y los de cada campana van en tarjetas y en una sola fila. */
+.kpi-strip.gasto-group-kpis {
+  margin: 0 0 18px;
+}
+
+@media (min-width: 1320px) {
+  .kpi-strip.gasto-kpis {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .kpi-strip.gasto-group-kpis {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .kpi-strip.gasto-kpis .kpi-pill,
+  .kpi-strip.gasto-group-kpis .kpi-pill {
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+
+  .kpi-strip.gasto-kpis .kpi-pill > span,
+  .kpi-strip.gasto-group-kpis .kpi-pill > span {
+    font-size: 9px;
+    letter-spacing: .02em;
+  }
+
+  .kpi-strip.gasto-kpis .kpi-pill > strong,
+  .kpi-strip.gasto-group-kpis .kpi-pill > strong {
+    font-size: clamp(12px, .9vw, 22px);
+    white-space: nowrap;
+  }
+
+  .kpi-strip.gasto-kpis .kpi-pill small,
+  .kpi-strip.gasto-group-kpis .kpi-pill small {
+    font-size: 9px;
+  }
+}
+
+@media (min-width: 1181px) and (max-width: 1319px) {
+  .kpi-strip.gasto-kpis,
+  .kpi-strip.gasto-group-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1180px) {
+  .kpi-strip.gasto-group-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .kpi-strip.gasto-group-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.gasto-group-kpis .kpi-pill .no-data {
+  font-weight: 700;
+}
+
+/* A la izquierda las palabras clave de la campana; a la derecha el top en pie. */
+.gasto-group-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(290px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.gasto-group-main,
+.gasto-group-side {
+  min-width: 0;
+}
+
+.gasto-group-side {
+  display: grid;
+  gap: 14px;
+}
+
+.gasto-group-cols .gasto-kw-block-head:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.gasto-group-card {
+  padding: 14px 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.gasto-group-empty {
+  padding: 10px 0 2px;
+}
+
+/* La tabla de la campana entra sin desplazamiento: las columnas sin dato van en guion. */
+.gasto-group-main .gasto-kw-table {
+  min-width: 520px;
+}
+
+.gasto-group-main .gasto-kw-table td,
+.gasto-group-main .gasto-kw-table th {
+  padding-right: 9px;
+  padding-left: 9px;
+}
+
+.gasto-group-main .gasto-kw-name {
+  min-width: 150px;
+}
+
+/* El texto que describe cada cuadro se lee con el mismo cuerpo que los datos que acompana */
+.gasto-group-cols .gasto-kw-block-head .panel-sub,
+.gasto-group-card .panel-sub {
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* Titulo del pie a la izquierda y su filtro de indicador a la derecha */
+.gasto-pie-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 14px;
+}
+
+.gasto-pie-head > div {
+  min-width: 0;
+}
+
+.h-240 {
+  height: 240px;
+}
+
+/* Leyenda del pie: color, palabra, el indicador y su peso */
+.gasto-pie-legend {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.gasto-pie-item {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+}
+
+.gasto-pie-item i {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+
+.gasto-pie-item span {
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gasto-pie-item b {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.gasto-pie-item em {
+  min-width: 52px;
+  color: #7b8da6;
+  font-style: normal;
+  text-align: right;
+}
+
+@media (max-width: 1100px) {
+  .gasto-group-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* La tabla de la campana se ajusta a su columna: anchos fijos y las palabras largas parten de linea. */
+.gasto-group-main .gasto-kw-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+/* Entra entera, asi que nada de barra lateral por el pixel que redondea el navegador. */
+.gasto-group-main .table-scroll {
+  overflow-x: hidden;
+}
+
+.gasto-group-main .gasto-kw-table td,
+.gasto-group-main .gasto-kw-table th {
+  padding-right: 7px;
+  padding-left: 7px;
+}
+
+.gasto-group-main .gasto-kw-name {
+  min-width: 0;
+}
+
+.gasto-group-main .gasto-kw-name span {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.gasto-group-main .gasto-kw-table .gasto-share {
+  width: 34px;
+}
+/* Los rotulos largos de la cabecera parten de linea en vez de ensanchar la tabla. */
+.gasto-group-main .gasto-kw-table th {
+  white-space: normal;
+}

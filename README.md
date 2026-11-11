@@ -65,18 +65,18 @@ Dashboard de gasto publicitario para Aquarius.
     y campana en `months[].detail` (sin impresiones; costo por conversion de cada dia, hueco si no hubo
     conversiones). No hay acumulado del mes: siempre sube y exagera el crecimiento (una vista guardada en
     acumulado vuelve a Por dia).
-  - **Palabras clave de la campana** del mes (en SKAG el grupo de anuncios es la campana): conversiones,
-    conversiones del mes anterior y variacion ("Nuevo" si no estaba), costo por conversion, inversion y su %
-    de la campana, impresiones, clics y CPC. Una palabra clave es su texto mas su concordancia, como en el
-    modulo Palabras Clave. Solo se compara con el mes anterior si los dos informes son de mes completo o
-    cubren los mismos dias; si no, las columnas de comparacion se ocultan.
+  - Sus indicadores van en las mismas tarjetas blancas del periodo y, desde 1320px, en una sola fila.
+  - Debajo del grafico, dos columnas. A la izquierda, **Palabras clave de la campana** del mes (en SKAG el
+    grupo de anuncios es la campana): impresiones, clics, CTR, conversiones, su % de la campana, inversion,
+    costo por conversion y nivel de calidad. Una palabra clave es su texto mas su concordancia, como en el
+    modulo Palabras Clave. A la derecha, el **Top 5 palabras clave** en pie, con el resto en `Otras N
+    palabras` para que los porcentajes cuadren con la tabla, y su **filtro de indicador** (conversiones,
+    inversion, clics o impresiones, solo los que el informe trae por palabra): lo elegido vale para todas
+    las campanas y se recuerda en `aquarius_gasto_pie_metric`.
   - Se minimiza con la flecha. Indicadores, vista, `Un solo cuadro` y minimizado se recuerdan por campana
     (`aquarius_gasto_campaign_charts`).
-- **Ranking de palabras clave del periodo**: por conversiones dentro de cada campana, con la lider marcada
-  con una estrella, conversiones del mes anterior y variacion. Cabecera fija, Campana y Palabra clave
-  ancladas, filtro por campana, Compacto (`aquarius_gasto_kw_compact`) y Pantalla completa (las pestanas
-  de mes entran al panel; `Esc` sale). "Ver analisis completo" abre el modulo Palabras Clave, que sigue
-  siendo el analisis a fondo.
+- El panel suelto de **Ranking de palabras clave del periodo** se retiro: repetia lo que ya dice cada
+  campana con sus propias palabras clave. El analisis a fondo sigue en el modulo Palabras Clave.
 - Las palabras clave respetan `keywords.excludeCampaigns` de `data/drive-config.json`.
 
 ## Proyecciones
