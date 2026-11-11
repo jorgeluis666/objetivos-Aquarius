@@ -8,3 +8,6 @@ credentials/
 .claude/
 __pycache__/
 *.pyc
+
+# Private generated PDF attachments
+native-report-output/

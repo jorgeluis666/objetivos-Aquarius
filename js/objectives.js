@@ -274,9 +274,9 @@
   function nextSyncLabel() {
     const now = new Date();
     const lima = new Date(now.getTime() - 5 * 3600000);
-    const candidates = SYNC_HOURS_LIMA.map(hour => new Date(Date.UTC(lima.getUTCFullYear(), lima.getUTCMonth(), lima.getUTCDate(), hour + 5)));
+    const candidates = SYNC_HOURS_LIMA.map(hour => new Date(Date.UTC(lima.getUTCFullYear(), lima.getUTCMonth(), lima.getUTCDate(), hour + 5, 30)));
     const next = candidates.find(date => date > now) || new Date(candidates[0].getTime() + 86400000);
-    return `${stampLabel(next, false)} · 06:00, 13:00 y 18:00 (Lima). Publicación después del barrido de Drive, aprox. 30 min más tarde`;
+    return `${stampLabel(next, false)} · Barrido de Drive: 06:30, 13:30 y 18:30 Lima (aprox.). Nexus: 06:00, 13:00 y 18:00. Publicación al terminar`;
   }
 
   // Ultima ejecucion del barrido. Se consulta al cargar y al abrir el detalle (como mucho cada 10 minutos).
@@ -764,7 +764,17 @@
   const CONFIG_URL = 'data/drive-config.json';
   // Indicadores, vista y minimizado del grafico de cada campana, por campana.
   const CAMP_CHARTS_KEY = 'aquarius_gasto_campaign_charts';
-  const KW_COMPACT_KEY = 'aquarius_gasto_kw_compact';
+  // El pie del top de palabras clave reparte el indicador que elija el filtro de cada cuadro.
+  const TOP_KEYWORDS = 5;
+  const PIE_COLORS = ['#2563eb', '#60a5fa', '#1e40af', '#93c5fd', '#3b82f6'];
+  const REST_COLOR = '#cbd5e1';
+  const PIE_METRICS = [
+    { key: 'conversions', label: 'Conversiones', of: 'las conversiones' },
+    { key: 'cost', label: 'Inversión', of: 'la inversión' },
+    { key: 'clicks', label: 'Clics', of: 'los clics' },
+    { key: 'impressions', label: 'Impresiones', of: 'las impresiones' }
+  ];
+  const PIE_METRIC_KEY = 'aquarius_gasto_pie_metric';
   const SHORT_NAMES = MONTH_NAMES.map(name => name.slice(0, 3));
   const SUMS = ['cost', 'impressions', 'clicks', 'conversions'];
   const SUM_NAMES = { cost: 'inversión', impressions: 'impresiones', clicks: 'clics', conversions: 'conversiones' };
@@ -826,10 +836,7 @@
     kwMonths: new Map(),
     config: null,
     kwSync: null,
-    kwFilter: 'all',
-    compact: readSetting(KW_COMPACT_KEY) === 'true',
-    fullscreen: false,
-    tabsHome: null
+    pieMetric: readSetting(PIE_METRIC_KEY) || 'conversions'
   };
 
   function readSetting(key) {
@@ -1018,6 +1025,61 @@
     return { month, months: [month], year: month.year, closed, compare, label: dayRange(month, month.firstDay, month.lastDay) };
   }
 
+  // El PDF acumula desde el dia 1 hasta el ultimo domingo terminado en Lima.
+  // Nunca asignar a ese corte los totales de un informe que incluye dias posteriores.
+  function reportPeriod(key) {
+    const source = gastoMonthByKey(key);
+    const original = periodOf(source);
+    if (!original || original.closed) return original;
+    const today = limaToday();
+    const yesterday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - 1));
+    const end = new Date(Math.min(Date.UTC(source.year, source.month - 1, source.lastDay), yesterday.getTime()));
+    end.setUTCDate(end.getUTCDate() - end.getUTCDay());
+    const to = end.getUTCFullYear() === source.year && end.getUTCMonth() === source.month - 1 ? end.getUTCDate() : 0;
+    const month = Object.assign({}, source, { firstDay: 1, lastDay: to });
+    const snapshot = (window.AQUARIUS_REPORT_SNAPSHOTS?.snapshots || []).find(entry =>
+      entry.month.id === key && entry.month.period.start === `${key}-01` &&
+      entry.month.period.end === `${key}-${String(to).padStart(2, '0')}`);
+    if (snapshot) {
+      const saved = gastoMonth(normalizeMonths({ months: [snapshot.month] })[0]);
+      // A summary-only capture may precede the automatic daily import. Enrich it
+      // only when the complete daily interval reconciles with the saved capture.
+      if (!saved.detail?.length && source.detail?.length && source.detailFirst <= 1 && source.detailLast >= to) {
+        const matches = (expected, actual) => ['cost', 'clicks', 'conversions'].every(field =>
+          Number.isFinite(expected[field]) && Number.isFinite(actual[field]) &&
+          Math.abs(expected[field] - actual[field]) <= (field === 'cost' ? 0.02 : 0.000001));
+        const campaignKeys = new Set(saved.campaigns.map(campaign => campaign.key));
+        const rows = source.detail.filter(row => row.d >= 1 && row.d <= to);
+        if (rows.every(row => campaignKeys.has(row.campaignKey)) &&
+            matches(saved.totals, detailTramo(source, 1, to)) &&
+            saved.campaigns.every(campaign => matches(campaign, detailTramo(source, 1, to, campaign.key)))) {
+          saved.detail = rows;
+          saved.detailFirst = 1;
+          saved.detailLast = to;
+        }
+      }
+      const period = periodOf(saved);
+      period.reportCutoff = true;
+      period.capturedAt = snapshot.capturedAt;
+      if (snapshot.keywords) period.reportKeywords = buildKeywordMonths({ months: [snapshot.keywords] }, window.AQUARIUS_DRIVE_CONFIG).get(key);
+      return period;
+    }
+    const period = periodOf(month);
+    period.reportCutoff = true;
+    if (!to) {
+      period.unavailable = 'Todavía no hay un domingo cerrado con datos de este mes.';
+    } else if (source.firstDay !== 1 || to !== source.lastDay) {
+      if (!source.detail || source.detailFirst > 1 || source.detailLast < to) {
+        period.unavailable = `Se necesita el informe del 1 al ${to} o el detalle diario de Google Ads para generar este reporte.`;
+      } else {
+        const sums = campaignKey => Object.assign(Object.fromEntries(SUMS.map(field => [field, null])), detailTramo(source, 1, to, campaignKey));
+        month.totals = sums();
+        month.campaigns = source.campaigns.map(campaign => Object.assign({}, campaign, sums(campaign.key)));
+      }
+    }
+    return period;
+  }
+
   // Anual: acumulado de los meses del ano con informe, sin comparacion (no hay informes del ano anterior).
   function yearPeriod(year) {
     const months = gasto.months.filter(month => month.hasData && month.year === year);
@@ -1142,7 +1204,8 @@
 
   // Meses del periodo con informe de palabras clave.
   function keywordScope(period) {
-    const months = period.months.map(month => gasto.kwMonths.get(month.key)).filter(Boolean);
+    const months = period.months.map(month => period.reportKeywords || gasto.kwMonths.get(month.key)).filter(Boolean)
+      .filter(month => !period.reportCutoff || (month.firstDay === period.month.firstDay && month.lastDay === period.month.lastDay));
     let label = '';
     if (period.annual) label = months.map(month => month.shortName).join(', ');
     else if (months.length) label = months[0].complete ? `${months[0].name} ${months[0].year}` : `${dayRange(months[0], months[0].firstDay, months[0].lastDay)} ${months[0].year}`;
@@ -1346,56 +1409,142 @@
   const campaignBlock = key => [...document.querySelectorAll('#gasto-blocks .gasto-camp-block')].find(node => node.dataset.campaign === key) || null;
   const hasCampaignDaily = (period, key) => !period.annual && Boolean(period.month.detail && period.month.detail.some(row => row.campaignKey === key && isActive(row)));
 
-  // Palabras clave de la campana en el periodo, con sus conversiones contra el mes anterior. En una campana
-  // SKAG el grupo de anuncios es la campana: el detalle util es la palabra clave.
+  // Carpeta de Drive de la que salen los informes de palabras clave (la nombra el detalle de sincronizacion).
+  function kwFolderName() {
+    const config = window.AQUARIUS_DRIVE_CONFIG || gasto.config || {};
+    return (config.keywords && config.keywords.folderName) || 'Google Ads Aquarius Keywords';
+  }
+
+  // Indicadores que la campana puede repartir en el pie: solo los que el informe del mes trae por palabra.
+  const metricFormat = key => (key === 'cost' ? fmtMoney : key === 'conversions' ? fmtDecimal : fmtCount);
+  const pieMetrics = rows => PIE_METRICS
+    .filter(metric => rows.some(row => Number(row[metric.key]) > 0))
+    .map(metric => Object.assign({}, metric, { fmt: metricFormat(metric.key) }));
+  const pieMetric = rows => {
+    const list = pieMetrics(rows);
+    return list.find(metric => metric.key === gasto.pieMetric) || list[0] || Object.assign({}, PIE_METRICS[0], { fmt: fmtDecimal });
+  };
+  // Las palabras clave con actividad de la campana en el periodo, de mas a menos inversion.
+  const campaignKeywords = (period, campaign) => keywordRows(keywordScope(period).months, campaign.key)
+    .filter(isActive)
+    .sort((a, b) => b.cost - a.cost || b.conversions - a.conversions || b.clicks - a.clicks);
+
+  // Palabras clave de la campana en el periodo. En una campana SKAG el grupo de anuncios es la campana,
+  // asi que el detalle util es la palabra clave: la tabla a la izquierda y su reparto en el pie, a la derecha.
   function campaignKeywordsHtml(period, campaign) {
-    const head = '<div class="gasto-kw-block-head"><div class="panel-title">Palabras clave de la campaña</div>';
+    const head = sub => `<div class="gasto-kw-block-head"><div class="panel-title">Palabras clave de la campaña</div><div class="panel-sub">${sub}</div></div>`;
     const folder = escapeHtml(kwFolderName());
-    if (gasto.kwStatus === 'loading') return `${head}<div class="panel-sub">Cargando palabras clave...</div></div>`;
-    if (gasto.kwStatus === 'error') return `${head}<div class="panel-sub">No se pudo leer el informe de palabras clave.</div></div>`;
+    if (gasto.kwStatus === 'loading') return head('Cargando palabras clave...');
+    if (gasto.kwStatus === 'error') return head('No se pudo leer el informe de palabras clave.');
     const scope = keywordScope(period);
     if (!scope.months.length) {
       const what = period.annual ? 'Ningún mes del periodo tiene' : `${escapeHtml(period.month.label)} no tiene`;
-      return `${head}<div class="panel-sub">${what} informe de palabras clave. Súbelo a la carpeta ${folder} de Drive.</div></div>`;
+      return head(`${what} informe de palabras clave. Súbelo a la carpeta ${folder} de Drive.`);
     }
     const all = keywordRows(scope.months, campaign.key);
-    const rows = all.filter(isActive).sort((a, b) => b.cost - a.cost || b.conversions - a.conversions || b.clicks - a.clicks);
+    const rows = campaignKeywords(period, campaign);
     if (!rows.length) {
-      return `${head}<div class="panel-sub">El informe de palabras clave de ${escapeHtml(scope.label)} no trae ${all.length ? 'actividad' : 'filas'} de esta campaña.</div></div>`;
+      return head(`El informe de palabras clave de ${escapeHtml(scope.label)} no trae ${all.length ? 'actividad' : 'filas'} de esta campaña.`);
     }
-    const { compare, reason } = keywordCompare(period);
-    const previous = new Map(compare ? keywordRows([compare.month], campaign.key).map(row => [row.key, row]) : []);
+    const metric = pieMetric(rows);
+    const metrics = pieMetrics(rows);
     const kwCost = rows.reduce((total, row) => total + row.cost, 0);
     const hidden = all.length - rows.length;
-    const cols = [['Palabra clave'], ['Conversiones', true]]
-      .concat(compare ? [[`Conversiones ${compare.label}`, true], ['Variación', true]] : [])
-      .concat([['Costo por conversión', true], ['Inversión', true], ['% de la campaña'], ['Impresiones', true], ['Clics', true], ['CPC', true]]);
-    const body = rows.map(row => {
-      const before = previous.get(row.key);
-      return `<tr>
-          <td class="gasto-kw-name"><span>${escapeHtml(row.keyword)}</span><small>${escapeHtml(row.matchType || 'Sin concordancia')}</small></td>
-          <td class="num gasto-strong">${fmtDecimal(row.conversions)}</td>
-          ${compare ? `<td class="num">${before ? fmtDecimal(before.conversions) : '<span class="no-data">—</span>'}</td><td class="num">${variationCell(row.conversions, before ? before.conversions : null)}</td>` : ''}
-          <td class="num">${fmtMoney(row.costPerConversion)}</td>
-          <td class="num">${fmtMoney(row.cost)}</td>
-          ${shareCell(kwCost > 0 ? row.cost / kwCost : null)}
-          <td class="num">${fmtCount(row.impressions)}</td>
-          <td class="num">${fmtCount(row.clicks)}</td>
-          <td class="num">${fmtMoney(row.cpc)}</td>
-        </tr>`;
-    }).join('');
     const notes = [`${rows.length} ${rows.length === 1 ? 'palabra clave' : 'palabras clave'} con actividad en ${escapeHtml(scope.label)}: ${fmtMoney(kwCost)} de ${fmtMoney(campaign.cost)} de la campaña.`];
-    if (compare) notes.push(`Conversiones contra ${escapeHtml(compare.label)}.`);
-    else if (reason) notes.push(escapeHtml(reason));
     if (hidden) notes.push(`${hidden} sin impresiones no se muestran.`);
     if (period.annual && scope.months.length < period.months.length) notes.push('Solo los meses del periodo con informe de palabras clave.');
-    return `${head}<div class="panel-sub">${notes.join(' ')}</div></div>
-      <div class="table-scroll">
-        <table class="data-table gasto-kw-table">
-          <thead><tr>${cols.map(([label, numeric]) => `<th${numeric ? ' class="num"' : ''}>${escapeHtml(label)}</th>`).join('')}</tr></thead>
-          <tbody>${body}</tbody>
-        </table>
+    const body = rows.map(row => `
+        <tr>
+          <td class="gasto-kw-name"><span>${escapeHtml(row.keyword)}</span><small>${escapeHtml(row.matchType || 'Sin concordancia')}</small></td>
+          <td class="num">${fmtCount(row.impressions)}</td>
+          <td class="num">${fmtCount(row.clicks)}</td>
+          <td class="num">${fmtPercent(row.ctr)}</td>
+          <td class="num gasto-strong">${fmtDecimal(row.conversions)}</td>
+          ${shareCell(kwCost > 0 ? row.cost / kwCost : null)}
+          <td class="num">${fmtMoney(row.cost)}</td>
+          <td class="num">${fmtMoney(row.costPerConversion)}</td>
+          <td class="num">${isNum(row.qualityScore) ? `${Math.round(row.qualityScore)}/10` : '<span class="no-data">—</span>'}</td>
+        </tr>`).join('');
+    const top = rows.filter(row => Number(row[metric.key]) > 0).slice(0, TOP_KEYWORDS);
+    const id = slug(campaign.key);
+    return `
+      <div class="gasto-group-cols">
+        <div class="gasto-group-main">
+          ${head(notes.join(' '))}
+          <div class="table-scroll">
+            <table class="data-table gasto-kw-table">
+              <colgroup><col style="width:21%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:9%"><col style="width:15%"><col style="width:11%"><col style="width:12%"><col style="width:9%"></colgroup>
+              <thead><tr><th>Palabra clave</th><th class="num">Impr.</th><th class="num">Clics</th><th class="num">CTR</th><th class="num">Conv.</th><th>% de la campaña</th><th class="num">Inversión</th><th class="num">Costo por conv.</th><th class="num">Calidad</th></tr></thead>
+              <tbody>${body}</tbody>
+            </table>
+          </div>
+        </div>
+        <div class="gasto-group-side">
+          <div class="gasto-group-card">
+            <div class="gasto-kw-block-head gasto-pie-head">
+              <div>
+                <div class="panel-title">Top ${top.length || TOP_KEYWORDS} palabras clave</div>
+                <div class="panel-sub">Reparto de ${escapeHtml(metric.of)} de la campaña.</div>
+              </div>
+              ${metrics.length > 1 ? `<label class="gasto-tool-select"><span class="sr-only">Indicador del gráfico</span><select class="gasto-pie-metric">${metrics.map(item => `<option value="${escapeHtml(item.key)}"${item.key === metric.key ? ' selected' : ''}>${escapeHtml(item.label)}</option>`).join('')}</select></label>` : ''}
+            </div>
+            ${top.length
+    ? `<div class="chart-wrap h-240"><canvas id="chart-kwpie-${id}" role="img" aria-label="Top de palabras clave de ${escapeHtml(campaign.label)}"></canvas></div>
+               <div class="gasto-pie-legend" data-pie-legend="${escapeHtml(campaign.key)}"></div>`
+    : `<div class="panel-sub gasto-group-empty">Ninguna palabra clave de la campaña registró ${escapeHtml(metric.of)} en el periodo.</div>`}
+          </div>
+        </div>
       </div>`;
+  }
+
+  // Pie del top de palabras clave de la campana, del indicador que elija el filtro, con su leyenda al lado.
+  function drawCampaignPie(period, campaign) {
+    const id = `chart-kwpie-${slug(campaign.key)}`;
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const all = campaignKeywords(period, campaign);
+    const metric = pieMetric(all);
+    const rows = all.filter(row => Number(row[metric.key]) > 0).sort((a, b) => Number(b[metric.key]) - Number(a[metric.key]));
+    if (!rows.length) return;
+    const top = rows.slice(0, TOP_KEYWORDS);
+    const total = rows.reduce((sum, row) => sum + Number(row[metric.key]), 0);
+    // El resto entra como una porcion gris para que el pie sea la campana entera y los % cuadren con la tabla.
+    const rest = rows.slice(TOP_KEYWORDS);
+    const restSum = rest.reduce((sum, row) => sum + Number(row[metric.key]), 0);
+    const slices = top.map((row, index) => ({ label: row.keyword, value: Number(row[metric.key]), color: PIE_COLORS[index % PIE_COLORS.length] }))
+      .concat(rest.length ? [{ label: `Otras ${rest.length} ${rest.length === 1 ? 'palabra' : 'palabras'}`, value: restSum, color: REST_COLOR }] : []);
+    const legend = document.querySelector(`[data-pie-legend="${CSS.escape(campaign.key)}"]`);
+    if (legend) {
+      legend.innerHTML = slices.map(slice => `
+        <div class="gasto-pie-item">
+          <i style="background:${slice.color}"></i>
+          <span title="${escapeHtml(slice.label)}">${escapeHtml(slice.label)}</span>
+          <b>${metric.fmt(slice.value)}</b>
+          <em>${total > 0 ? fmtPercent(slice.value / total) : '—'}</em>
+        </div>`).join('');
+    }
+    if (typeof Chart === 'undefined') {
+      canvas.parentElement.innerHTML = '<div class="panel-sub gasto-group-empty">Gráfico no disponible sin conexión; el reparto va en la lista.</div>';
+      return;
+    }
+    destroyCampaignChart(id);
+    gasto.charts.set(id, new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        labels: slices.map(slice => slice.label),
+        datasets: [{ data: slices.map(slice => slice.value), backgroundColor: slices.map(slice => slice.color), borderColor: '#fff', borderWidth: 2 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        cutout: '58%',
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: context => ` ${context.label}: ${metric.fmt(context.raw)} (${total > 0 ? fmtPercent(context.raw / total) : '—'})` } }
+        }
+      }
+    }));
   }
 
   function campaignHtml(period, campaign, before) {
@@ -1411,8 +1560,11 @@
     } else if (period.compare) {
       comparison = before ? ` vs ${period.compare.label}` : `. Nueva: no corría en ${period.compare.month.name}`;
     }
-    const kpis = CAMPAIGN_KPIS.map(kpi => `
-      <div><dt>${kpi.label}</dt><dd>${formatValue(campaign[kpi.key], kpi.unit)}${before ? deltaHtml(campaign[kpi.key], before[kpi.key], kpi.better) : ''}</dd></div>`).join('');
+    // Los indicadores de la campana van en las mismas tarjetas del periodo, en una sola fila.
+    const kpis = CAMPAIGN_KPIS.map(kpi => {
+      const value = formatValue(campaign[kpi.key], kpi.unit);
+      return `<div class="kpi-pill"><span>${escapeHtml(kpi.label)}</span><strong>${value === '—' ? '<span class="no-data">—</span>' : value}</strong>${before ? deltaHtml(campaign[kpi.key], before[kpi.key], kpi.better) : ''}</div>`;
+    }).join('');
     return `
       <section class="gasto-camp-block${settings.collapsed ? ' is-collapsed' : ''}" data-campaign="${key}">
         <div class="gasto-camp-head">
@@ -1425,7 +1577,7 @@
             <button type="button" class="gasto-camp-toggle" data-camp-toggle aria-controls="gasto-camp-body-${id}">${CHEVRON}</button>
           </div>
         </div>
-        <dl class="gasto-camp-kpis">${kpis}</dl>
+        <div class="kpi-strip gasto-group-kpis">${kpis}</div>
         <div class="gasto-camp-body" id="gasto-camp-body-${id}">
           <div class="gasto-chips gasto-camp-metrics" data-camp-metrics role="group" aria-label="Indicadores del gráfico de ${escapeHtml(campaign.label)}"></div>
           <div class="chart-wrap h-300"><canvas id="chart-gasto-${id}" role="img" aria-label="Gráfico de la campaña ${escapeHtml(campaign.label)}"></canvas></div>
@@ -1744,120 +1896,7 @@
     destroyCampaignCharts();
     host.innerHTML = campaigns.map(campaign => campaignHtml(period, campaign, previousCampaign(period, campaign.key))).join('');
     campaigns.forEach(campaign => renderCampaignChart(campaign.key, period, campaigns));
-  }
-
-  // ── Ranking de palabras clave del periodo ──
-  function kwFolderName() {
-    const config = window.AQUARIUS_DRIVE_CONFIG || gasto.config || {};
-    return (config.keywords && config.keywords.folderName) || 'Google Ads Aquarius Keywords';
-  }
-
-  function renderRanking(period, campaigns) {
-    const panel = document.getElementById('gasto-kw-panel');
-    const body = document.getElementById('gasto-kw-body');
-    const select = document.getElementById('gasto-kw-campaign');
-    const sub = document.getElementById('gasto-kw-sub');
-    if (!panel || !body) return;
-    const { compare, reason } = gasto.kwStatus === 'ok' ? keywordCompare(period) : { compare: null, reason: null };
-    panel.classList.toggle('no-compare', !compare);
-    document.getElementById('gasto-kw-title').textContent = `Ranking de palabras clave | ${period.label} ${period.year}`;
-    document.getElementById('gasto-kw-prev-head').textContent = compare ? `Conversiones ${compare.label}` : 'Mes anterior';
-    const empty = text => {
-      sub.textContent = '';
-      select.innerHTML = '<option value="all">Todas las campañas</option>';
-      body.innerHTML = `<tr><td class="table-empty" colspan="11">${text}</td></tr>`;
-    };
-    if (gasto.kwStatus === 'loading') { empty('Cargando palabras clave...'); return; }
-    if (gasto.kwStatus === 'error') { empty('No se pudo leer el informe de palabras clave.'); return; }
-    const scope = keywordScope(period);
-    if (!scope.months.length) {
-      empty(`${period.annual ? 'Ningún mes del periodo tiene' : `${escapeHtml(period.month.label)} no tiene`} informe de palabras clave. Súbelo a la carpeta ${escapeHtml(kwFolderName())} de Drive.`);
-      return;
-    }
-    const order = new Map(campaigns.map((campaign, index) => [campaign.key, index]));
-    const previous = new Map(compare ? keywordRows([compare.month]).map(row => [row.id, row]) : []);
-    const all = keywordRows(scope.months).filter(isActive);
-    // Las campanas que no estan en el informe de campana van al final, por su inversion en palabras clave.
-    const kwCost = new Map();
-    all.forEach(row => kwCost.set(row.campaignKey, (kwCost.get(row.campaignKey) || 0) + row.cost));
-    const rank = key => (order.has(key) ? order.get(key) : campaigns.length + 1 / (1 + (kwCost.get(key) || 0)));
-    all.sort((a, b) => rank(a.campaignKey) - rank(b.campaignKey) || b.conversions - a.conversions || b.cost - a.cost);
-    const leaders = new Set();
-    all.forEach(row => { if (row.conversions > 0 && !leaders.has(row.campaignKey)) { leaders.add(row.campaignKey); row.leader = true; } });
-    const present = [...new Set(all.map(row => row.campaignKey))];
-    if (gasto.kwFilter !== 'all' && !present.includes(gasto.kwFilter)) gasto.kwFilter = 'all';
-    select.innerHTML = ['<option value="all">Todas las campañas</option>']
-      .concat(present.map(key => {
-        const row = all.find(item => item.campaignKey === key);
-        return `<option value="${escapeHtml(key)}"${key === gasto.kwFilter ? ' selected' : ''}>${escapeHtml(campaignLabel(row.campaign))}</option>`;
-      })).join('');
-    const rows = gasto.kwFilter === 'all' ? all : all.filter(row => row.campaignKey === gasto.kwFilter);
-    sub.textContent = `${rows.length} ${rows.length === 1 ? 'palabra clave ordenada' : 'palabras clave ordenadas'} por conversiones dentro de cada campaña, del informe de palabras clave de ${scope.label}. La estrella marca a la líder de cada campaña.${compare ? '' : reason ? ` ${reason}` : ''}`;
-    body.innerHTML = rows.map(row => {
-      const before = previous.get(row.id);
-      return `
-        <tr>
-          <td class="gasto-rank-campaign" title="${escapeHtml(row.campaign)}"><span>${escapeHtml(campaignLabel(row.campaign))}</span></td>
-          <td class="gasto-rank-keyword" title="${escapeHtml(`${row.keyword} (${row.matchType || 'Sin concordancia'})`)}"><span>${row.leader ? '<b class="gasto-leader" title="Líder de la campaña">★</b> ' : ''}${escapeHtml(row.keyword)}</span><small>${escapeHtml(row.matchType || 'Sin concordancia')}</small></td>
-          <td class="num gasto-strong">${fmtDecimal(row.conversions)}</td>
-          <td class="num">${before ? fmtDecimal(before.conversions) : '<span class="no-data">—</span>'}</td>
-          <td class="num">${compare ? variationCell(row.conversions, before ? before.conversions : null) : '<span class="no-data">—</span>'}</td>
-          <td class="num">${fmtMoney(row.costPerConversion)}</td>
-          <td class="num">${fmtMoney(row.cost)}</td>
-          <td class="num">${fmtCount(row.impressions)}</td>
-          <td class="num">${fmtCount(row.clicks)}</td>
-          <td class="num">${fmtPercent(row.ctr)}</td>
-          <td class="num">${fmtMoney(row.cpc)}</td>
-        </tr>`;
-    }).join('') || '<tr><td class="table-empty" colspan="11">No hay palabras clave de esta campaña en el periodo.</td></tr>';
-  }
-
-  // ── Herramientas del ranking: compacto y pantalla completa ──
-  function applyCompact() {
-    const panel = document.getElementById('gasto-kw-panel');
-    const button = document.getElementById('gasto-kw-density');
-    if (!panel || !button) return;
-    panel.classList.toggle('is-compact', gasto.compact);
-    button.setAttribute('aria-pressed', String(gasto.compact));
-    button.textContent = gasto.compact ? 'Cómodo' : 'Compacto';
-    button.title = gasto.compact ? 'Volver a filas amplias' : 'Reducir el alto de las filas';
-  }
-  function toggleCompact() {
-    gasto.compact = !gasto.compact;
-    saveSetting(KW_COMPACT_KEY, gasto.compact);
-    applyCompact();
-  }
-
-  function toggleFullscreen(force) {
-    const panel = document.getElementById('gasto-kw-panel');
-    const button = document.getElementById('gasto-kw-expand');
-    const tabs = document.getElementById('month-tabs');
-    if (!panel || !button || !tabs) return;
-    const next = force === undefined ? !gasto.fullscreen : Boolean(force);
-    if (next === gasto.fullscreen) return;
-    gasto.fullscreen = next;
-    const scroll = panel.querySelector('.gasto-rank-scroll');
-    panel.classList.toggle('is-fullscreen', next);
-    document.body.classList.toggle('gasto-table-fullscreen', next);
-    // Las pestanas de mes viajan al panel para poder cambiar de mes sin salir.
-    if (next) {
-      gasto.tabsHome = { parent: tabs.parentNode, next: tabs.nextSibling };
-      panel.insertBefore(tabs, scroll);
-    } else if (gasto.tabsHome) {
-      gasto.tabsHome.parent.insertBefore(tabs, gasto.tabsHome.next);
-      gasto.tabsHome = null;
-    }
-    button.setAttribute('aria-pressed', String(next));
-    button.textContent = next ? '✕ Salir' : '⤢ Pantalla completa';
-    button.title = next ? 'Salir de pantalla completa (Esc)' : 'Ver la tabla en pantalla completa (Esc para salir)';
-    if (next) scroll.focus();
-  }
-
-  function openKeywordsView() {
-    toggleFullscreen(false);
-    const button = document.querySelector('.s-item[data-view-target="view-keywords"]');
-    if (button) button.click();
-    window.scrollTo(0, 0);
+    campaigns.forEach(campaign => drawCampaignPie(period, campaign));
   }
 
   // ── Render ──
@@ -1883,14 +1922,12 @@
       document.getElementById('gasto-dist-body').innerHTML = '<tr><td class="table-empty" colspan="12">Sin resultados para mostrar.</td></tr>';
       destroyCampaignCharts();
       document.getElementById('gasto-blocks').innerHTML = '';
-      document.getElementById('gasto-kw-body').innerHTML = '<tr><td class="table-empty" colspan="11">Sin resultados para mostrar.</td></tr>';
       return;
     }
     const campaigns = periodCampaigns(period);
     renderPeriod(period);
     renderDistribution(period, campaigns);
     renderCampaigns(period, campaigns);
-    renderRanking(period, campaigns);
   }
 
   // Las palabras clave llegan aparte: el informe de campana se pinta sin esperarlas.
@@ -1972,15 +2009,14 @@
         renderCampaignChart(key);
         return;
       }
-      if (event.target.closest('#gasto-kw-density')) { toggleCompact(); return; }
-      if (event.target.closest('#gasto-kw-expand')) { toggleFullscreen(); return; }
-      if (event.target.closest('#gasto-kw-more')) openKeywordsView();
     });
     view.addEventListener('change', event => {
-      if (event.target.id === 'gasto-kw-campaign') {
-        gasto.kwFilter = event.target.value;
+      // El filtro del pie es uno por campana, pero el indicador elegido vale para todas.
+      if (event.target.classList.contains('gasto-pie-metric')) {
+        gasto.pieMetric = event.target.value;
+        saveSetting(PIE_METRIC_KEY, gasto.pieMetric);
         const period = currentPeriod();
-        if (period) renderRanking(period, periodCampaigns(period));
+        if (period) renderCampaigns(period, periodCampaigns(period));
         return;
       }
       const input = event.target.closest('.gasto-camp-block input');
@@ -1996,16 +2032,16 @@
       }
       renderCampaignChart(key);
     });
-    // Esc y el cambio de modulo cierran la pantalla completa (con el panel fijo la pagina quedaria bloqueada).
-    document.addEventListener('keydown', event => { if (event.key === 'Escape') toggleFullscreen(false); });
-    document.querySelectorAll('.s-item').forEach(button => button.addEventListener('click', () => toggleFullscreen(false)));
-    applyCompact();
   }
 
   async function init() {
     try {
       wireStatusCard();
       wireEvents();
+      if (!window.AQUARIUS_REPORT_SNAPSHOTS) {
+        const snapshots = await fetch('data/report-snapshots.json', { cache: 'no-store' });
+        if (snapshots.ok) window.AQUARIUS_REPORT_SNAPSHOTS = await snapshots.json();
+      }
       loadKeywords();
       state.data = window.AQUARIUS_RETAIL_DATA;
       if (!state.data) {
@@ -2082,12 +2118,13 @@
   window.AquariusGasto = {
     months: () => gasto.months.filter(month => month.hasData),
     period: key => periodOf(gastoMonthByKey(key)),
+    reportPeriod,
     totals: periodTotals,
     previous: previousTotals,
     campaigns: periodCampaigns,
     previousCampaign,
-    keywords: period => (gasto.kwMonths && gasto.kwMonths.size ? keywordRows(keywordScope(period).months) : null),
-    keywordLabel: period => (gasto.kwMonths && gasto.kwMonths.size ? keywordScope(period).label : ''),
+    keywords: period => (period.reportKeywords || (gasto.kwMonths && gasto.kwMonths.size) ? keywordRows(keywordScope(period).months) : null),
+    keywordLabel: period => (period.reportKeywords || (gasto.kwMonths && gasto.kwMonths.size) ? keywordScope(period).label : ''),
     campaignLabel
   };
 

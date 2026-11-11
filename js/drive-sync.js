@@ -566,7 +566,9 @@
   function restoreCache() {
     const cached = readCache();
     if (!cached || !Array.isArray(cached.months) || !cached.months.length) return;
-    const current = window.AquariusDashboard.getData();
+    // Antes de DOMContentLoaded el dashboard existe, pero getData() aún es null.
+    // Comparar con el payload publicado evita que una caché antigua lo reemplace.
+    const current = window.AquariusDashboard.getData() || window.AQUARIUS_RETAIL_DATA;
     if (syncStamp(cached) <= syncStamp(current)) return;
     try {
       window.AquariusDashboard.applyData(cached);

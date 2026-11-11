@@ -106,9 +106,10 @@
   // ── El mes del reporte ─────────────────────────────────────────────────
   function months() {
     if (!G()) return [];
-    return G().months().slice().reverse().map(month => {
-      const period = G().period(month.key);
+    return G().months().slice().reverse().map(source => {
+      const period = G().reportPeriod(source.key);
       if (!period) return null;
+      const month = period.month;
       const from = month.firstDay;
       const to = month.lastDay;
       const short = month.shortName.toLowerCase();
@@ -119,11 +120,11 @@
         period,
         from,
         to,
-        option: `${month.name} ${month.year}${period.closed ? '' : ` · ${from}–${to} (en curso)`}`,
+        option: `${month.name} ${month.year}${period.closed ? '' : to ? ` · ${from}–${to} (en curso)` : ' · pendiente de cierre semanal'}`,
         labels: {
           range,
           cover: `${month.name} ${month.year} · Periodo ${from} – ${to} ${short}`,
-          source: `Fuente: Google Ads · ${range}`,
+          source: `Fuente: Google Ads · ${range}${period.capturedAt ? ` · Captura: ${new Date(period.capturedAt).toLocaleString('es-PE', { timeZone: 'America/Lima', dateStyle: 'short', timeStyle: 'short' })} (Lima)` : ''}`,
           analysisSource: `Fuente: análisis Lima Retail sobre Google Ads · ${BRAND} · ${month.name.toLowerCase()} ${month.year}`,
           footer: `${BRAND} · Reporte Google Ads · ${month.name} ${month.year}`,
           period: `${from} – ${to} de ${month.name.toLowerCase()} de ${month.year}`,
@@ -701,9 +702,9 @@
 
   // Evolucion de leads y costo por lead por semana, en dos paneles con su escala (como el template): cada punto
   // con su valor y la ultima semana resaltada.
-  function weekChart(weeks) {
+  function weekChart(weeks, daily = false) {
     if (!weeks.length) {
-      return '<p class="rp-empty rp-chart-empty">El informe por día de este mes todavía no está en el tablero: la evolución semanal aparece cuando se suba a Drive el informe de campaña por día.</p>';
+      return '<p class="rp-empty rp-chart-empty">El detalle diario del período todavía no está disponible en la sincronización automática.</p>';
     }
     const width = 620;
     const height = 300;
@@ -743,13 +744,13 @@
         ${placed.map(item => labelText(item, item.last ? panel.color : '#475569', item.last ? 'rp-label big strong' : 'rp-label big')).join('')}`;
     }).join('');
     return `
-      <svg class="rp-chart rp-chart-week" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Evolución de leads y costo por lead por semana">
+      <svg class="rp-chart rp-chart-week" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Evolución de leads y costo por lead por ${daily ? 'día' : 'semana'}">
         <rect x="${(x(last) - slot * 0.42).toFixed(1)}" y="${panels[0].cap + 8}" width="${(slot * 0.84).toFixed(1)}" height="${panels[1].bottom + 28 - panels[0].cap}" rx="6" fill="#eef4ff"/>
         <line x1="${left}" x2="${right}" y1="${panels[1].bottom + 28}" y2="${panels[1].bottom + 28}" class="rp-grid"/>
         ${body}
         ${weeks.map((week, index) => `
           <text x="${x(index).toFixed(1)}" y="${height - 22}" text-anchor="middle" class="rp-axis big${index === last ? ' strong' : ''}">${week.label}</text>
-          <text x="${x(index).toFixed(1)}" y="${height - 6}" text-anchor="middle" class="rp-tick big">${week.from}–${week.to}</text>`).join('')}
+          <text x="${x(index).toFixed(1)}" y="${height - 6}" text-anchor="middle" class="rp-tick big">${daily ? '' : `${week.from}–${week.to}`}</text>`).join('')}
       </svg>`;
   }
 
@@ -928,6 +929,12 @@
   }
 
   function summaryPage(report, notes, page, total) {
+    // An eight-day cutoff collapses to one weekly bucket. Show actual days so
+    // the line still communicates evolution instead of a single isolated dot.
+    const daily = report.weeks.length < 2;
+    const evolution = daily ? dailySeries(report.item).map(day => ({ ...day,
+      label: String(day.d), cpl: day.conversions > 0 ? day.cost / day.conversions : null,
+    })) : report.weeks;
     const { current, previous } = report;
     const prev = key => (previous ? previous[key] : null);
     const text = suggestSummary(report);
@@ -948,10 +955,17 @@
           <div class="rp-split-2">
             <div class="rp-card rp-chart-card">
               <div class="rp-card-row">
-                <div><div class="rp-card-title">Evolución de leads y costo por lead</div><div class="rp-card-sub">Por semana</div></div>
-                ${legends([[BLUE, 'Leads'], [RED, 'Costo/lead']])}
+                <div><div class="rp-card-title">${evolution.length ? 'Evolución de leads y costo por lead' : 'Resultados por servicio'}</div><div class="rp-card-sub">${evolution.length ? `Por ${daily ? 'día' : 'semana'}` : esc(report.labels.period)}</div></div>
+                ${evolution.length ? legends([[BLUE, 'Leads'], [RED, 'Costo/lead']]) : ''}
               </div>
-              ${weekChart(report.weeks)}
+              ${evolution.length ? weekChart(evolution, daily) : `
+                <table class="rp-table" style="margin-top:14px;table-layout:fixed">
+                  <colgroup><col style="width:48%"><col style="width:20%"><col style="width:12%"><col style="width:20%"></colgroup>
+                  <thead><tr><th>Servicio</th><th class="num">Inversión</th><th class="num">Leads</th><th class="num">CPL</th></tr></thead>
+                  <tbody>${report.detailed.map(row => `<tr><td style="white-space:normal;font-size:12px">${esc(row.name)}</td><td class="num">${money2(row.cost)}</td><td class="num">${leads(row.conversions)}</td><td class="num">${row.conversions > 0 ? money2(row.cpl) : '—'}</td></tr>`).join('')}
+                  <tr class="rp-total"><td>Total</td><td class="num">${money2(current.cost)}</td><td class="num">${leads(current.conversions)}</td><td class="num">${money2(current.cpl)}</td></tr></tbody>
+                </table>
+                <p class="rp-card-sub" style="margin-top:12px">Acumulado del período. La fuente no incluye detalle diario para mostrar una evolución semanal.</p>`}
             </div>
             <div class="rp-stack">
               <div class="rp-projection">
@@ -1261,6 +1275,12 @@
     if (select) {
       select.innerHTML = available.map(entry => `<option value="${esc(entry.id)}"${entry.id === state.month ? ' selected' : ''}>${esc(entry.option)}</option>`).join('');
     }
+    const print = document.getElementById('week-print');
+    if (print) print.disabled = Boolean(item.period.unavailable);
+    if (item.period.unavailable) {
+      host.innerHTML = `<div class="panel"><div class="empty-state"><strong>Reporte pendiente de datos al cierre semanal</strong><span>${esc(item.period.unavailable)}</span></div></div>`;
+      return;
+    }
     const report = buildReport(item);
     const notes = readNotes()[item.id] || {};
     // Portada, contenido, resumen, distribucion, desempeño, una por campaña, palabras clave, conclusiones y cierre.
@@ -1291,7 +1311,7 @@
   // El nombre del PDF lo pone el navegador con el titulo del documento: se cambia solo mientras imprime.
   function printReport() {
     const item = months().find(entry => entry.id === state.month);
-    if (!item) return;
+    if (!item || item.period.unavailable) return;
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     const title = document.title;
     document.title = `Reporte_Aquarius_${item.labels.file}`;

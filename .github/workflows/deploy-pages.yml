@@ -27,9 +27,11 @@ jobs:
         with:
           node-version: 20
 
-      # Con una prueba en rojo no se publica (hoy, las del Recalculo de inversion).
-      - name: Pruebas
-        run: npm test
+      # Con una prueba en rojo no se publica (las del reporte y las del Recalculo de inversion).
+      - name: Verificar reporte
+        run: |
+          npm test
+          python3 -m unittest discover -s tests -p 'test*.py'
 
       - name: Build
         env:

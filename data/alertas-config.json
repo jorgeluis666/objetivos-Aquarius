@@ -6,5 +6,8 @@
   "destinatarios": [
     { "email": "jorgeluis@limaretail.com", "nombre": "Jorge Luis" },
     { "email": "diegomachuca@limaretail.com", "nombre": "Diego Machuca" }
+  ],
+  "destinatarios_tecnicos": [
+    { "email": "jorgeluis@limaretail.com", "nombre": "Jorge Luis" }
   ]
 }
