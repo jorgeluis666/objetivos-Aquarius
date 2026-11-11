@@ -814,6 +814,19 @@
             "dailyBudget": 14.23
           },
           {
+            "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
+            "type": "Búsqueda",
+            "cost": 59.730000000000004,
+            "impressions": 75,
+            "clicks": 7,
+            "cpc": 8.532857142857143,
+            "ctr": 0.09333333333333334,
+            "conversions": 0,
+            "costPerConversion": null,
+            "status": "Habilitada",
+            "dailyBudget": 13.24
+          },
+          {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
             "type": "Búsqueda",
             "cost": 76.50107,
@@ -838,19 +851,6 @@
             "costPerConversion": null,
             "status": "Habilitada",
             "dailyBudget": 12.82
-          },
-          {
-            "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
-            "type": "Búsqueda",
-            "cost": 59.730000000000004,
-            "impressions": 75,
-            "clicks": 7,
-            "cpc": 8.532857142857143,
-            "ctr": 0.09333333333333334,
-            "conversions": 0,
-            "costPerConversion": null,
-            "status": "Habilitada",
-            "dailyBudget": 13.24
           },
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
@@ -917,9 +917,9 @@
               "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
+              "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
-              "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES"
             ],
@@ -1119,70 +1119,6 @@
               [
                 1,
                 3,
-                8.781995,
-                32,
-                0,
-                596
-              ],
-              [
-                2,
-                3,
-                6.569632,
-                28,
-                0,
-                919
-              ],
-              [
-                3,
-                3,
-                6.816764,
-                28,
-                1,
-                545
-              ],
-              [
-                4,
-                3,
-                9.316065,
-                29,
-                1,
-                646
-              ],
-              [
-                5,
-                3,
-                10.794393,
-                23,
-                1,
-                823
-              ],
-              [
-                6,
-                3,
-                7.254597,
-                15,
-                0,
-                455
-              ],
-              [
-                7,
-                3,
-                10.782624,
-                25,
-                2,
-                480
-              ],
-              [
-                8,
-                3,
-                16.185,
-                33,
-                3,
-                400
-              ],
-              [
-                1,
-                4,
                 0,
                 0,
                 0,
@@ -1190,7 +1126,7 @@
               ],
               [
                 2,
-                4,
+                3,
                 0,
                 0,
                 0,
@@ -1198,87 +1134,23 @@
               ],
               [
                 3,
-                4,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                4,
-                4,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                5,
-                4,
-                12.88,
                 3,
                 0,
-                31
-              ],
-              [
-                6,
-                4,
-                15.025394,
-                7,
                 0,
-                60
+                0,
+                0
               ],
               [
-                7,
                 4,
-                10.04,
                 3,
                 0,
-                43
-              ],
-              [
-                8,
-                4,
-                6.724043,
-                2,
-                0,
-                36
-              ],
-              [
-                1,
-                5,
-                0,
                 0,
                 0,
                 0
               ],
               [
-                2,
                 5,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
                 3,
-                5,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                4,
-                5,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                5,
-                5,
                 16.07,
                 1,
                 0,
@@ -1286,7 +1158,7 @@
               ],
               [
                 6,
-                5,
+                3,
                 13.7,
                 2,
                 0,
@@ -1294,7 +1166,7 @@
               ],
               [
                 7,
-                5,
+                3,
                 14.63,
                 2,
                 0,
@@ -1302,11 +1174,139 @@
               ],
               [
                 8,
-                5,
+                3,
                 15.33,
                 2,
                 0,
                 29
+              ],
+              [
+                1,
+                4,
+                8.781995,
+                32,
+                0,
+                596
+              ],
+              [
+                2,
+                4,
+                6.569632,
+                28,
+                0,
+                919
+              ],
+              [
+                3,
+                4,
+                6.816764,
+                28,
+                1,
+                545
+              ],
+              [
+                4,
+                4,
+                9.316065,
+                29,
+                1,
+                646
+              ],
+              [
+                5,
+                4,
+                10.794393,
+                23,
+                1,
+                823
+              ],
+              [
+                6,
+                4,
+                7.254597,
+                15,
+                0,
+                455
+              ],
+              [
+                7,
+                4,
+                10.782624,
+                25,
+                2,
+                480
+              ],
+              [
+                8,
+                4,
+                16.185,
+                33,
+                3,
+                400
+              ],
+              [
+                1,
+                5,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                5,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                3,
+                5,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                5,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                5,
+                5,
+                12.88,
+                3,
+                0,
+                31
+              ],
+              [
+                6,
+                5,
+                15.025394,
+                7,
+                0,
+                60
+              ],
+              [
+                7,
+                5,
+                10.04,
+                3,
+                0,
+                43
+              ],
+              [
+                8,
+                5,
+                6.724043,
+                2,
+                0,
+                36
               ],
               [
                 1,
@@ -21080,7 +21080,7 @@
           }
         ]
       },
-      "capturedAt": "2026-11-11T18:25:28Z"
+      "capturedAt": "2026-11-11T23:26:08Z"
     }
   ]
 }
