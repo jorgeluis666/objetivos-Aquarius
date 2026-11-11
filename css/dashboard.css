@@ -889,8 +889,8 @@ body[data-view="view-users"] #sync-now {
 }
 
 /* ===== 01 - Gasto Publicitario ===== */
-/* Pestanas de mes y Anual, periodo con KPIs, distribucion por campana con un cuadro por campana y el
-   ranking de palabras clave. */
+/* Pestanas de mes y Anual, periodo con KPIs y distribucion por campana con un cuadro por campana:
+   sus indicadores, sus palabras clave y el pie del top 5. */
 
 .gasto-month-tabs {
   grid-template-columns: repeat(13, minmax(78px, 1fr));
@@ -924,8 +924,8 @@ body[data-view="view-users"] #sync-now {
 .gasto-delta.bad { color: var(--red); }
 .gasto-delta.flat { color: var(--muted); }
 
-.gasto-dist-panel,
-.gasto-kw-panel {
+.gasto-dist-panel
+{
   margin-top: 20px;
 }
 
@@ -1227,15 +1227,15 @@ body[data-view="view-users"] #sync-now {
   min-width: 180px;
 }
 
-.gasto-kw-name span,
-.gasto-rank-keyword span {
+.gasto-kw-name span
+{
   display: block;
   color: var(--ink);
   font-weight: 700;
 }
 
-.gasto-kw-name small,
-.gasto-rank-keyword small {
+.gasto-kw-name small
+{
   display: block;
   margin-top: 3px;
   color: #7890b5;
@@ -1243,19 +1243,7 @@ body[data-view="view-users"] #sync-now {
   font-weight: 600;
 }
 
-/* Ranking: cabecera fija, Campana y Palabra clave ancladas, compacto y pantalla completa */
-.gasto-kw-head {
-  flex-wrap: wrap;
-  gap: 12px 16px;
-}
-
-.gasto-table-tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
+/* Botones y filtros que acompanan a las tablas del modulo */
 .gasto-tool-btn,
 .gasto-tool-select select {
   height: 34px;
@@ -1282,169 +1270,10 @@ body[data-view="view-users"] #sync-now {
 }
 
 .gasto-tool-btn:focus-visible,
-.gasto-tool-select select:focus-visible,
-.gasto-tool-link:focus-visible {
+.gasto-tool-select select:focus-visible
+{
   outline: none;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, .25);
-}
-
-.gasto-tool-link {
-  height: 34px;
-  padding: 0 6px;
-  border: 0;
-  border-radius: 8px;
-  color: var(--brand);
-  background: transparent;
-  font-size: 11px;
-  font-weight: 800;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.gasto-tool-link:hover {
-  color: var(--brand-text);
-  text-decoration: underline;
-}
-
-.gasto-rank-scroll {
-  overflow: auto;
-  max-height: calc(100vh - 230px);
-  min-height: 260px;
-  overscroll-behavior-x: contain;
-}
-
-.gasto-rank-scroll:focus-visible {
-  outline: 2px solid #bfdbfe;
-  outline-offset: 2px;
-}
-
-.gasto-rank-table {
-  min-width: 1240px;
-}
-
-.gasto-rank-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  border-bottom: 0;
-  box-shadow: inset 0 -1px 0 var(--border);
-}
-
-.gasto-rank-table .gasto-rank-campaign,
-.gasto-rank-table .gasto-rank-keyword {
-  position: sticky;
-  z-index: 2;
-  background: #fff;
-}
-
-.gasto-rank-table thead th:nth-child(-n+2) {
-  z-index: 4;
-}
-
-.gasto-rank-table .gasto-rank-campaign,
-.gasto-rank-table thead th:nth-child(1) {
-  left: 0;
-  width: 170px;
-  min-width: 170px;
-  max-width: 170px;
-}
-
-.gasto-rank-table .gasto-rank-keyword,
-.gasto-rank-table thead th:nth-child(2) {
-  left: 170px;
-  width: 250px;
-  min-width: 250px;
-  max-width: 250px;
-}
-
-/* Borde derecho del bloque anclado + sombra que indica que hay mas columnas */
-.gasto-rank-table .gasto-rank-keyword {
-  box-shadow: 1px 0 0 var(--border), 9px 0 11px -8px rgba(15, 23, 42, .35);
-}
-
-.gasto-rank-table thead th:nth-child(2) {
-  box-shadow: 1px 0 0 var(--border), 9px 0 11px -8px rgba(15, 23, 42, .35), inset 0 -1px 0 var(--border);
-}
-
-.gasto-rank-campaign span {
-  display: block;
-  overflow: hidden;
-  color: #334155;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gasto-rank-keyword span,
-.gasto-rank-keyword small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gasto-rank-table tbody tr:hover > td {
-  background: #f8fbff;
-}
-
-.gasto-leader {
-  color: #d97706;
-}
-
-/* Sin periodo de comparacion (Anual, primer mes o informes que no cubren los mismos dias): fuera Mes anterior y Variacion */
-.gasto-kw-panel.no-compare .gasto-rank-table :is(th, td):is(:nth-child(4), :nth-child(5)) {
-  display: none;
-}
-
-.gasto-kw-panel.no-compare .gasto-rank-table {
-  min-width: 1080px;
-}
-
-.gasto-kw-panel.is-compact .gasto-rank-table td {
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-
-.gasto-kw-panel.is-compact .gasto-rank-table th {
-  padding-top: 6px;
-  padding-bottom: 6px;
-}
-
-.gasto-kw-panel.is-compact .gasto-rank-keyword small {
-  display: inline;
-  margin: 0 0 0 6px;
-}
-
-.gasto-kw-panel.is-compact .gasto-rank-keyword span {
-  display: inline;
-}
-
-/* Pantalla completa: el panel toma la ventana y las pestanas de mes se mueven aqui dentro (objectives.js) */
-.gasto-kw-panel.is-fullscreen {
-  position: fixed;
-  z-index: 160;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 16px 20px 12px;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.gasto-kw-panel.is-fullscreen .gasto-rank-scroll {
-  flex: 1;
-  min-height: 0;
-  max-height: none;
-}
-
-.gasto-kw-panel.is-fullscreen .month-tabs {
-  flex: none;
-  margin: 0 0 14px;
-}
-
-body.gasto-table-fullscreen {
-  overflow: hidden;
 }
 
 @media (max-width: 760px) {
@@ -1468,20 +1297,6 @@ body.gasto-table-fullscreen {
 
   .gasto-camp-kpis {
     gap: 10px 22px;
-  }
-
-  .gasto-rank-scroll {
-    max-height: calc(100vh - 170px);
-  }
-
-  /* En el celular las columnas ancladas taparian la tabla: se desplazan con el resto. */
-  .gasto-rank-table .gasto-rank-campaign,
-  .gasto-rank-table .gasto-rank-keyword {
-    position: static;
-  }
-
-  .gasto-rank-table thead th:nth-child(-n+2) {
-    left: auto;
   }
 }
 
@@ -5304,8 +5119,8 @@ body.gasto-table-fullscreen {
 }
 
 /* ===== 01 - Gasto Publicitario ===== */
-/* Pestanas de mes y Anual, periodo con KPIs, distribucion por campana con un cuadro por campana y el
-   ranking de palabras clave. */
+/* Pestanas de mes y Anual, periodo con KPIs y distribucion por campana con un cuadro por campana:
+   sus indicadores, sus palabras clave y el pie del top 5. */
 
 .gasto-month-tabs {
   grid-template-columns: repeat(13, minmax(78px, 1fr));
@@ -5339,8 +5154,8 @@ body.gasto-table-fullscreen {
 .gasto-delta.bad { color: var(--red); }
 .gasto-delta.flat { color: var(--muted); }
 
-.gasto-dist-panel,
-.gasto-kw-panel {
+.gasto-dist-panel
+{
   margin-top: 20px;
 }
 
@@ -5641,15 +5456,15 @@ body.gasto-table-fullscreen {
   min-width: 180px;
 }
 
-.gasto-kw-name span,
-.gasto-rank-keyword span {
+.gasto-kw-name span
+{
   display: block;
   color: var(--ink);
   font-weight: 700;
 }
 
-.gasto-kw-name small,
-.gasto-rank-keyword small {
+.gasto-kw-name small
+{
   display: block;
   margin-top: 3px;
   color: #7890b5;
@@ -5722,20 +5537,7 @@ body.gasto-table-fullscreen {
   }
 }
 
-/* 01 - Gasto Publicitario | ranking de palabras clave */
-/* Ranking: cabecera fija, Campana y Palabra clave ancladas, compacto y pantalla completa */
-.gasto-kw-head {
-  flex-wrap: wrap;
-  gap: 12px 16px;
-}
-
-.gasto-table-tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
+/* 01 - Gasto Publicitario | botones y filtros de las tablas */
 .gasto-tool-btn,
 .gasto-tool-select select {
   height: 34px;
@@ -5762,204 +5564,10 @@ body.gasto-table-fullscreen {
 }
 
 .gasto-tool-btn:focus-visible,
-.gasto-tool-select select:focus-visible,
-.gasto-tool-link:focus-visible {
+.gasto-tool-select select:focus-visible
+{
   outline: none;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, .25);
-}
-
-.gasto-tool-link {
-  height: 34px;
-  padding: 0 6px;
-  border: 0;
-  border-radius: 8px;
-  color: var(--brand);
-  background: transparent;
-  font-size: 11px;
-  font-weight: 800;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.gasto-tool-link:hover {
-  color: var(--brand-text);
-  text-decoration: underline;
-}
-
-.gasto-rank-scroll {
-  overflow: auto;
-  max-height: calc(100vh - 230px);
-  min-height: 260px;
-  overscroll-behavior-x: contain;
-}
-
-.gasto-rank-scroll:focus-visible {
-  outline: 2px solid #bfdbfe;
-  outline-offset: 2px;
-}
-
-.gasto-rank-table {
-  min-width: 1240px;
-}
-
-.gasto-rank-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  border-bottom: 0;
-  box-shadow: inset 0 -1px 0 var(--border);
-}
-
-.gasto-rank-table .gasto-rank-campaign,
-.gasto-rank-table .gasto-rank-keyword {
-  position: sticky;
-  z-index: 2;
-  background: #fff;
-}
-
-.gasto-rank-table thead th:nth-child(-n+2) {
-  z-index: 4;
-}
-
-.gasto-rank-table .gasto-rank-campaign,
-.gasto-rank-table thead th:nth-child(1) {
-  left: 0;
-  width: 170px;
-  min-width: 170px;
-  max-width: 170px;
-}
-
-.gasto-rank-table .gasto-rank-keyword,
-.gasto-rank-table thead th:nth-child(2) {
-  left: 170px;
-  width: 250px;
-  min-width: 250px;
-  max-width: 250px;
-}
-
-/* Borde derecho del bloque anclado + sombra que indica que hay mas columnas */
-.gasto-rank-table .gasto-rank-keyword {
-  box-shadow: 1px 0 0 var(--border), 9px 0 11px -8px rgba(15, 23, 42, .35);
-}
-
-.gasto-rank-table thead th:nth-child(2) {
-  box-shadow: 1px 0 0 var(--border), 9px 0 11px -8px rgba(15, 23, 42, .35), inset 0 -1px 0 var(--border);
-}
-
-.gasto-rank-campaign span {
-  display: block;
-  overflow: hidden;
-  color: #334155;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gasto-rank-keyword span,
-.gasto-rank-keyword small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gasto-rank-table tbody tr:hover > td {
-  background: #f8fbff;
-}
-
-.gasto-leader {
-  color: #d97706;
-}
-
-/* Sin periodo de comparacion (Anual, primer mes o informes que no cubren los mismos dias): fuera Mes anterior y Variacion */
-.gasto-kw-panel.no-compare .gasto-rank-table :is(th, td):is(:nth-child(4), :nth-child(5)) {
-  display: none;
-}
-
-.gasto-kw-panel.no-compare .gasto-rank-table {
-  min-width: 1080px;
-}
-
-.gasto-kw-panel.is-compact .gasto-rank-table td {
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-
-.gasto-kw-panel.is-compact .gasto-rank-table th {
-  padding-top: 6px;
-  padding-bottom: 6px;
-}
-
-.gasto-kw-panel.is-compact .gasto-rank-keyword small {
-  display: inline;
-  margin: 0 0 0 6px;
-}
-
-.gasto-kw-panel.is-compact .gasto-rank-keyword span {
-  display: inline;
-}
-
-/* Pantalla completa: el panel toma la ventana y las pestanas de mes se mueven aqui dentro (objectives.js) */
-.gasto-kw-panel.is-fullscreen {
-  position: fixed;
-  z-index: 160;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 16px 20px 12px;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.gasto-kw-panel.is-fullscreen .gasto-rank-scroll {
-  flex: 1;
-  min-height: 0;
-  max-height: none;
-}
-
-.gasto-kw-panel.is-fullscreen .month-tabs {
-  flex: none;
-  margin: 0 0 14px;
-}
-
-body.gasto-table-fullscreen {
-  overflow: hidden;
-}
-
-/* Informe sin impresiones, clics ni costo por palabra (por accion de conversion): fuera esas columnas */
-.gasto-kw-panel.no-metrics .gasto-rank-table :is(th, td):nth-child(n+6) {
-  display: none;
-}
-
-.gasto-kw-panel.no-metrics .gasto-rank-table {
-  width: auto;
-  min-width: 720px;
-}
-
-.gasto-kw-panel.no-metrics.no-compare .gasto-rank-table {
-  min-width: 560px;
-}
-
-@media (max-width: 760px) {
-  .gasto-rank-scroll {
-    max-height: calc(100vh - 170px);
-  }
-
-  /* En el celular las columnas ancladas taparian la tabla: se desplazan con el resto. */
-  .gasto-rank-table .gasto-rank-campaign,
-  .gasto-rank-table .gasto-rank-keyword {
-    position: static;
-  }
-
-  .gasto-rank-table thead th:nth-child(-n+2) {
-    left: auto;
-  }
-}
-
-/* Anual con los dos informes de palabras clave: sin costo por conversion */
-.gasto-kw-panel.no-cpa .gasto-rank-table :is(th, td):nth-child(6) {
-  display: none;
 }
 
 /* ===== Sincronizacion (barra superior derecha) ===== */
@@ -7057,11 +6665,6 @@ button.topbar-pill[aria-expanded="true"] .status-chevron {
   .s-icon {
     margin: 0 auto;
   }
-}
-
-/* Informe por dia sin impresiones por palabra: fuera Impresiones y CTR del ranking */
-.gasto-kw-panel.no-impr .gasto-rank-table :is(th, td):is(:nth-child(8), :nth-child(10)) {
-  display: none;
 }
 
 /* ===== 05 - Leads (CRM de feedback del cliente) ===== */
