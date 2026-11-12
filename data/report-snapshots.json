@@ -777,13 +777,13 @@
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
             "type": "Búsqueda",
-            "cost": 94.866261,
+            "cost": 95.081167,
             "impressions": 1705,
-            "clicks": 157,
-            "cpc": 0.6042437006369427,
-            "ctr": 0.09208211143695015,
+            "clicks": 158,
+            "cpc": 0.6017795379746835,
+            "ctr": 0.09266862170087976,
             "conversions": 13,
-            "costPerConversion": 7.297404692307692,
+            "costPerConversion": 7.313935923076922,
             "status": "Habilitada",
             "dailyBudget": 34.89
           },
@@ -882,12 +882,12 @@
         "sourceFile": "Aquarius diario - Noviembre 2026",
         "driveFileId": "1kvfVAUFZok8QZIoJd4gKWj-F8OH7VVSHbmHWOZTTTls",
         "totals": {
-          "cost": 476.15,
-          "clicks": 602,
+          "cost": 476.36,
+          "clicks": 603,
           "conversions": 36,
           "impressions": 9488,
-          "ctr": 0.06344856661045531,
-          "costPerConversion": 13.226388888888888
+          "ctr": 0.0635539629005059,
+          "costPerConversion": 13.232222222222223
         },
         "period": {
           "start": "2026-11-01",
@@ -967,8 +967,8 @@
               [
                 6,
                 0,
-                26.218928,
-                37,
+                26.433834,
+                38,
                 8,
                 362
               ],
@@ -21080,7 +21080,7 @@
           }
         ]
       },
-      "capturedAt": "2026-11-11T23:26:08Z"
+      "capturedAt": "2026-11-12T11:29:28Z"
     }
   ]
 }
