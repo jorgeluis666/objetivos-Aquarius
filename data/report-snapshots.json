@@ -830,10 +830,10 @@
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
             "type": "Búsqueda",
             "cost": 76.50107,
-            "impressions": 4864,
+            "impressions": 4862,
             "clicks": 213,
             "cpc": 0.35915995305164317,
-            "ctr": 0.043791118421052634,
+            "ctr": 0.043809132044426165,
             "conversions": 8,
             "costPerConversion": 9.56263375,
             "status": "Habilitada",
@@ -885,8 +885,8 @@
           "cost": 476.36,
           "clicks": 603,
           "conversions": 36,
-          "impressions": 9488,
-          "ctr": 0.0635539629005059,
+          "impressions": 9486,
+          "ctr": 0.0635673624288425,
           "costPerConversion": 13.232222222222223
         },
         "period": {
@@ -1226,7 +1226,7 @@
                 7.254597,
                 15,
                 0,
-                455
+                453
               ],
               [
                 7,
@@ -21080,7 +21080,7 @@
           }
         ]
       },
-      "capturedAt": "2026-11-12T11:29:28Z"
+      "capturedAt": "2026-11-12T18:25:21Z"
     }
   ]
 }
