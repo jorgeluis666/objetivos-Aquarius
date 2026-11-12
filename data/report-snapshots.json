@@ -827,19 +827,6 @@
             "dailyBudget": 13.24
           },
           {
-            "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
-            "type": "Búsqueda",
-            "cost": 76.50107,
-            "impressions": 4862,
-            "clicks": 213,
-            "cpc": 0.35915995305164317,
-            "ctr": 0.043809132044426165,
-            "conversions": 8,
-            "costPerConversion": 9.56263375,
-            "status": "Habilitada",
-            "dailyBudget": 10.07
-          },
-          {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
             "type": "Búsqueda",
             "cost": 44.669437,
@@ -851,6 +838,19 @@
             "costPerConversion": null,
             "status": "Habilitada",
             "dailyBudget": 12.82
+          },
+          {
+            "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
+            "type": "Búsqueda",
+            "cost": 76.50107,
+            "impressions": 4862,
+            "clicks": 213,
+            "cpc": 0.35915995305164317,
+            "ctr": 0.043809132044426165,
+            "conversions": 8,
+            "costPerConversion": 9.56263375,
+            "status": "Habilitada",
+            "dailyBudget": 10.07
           },
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
@@ -918,8 +918,8 @@
               "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
-              "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
+              "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES"
             ],
@@ -1183,70 +1183,6 @@
               [
                 1,
                 4,
-                8.781995,
-                32,
-                0,
-                596
-              ],
-              [
-                2,
-                4,
-                6.569632,
-                28,
-                0,
-                919
-              ],
-              [
-                3,
-                4,
-                6.816764,
-                28,
-                1,
-                545
-              ],
-              [
-                4,
-                4,
-                9.316065,
-                29,
-                1,
-                646
-              ],
-              [
-                5,
-                4,
-                10.794393,
-                23,
-                1,
-                823
-              ],
-              [
-                6,
-                4,
-                7.254597,
-                15,
-                0,
-                453
-              ],
-              [
-                7,
-                4,
-                10.782624,
-                25,
-                2,
-                480
-              ],
-              [
-                8,
-                4,
-                16.185,
-                33,
-                3,
-                400
-              ],
-              [
-                1,
-                5,
                 0,
                 0,
                 0,
@@ -1254,7 +1190,7 @@
               ],
               [
                 2,
-                5,
+                4,
                 0,
                 0,
                 0,
@@ -1262,7 +1198,7 @@
               ],
               [
                 3,
-                5,
+                4,
                 0,
                 0,
                 0,
@@ -1270,7 +1206,7 @@
               ],
               [
                 4,
-                5,
+                4,
                 0,
                 0,
                 0,
@@ -1278,7 +1214,7 @@
               ],
               [
                 5,
-                5,
+                4,
                 12.88,
                 3,
                 0,
@@ -1286,7 +1222,7 @@
               ],
               [
                 6,
-                5,
+                4,
                 15.025394,
                 7,
                 0,
@@ -1294,7 +1230,7 @@
               ],
               [
                 7,
-                5,
+                4,
                 10.04,
                 3,
                 0,
@@ -1302,11 +1238,75 @@
               ],
               [
                 8,
-                5,
+                4,
                 6.724043,
                 2,
                 0,
                 36
+              ],
+              [
+                1,
+                5,
+                8.781995,
+                32,
+                0,
+                596
+              ],
+              [
+                2,
+                5,
+                6.569632,
+                28,
+                0,
+                919
+              ],
+              [
+                3,
+                5,
+                6.816764,
+                28,
+                1,
+                545
+              ],
+              [
+                4,
+                5,
+                9.316065,
+                29,
+                1,
+                646
+              ],
+              [
+                5,
+                5,
+                10.794393,
+                23,
+                1,
+                823
+              ],
+              [
+                6,
+                5,
+                7.254597,
+                15,
+                0,
+                453
+              ],
+              [
+                7,
+                5,
+                10.782624,
+                25,
+                2,
+                480
+              ],
+              [
+                8,
+                5,
+                16.185,
+                33,
+                3,
+                400
               ],
               [
                 1,
@@ -21080,7 +21080,7 @@
           }
         ]
       },
-      "capturedAt": "2026-11-12T18:25:21Z"
+      "capturedAt": "2026-11-12T23:26:05Z"
     }
   ]
 }
