@@ -24272,7 +24272,7 @@
       "driveFileId": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
       "period": {
         "start": "2026-11-01",
-        "end": "2026-11-12"
+        "end": "2026-11-13"
       },
       "keywords": [
         {
@@ -38334,7 +38334,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 34,
+          "impressions": 36,
           "cost": 0,
           "clicks": 0,
           "conversions": 0
@@ -38470,7 +38470,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 181,
+          "impressions": 182,
           "cost": 52.41,
           "clicks": 28,
           "conversions": 2
@@ -38571,7 +38571,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 91,
+          "impressions": 92,
           "cost": 17.41,
           "clicks": 9,
           "conversions": 5
@@ -39075,7 +39075,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "status": "Apto",
-          "impressions": 37,
+          "impressions": 38,
           "cost": 6.91,
           "clicks": 3,
           "conversions": 0
@@ -39280,7 +39280,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "status": "Apto",
-          "impressions": 140,
+          "impressions": 144,
           "cost": 0.15,
           "clicks": 1,
           "conversions": 0
@@ -39359,9 +39359,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "status": "Apto",
-          "impressions": 1665,
-          "cost": 35.87,
-          "clicks": 79,
+          "impressions": 1693,
+          "cost": 36.03,
+          "clicks": 80,
           "conversions": 4
         },
         {
@@ -39836,7 +39836,7 @@
           "impressions": 60,
           "cost": 20.32,
           "clicks": 7,
-          "conversions": 0,
+          "conversions": 1,
           "qualityScore": 7
         },
         {
@@ -42045,7 +42045,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "status": "Apto",
-          "impressions": 170,
+          "impressions": 171,
           "cost": 44.91,
           "clicks": 20,
           "conversions": 2,
@@ -42605,7 +42605,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "status": "Apto",
-          "impressions": 155,
+          "impressions": 156,
           "cost": 53.97,
           "clicks": 20,
           "conversions": 1
@@ -42851,7 +42851,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "status": "Apto",
-          "impressions": 22,
+          "impressions": 23,
           "cost": 35.67,
           "clicks": 4,
           "conversions": 0
@@ -43907,7 +43907,7 @@
   "drive": {
     "folderId": "1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO",
     "discovery": "apps script",
-    "lastSync": "2026-11-12T23:26:18Z",
+    "lastSync": "2026-11-13T11:29:42Z",
     "files": [
       {
         "id": "17oCEc4yhZfWSY8y_km3IPYb0hmH2VKHBXOi60LvHd0w",
@@ -43952,12 +43952,12 @@
       {
         "id": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
         "name": "Aquarius KW noviembre 2026",
-        "modifiedTime": "2026-11-12T23:03:41.149Z"
+        "modifiedTime": "2026-11-13T11:03:24.529Z"
       },
       {
         "id": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
         "name": "Aquarius KW octubre 2026",
-        "modifiedTime": "2026-11-12T23:03:28.870Z"
+        "modifiedTime": "2026-11-13T11:03:11.378Z"
       },
       {
         "id": "1tJ7B5yQydbvGxOczu0XxnAoot8ew7_vZjFOJOU3cabw",
