@@ -827,19 +827,6 @@
             "dailyBudget": 13.24
           },
           {
-            "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
-            "type": "Búsqueda",
-            "cost": 44.669437,
-            "impressions": 170,
-            "clicks": 15,
-            "cpc": 2.977962466666667,
-            "ctr": 0.08823529411764706,
-            "conversions": 0,
-            "costPerConversion": null,
-            "status": "Habilitada",
-            "dailyBudget": 12.82
-          },
-          {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
             "type": "Búsqueda",
             "cost": 16.896354,
@@ -851,6 +838,19 @@
             "costPerConversion": 16.896354,
             "status": "Habilitada",
             "dailyBudget": 34.07
+          },
+          {
+            "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
+            "type": "Búsqueda",
+            "cost": 44.669437,
+            "impressions": 170,
+            "clicks": 15,
+            "cpc": 2.977962466666667,
+            "ctr": 0.08823529411764706,
+            "conversions": 0,
+            "costPerConversion": null,
+            "status": "Habilitada",
+            "dailyBudget": 12.82
           },
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
@@ -918,8 +918,8 @@
               "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
-              "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
+              "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES"
             ],
@@ -1186,75 +1186,11 @@
                 0,
                 0,
                 0,
-                0
-              ],
-              [
-                2,
-                4,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                3,
-                4,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                4,
-                4,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                5,
-                4,
-                12.88,
-                3,
-                0,
-                31
-              ],
-              [
-                6,
-                4,
-                15.025394,
-                7,
-                0,
-                60
-              ],
-              [
-                7,
-                4,
-                10.04,
-                3,
-                0,
-                43
-              ],
-              [
-                8,
-                4,
-                6.724043,
-                2,
-                0,
-                36
-              ],
-              [
-                1,
-                5,
-                0,
-                0,
-                0,
                 2
               ],
               [
                 2,
-                5,
+                4,
                 0,
                 0,
                 0,
@@ -1262,7 +1198,7 @@
               ],
               [
                 3,
-                5,
+                4,
                 10.398233,
                 5,
                 0,
@@ -1270,7 +1206,7 @@
               ],
               [
                 4,
-                5,
+                4,
                 3.29,
                 2,
                 1,
@@ -1278,7 +1214,7 @@
               ],
               [
                 5,
-                5,
+                4,
                 0.948121,
                 1,
                 0,
@@ -1286,7 +1222,7 @@
               ],
               [
                 6,
-                5,
+                4,
                 2.26,
                 2,
                 0,
@@ -1294,7 +1230,7 @@
               ],
               [
                 7,
-                5,
+                4,
                 0,
                 0,
                 0,
@@ -1302,11 +1238,75 @@
               ],
               [
                 8,
+                4,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                1,
                 5,
                 0,
                 0,
                 0,
                 0
+              ],
+              [
+                2,
+                5,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                3,
+                5,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                5,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                5,
+                5,
+                12.88,
+                3,
+                0,
+                31
+              ],
+              [
+                6,
+                5,
+                15.025394,
+                7,
+                0,
+                60
+              ],
+              [
+                7,
+                5,
+                10.04,
+                3,
+                0,
+                43
+              ],
+              [
+                8,
+                5,
+                6.724043,
+                2,
+                0,
+                36
               ],
               [
                 1,
@@ -21080,7 +21080,7 @@
           }
         ]
       },
-      "capturedAt": "2026-11-15T11:29:29Z"
+      "capturedAt": "2026-11-15T18:25:20Z"
     }
   ]
 }
