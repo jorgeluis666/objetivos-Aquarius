@@ -791,10 +791,10 @@
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
             "type": "Búsqueda",
             "cost": 83.716961,
-            "impressions": 2263,
+            "impressions": 2262,
             "clicks": 159,
             "cpc": 0.5265217672955975,
-            "ctr": 0.07026071586389748,
+            "ctr": 0.07029177718832891,
             "conversions": 10,
             "costPerConversion": 8.3716961,
             "status": "Habilitada",
@@ -885,8 +885,8 @@
           "cost": 475.34,
           "clicks": 602,
           "conversions": 36,
-          "impressions": 9486,
-          "ctr": 0.06346194391735188,
+          "impressions": 9485,
+          "ctr": 0.06346863468634686,
           "costPerConversion": 13.203888888888889
         },
         "period": {
@@ -1042,7 +1042,7 @@
                 18.976587,
                 42,
                 3,
-                640
+                639
               ],
               [
                 8,
@@ -21080,7 +21080,7 @@
           }
         ]
       },
-      "capturedAt": "2026-11-14T18:25:18Z"
+      "capturedAt": "2026-11-15T11:29:29Z"
     }
   ]
 }
