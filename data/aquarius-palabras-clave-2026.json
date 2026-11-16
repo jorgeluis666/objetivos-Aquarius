@@ -38470,7 +38470,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 227,
+          "impressions": 229,
           "cost": 57.74,
           "clicks": 31,
           "conversions": 2
@@ -39359,7 +39359,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "status": "Apto",
-          "impressions": 2368,
+          "impressions": 2376,
           "cost": 46.06,
           "clicks": 105,
           "conversions": 5
@@ -41890,9 +41890,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
           "status": "Apto",
-          "impressions": 205,
-          "cost": 40.05,
-          "clicks": 18,
+          "impressions": 208,
+          "cost": 41.43,
+          "clicks": 19,
           "conversions": 1,
           "qualityScore": 4
         },
@@ -43907,7 +43907,7 @@
   "drive": {
     "folderId": "1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO",
     "discovery": "apps script",
-    "lastSync": "2026-11-16T23:05:50Z",
+    "lastSync": "2026-11-16T23:26:20Z",
     "files": [
       {
         "id": "17oCEc4yhZfWSY8y_km3IPYb0hmH2VKHBXOi60LvHd0w",
@@ -43952,7 +43952,7 @@
       {
         "id": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
         "name": "Aquarius KW noviembre 2026",
-        "modifiedTime": "2026-11-16T22:56:42.468Z"
+        "modifiedTime": "2026-11-16T23:25:06.171Z"
       },
       {
         "id": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
