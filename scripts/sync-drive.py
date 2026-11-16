@@ -921,7 +921,8 @@ def main():
         text = download(item["id"], item["name"])
         if text is None:
             continue
-        backup_path = BACKUPS / backup_name(item["name"])
+        backup = item["name"] if item["name"].lower().endswith(".csv") else f"{item['name']}.csv"
+        backup_path = BACKUPS / backup
         if "Nexus visibilidad" in text:
             visibility_changed = visibility_changed or not backup_path.exists() or backup_path.read_text(encoding="utf-8") != text
             backup_path.write_text(text, encoding="utf-8", newline="")
