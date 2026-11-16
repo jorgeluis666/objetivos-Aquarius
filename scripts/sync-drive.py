@@ -912,6 +912,7 @@ def main():
     before = comparable(document)
     months = {month["id"]: month for month in document["months"]}
     BACKUPS.mkdir(parents=True, exist_ok=True)
+    visibility_changed = False
     exclude = excluded_campaigns()
 
     loaded = {}
@@ -920,6 +921,10 @@ def main():
         text = download(item["id"], item["name"])
         if text is None:
             continue
+        backup_path = BACKUPS / backup_name(item["name"])
+        if "Nexus visibilidad" in text:
+            visibility_changed = visibility_changed or not backup_path.exists() or backup_path.read_text(encoding="utf-8") != text
+            backup_path.write_text(text, encoding="utf-8", newline="")
         month_id, records, totals, summary = parse_campaign_report(text, item["name"], exclude)
         if not month_id or not records:
             # No es el informe de campana, pero puede ser el informe por dia: de ahi sale la evolucion
@@ -957,7 +962,7 @@ def main():
         months[month_id]["detail"] = {"table": payload["table"], "sourceFile": payload["sourceFile"], "period": payload["summary"]["period"]}
 
     finish_document(document, months)
-    changed = comparable(document) != before
+    changed = comparable(document) != before or visibility_changed
     document["drive"] = {
         "folderId": folder_id,
         "discovery": origin,

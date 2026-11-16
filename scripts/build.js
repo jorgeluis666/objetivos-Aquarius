@@ -38,6 +38,8 @@ function encryptPage(html, password) {
 
 function main() {
   let html = readFile('index.html');
+  const visibility = JSON.stringify(require('./visibility-reader').read(ROOT)).replace(/</g, '\\u003c');
+  html = html.replace('</head>', () => `<script>window.NEXUS_ADS_VISIBILITY = ${visibility};</script></head>`);
   // Al incrustar el CSS la ruta pasa a resolverse desde dist/index.html,
   // asi que '../assets/' tiene que quedar como 'assets/'.
   const css = readFile('css/dashboard.css').replaceAll('../assets/', 'assets/');
