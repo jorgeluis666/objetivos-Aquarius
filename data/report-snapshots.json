@@ -21090,13 +21090,13 @@
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
             "type": "Búsqueda",
-            "cost": 267.257486,
+            "cost": 267.221295,
             "impressions": 4348,
-            "clicks": 444,
-            "cpc": 0.6019312747747747,
-            "ctr": 0.10211591536338546,
+            "clicks": 443,
+            "cpc": 0.6032083408577879,
+            "ctr": 0.10188592456301748,
             "conversions": 28.5,
-            "costPerConversion": 9.377455649122806,
+            "costPerConversion": 9.376185789473684,
             "status": "Habilitada",
             "dailyBudget": 34.89
           },
@@ -21140,6 +21140,19 @@
             "dailyBudget": 14.23
           },
           {
+            "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
+            "type": "Búsqueda",
+            "cost": 139.884728,
+            "impressions": 2908,
+            "clicks": 215,
+            "cpc": 0.6506266418604651,
+            "ctr": 0.07393397524071527,
+            "conversions": 9,
+            "costPerConversion": 15.542747555555556,
+            "status": "Habilitada",
+            "dailyBudget": 34.07
+          },
+          {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
             "type": "Búsqueda",
             "cost": 134.538366,
@@ -21151,19 +21164,6 @@
             "costPerConversion": 67.269183,
             "status": "Habilitada",
             "dailyBudget": 12.82
-          },
-          {
-            "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
-            "type": "Búsqueda",
-            "cost": 139.96677,
-            "impressions": 2908,
-            "clicks": 217,
-            "cpc": 0.6450081566820276,
-            "ctr": 0.07462173314993123,
-            "conversions": 9,
-            "costPerConversion": 15.551863333333333,
-            "status": "Habilitada",
-            "dailyBudget": 34.07
           },
           {
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
@@ -21195,12 +21195,12 @@
         "sourceFile": "Aquarius diario - Noviembre 2026",
         "driveFileId": "1kvfVAUFZok8QZIoJd4gKWj-F8OH7VVSHbmHWOZTTTls",
         "totals": {
-          "cost": 1279.46,
-          "clicks": 1677,
+          "cost": 1279.34,
+          "clicks": 1674,
           "conversions": 86.0,
           "impressions": 24963,
-          "ctr": 0.06717942554981372,
-          "costPerConversion": 14.877441860465117
+          "ctr": 0.06705924768657613,
+          "costPerConversion": 14.876046511627907
         },
         "period": {
           "start": "2026-11-01",
@@ -21231,8 +21231,8 @@
               "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
-              "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
+              "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
               "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES"
             ],
@@ -21352,8 +21352,8 @@
               [
                 15,
                 0,
-                17.809511,
-                47,
+                17.77332,
+                46,
                 5.5,
                 271
               ],
@@ -21723,131 +21723,11 @@
                 0,
                 0,
                 0,
-                0
-              ],
-              [
-                2,
-                4,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                3,
-                4,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                4,
-                4,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                5,
-                4,
-                12.88,
-                3,
-                0,
-                31
-              ],
-              [
-                6,
-                4,
-                15.025394,
-                7,
-                0,
-                60
-              ],
-              [
-                7,
-                4,
-                10.04,
-                3,
-                0,
-                43
-              ],
-              [
-                8,
-                4,
-                6.724043,
-                2,
-                0,
-                36
-              ],
-              [
-                9,
-                4,
-                23.27,
-                9,
-                0,
-                63
-              ],
-              [
-                10,
-                4,
-                13.066724,
-                5,
-                0,
-                109
-              ],
-              [
-                11,
-                4,
-                14.055339,
-                4,
-                1,
-                28
-              ],
-              [
-                12,
-                4,
-                12.92,
-                3,
-                1,
-                53
-              ],
-              [
-                13,
-                4,
-                13.27032,
-                4,
-                0,
-                74
-              ],
-              [
-                14,
-                4,
-                7.55682,
-                5,
-                0,
-                45
-              ],
-              [
-                15,
-                4,
-                5.729726,
-                6,
-                0,
-                45
-              ],
-              [
-                1,
-                5,
-                0,
-                0,
-                0,
                 2
               ],
               [
                 2,
-                5,
+                4,
                 0,
                 0,
                 0,
@@ -21855,7 +21735,7 @@
               ],
               [
                 3,
-                5,
+                4,
                 10.398233,
                 5,
                 0,
@@ -21863,7 +21743,7 @@
               ],
               [
                 4,
-                5,
+                4,
                 3.29,
                 2,
                 1,
@@ -21871,7 +21751,7 @@
               ],
               [
                 5,
-                5,
+                4,
                 0.948121,
                 1,
                 0,
@@ -21879,7 +21759,7 @@
               ],
               [
                 6,
-                5,
+                4,
                 2.26,
                 2,
                 0,
@@ -21887,7 +21767,7 @@
               ],
               [
                 7,
-                5,
+                4,
                 0,
                 0,
                 0,
@@ -21895,7 +21775,7 @@
               ],
               [
                 8,
-                5,
+                4,
                 0,
                 0,
                 0,
@@ -21903,7 +21783,7 @@
               ],
               [
                 9,
-                5,
+                4,
                 5.294088,
                 2,
                 0,
@@ -21911,7 +21791,7 @@
               ],
               [
                 10,
-                5,
+                4,
                 19.171814,
                 44,
                 0,
@@ -21919,7 +21799,7 @@
               ],
               [
                 11,
-                5,
+                4,
                 21.165378,
                 31,
                 4,
@@ -21927,7 +21807,7 @@
               ],
               [
                 12,
-                5,
+                4,
                 19.457325,
                 36,
                 0,
@@ -21935,7 +21815,7 @@
               ],
               [
                 13,
-                5,
+                4,
                 19.379116,
                 31,
                 2,
@@ -21943,7 +21823,7 @@
               ],
               [
                 14,
-                5,
+                4,
                 21.311731,
                 33,
                 1,
@@ -21951,11 +21831,131 @@
               ],
               [
                 15,
-                5,
-                17.290964,
-                30,
+                4,
+                17.208922,
+                28,
                 1,
                 538
+              ],
+              [
+                1,
+                5,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                5,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                3,
+                5,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                5,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                5,
+                5,
+                12.88,
+                3,
+                0,
+                31
+              ],
+              [
+                6,
+                5,
+                15.025394,
+                7,
+                0,
+                60
+              ],
+              [
+                7,
+                5,
+                10.04,
+                3,
+                0,
+                43
+              ],
+              [
+                8,
+                5,
+                6.724043,
+                2,
+                0,
+                36
+              ],
+              [
+                9,
+                5,
+                23.27,
+                9,
+                0,
+                63
+              ],
+              [
+                10,
+                5,
+                13.066724,
+                5,
+                0,
+                109
+              ],
+              [
+                11,
+                5,
+                14.055339,
+                4,
+                1,
+                28
+              ],
+              [
+                12,
+                5,
+                12.92,
+                3,
+                1,
+                53
+              ],
+              [
+                13,
+                5,
+                13.27032,
+                4,
+                0,
+                74
+              ],
+              [
+                14,
+                5,
+                7.55682,
+                5,
+                0,
+                45
+              ],
+              [
+                15,
+                5,
+                5.729726,
+                6,
+                0,
+                45
               ],
               [
                 1,
@@ -22207,7 +22207,7 @@
         }
       },
       "keywords": null,
-      "capturedAt": "2026-11-16T18:25:21Z"
+      "capturedAt": "2026-11-17T11:29:32Z"
     }
   ]
 }
