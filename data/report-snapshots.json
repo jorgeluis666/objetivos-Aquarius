@@ -21104,10 +21104,10 @@
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
             "type": "Búsqueda",
             "cost": 240.936695,
-            "impressions": 8321,
+            "impressions": 8320,
             "clicks": 416,
             "cpc": 0.5791747475961538,
-            "ctr": 0.04999399110683812,
+            "ctr": 0.05,
             "conversions": 20.5,
             "costPerConversion": 11.75300951219512,
             "status": "Habilitada",
@@ -21156,10 +21156,10 @@
             "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
             "type": "Búsqueda",
             "cost": 139.884728,
-            "impressions": 2908,
+            "impressions": 2906,
             "clicks": 215,
             "cpc": 0.6506266418604651,
-            "ctr": 0.07393397524071527,
+            "ctr": 0.07398485891259463,
             "conversions": 9,
             "costPerConversion": 15.542747555555556,
             "status": "Habilitada",
@@ -21198,8 +21198,8 @@
           "cost": 1279.34,
           "clicks": 1674,
           "conversions": 86.0,
-          "impressions": 24963,
-          "ctr": 0.06705924768657613,
+          "impressions": 24960,
+          "ctr": 0.06706730769230769,
           "costPerConversion": 14.876046511627907
         },
         "period": {
@@ -21467,7 +21467,7 @@
                 18.847513,
                 32,
                 0,
-                1291
+                1290
               ],
               [
                 15,
@@ -21915,7 +21915,7 @@
                 19.171814,
                 44,
                 0,
-                602
+                600
               ],
               [
                 11,
@@ -22207,7 +22207,7 @@
         }
       },
       "keywords": null,
-      "capturedAt": "2026-11-17T23:26:06Z"
+      "capturedAt": "2026-11-18T11:29:34Z"
     }
   ]
 }
