@@ -18744,7 +18744,8 @@
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
-          "conversions": 0
+          "conversions": 0,
+          "qualityScore": 6
         },
         {
           "keyword": "\"toma de inventario\"",
@@ -22104,8 +22105,7 @@
           "matchType": "Concordancia de frase",
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
-          "status": "No apto",
-          "reasons": "AD_GROUP_CRITERION_RARELY_SERVED",
+          "status": "Apto",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -22314,7 +22314,7 @@
           "cost": 25.56,
           "clicks": 8,
           "conversions": 0,
-          "qualityScore": 3
+          "qualityScore": 5
         },
         {
           "keyword": "Fotogrametría con drones",
@@ -24270,7 +24270,7 @@
       "driveFileId": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
       "period": {
         "start": "2026-11-01",
-        "end": "2026-11-19"
+        "end": "2026-11-20"
       },
       "keywords": [
         {
@@ -37587,7 +37587,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
           "status": "Apto",
-          "impressions": 20,
+          "impressions": 22,
           "cost": 6.55,
           "clicks": 2,
           "conversions": 2,
@@ -38332,7 +38332,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 46,
+          "impressions": 47,
           "cost": 0,
           "clicks": 0,
           "conversions": 0
@@ -38380,7 +38380,8 @@
           "impressions": 1,
           "cost": 0,
           "clicks": 0,
-          "conversions": 0
+          "conversions": 0,
+          "qualityScore": 6
         },
         {
           "keyword": "\"toma de inventario\"",
@@ -38468,7 +38469,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 282,
+          "impressions": 284,
           "cost": 62.81,
           "clicks": 34,
           "conversions": 4
@@ -38569,7 +38570,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 146,
+          "impressions": 147,
           "cost": 26.28,
           "clicks": 13,
           "conversions": 6
@@ -39038,7 +39039,7 @@
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "status": "UNKNOWN",
           "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
-          "impressions": 1,
+          "impressions": 3,
           "cost": 0,
           "clicks": 0,
           "conversions": 0,
@@ -39357,9 +39358,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "status": "Apto",
-          "impressions": 3315,
-          "cost": 92.11,
-          "clicks": 146,
+          "impressions": 3317,
+          "cost": 93.15,
+          "clicks": 147,
           "conversions": 5
         },
         {
@@ -41740,8 +41741,7 @@
           "matchType": "Concordancia de frase",
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
-          "status": "No apto",
-          "reasons": "AD_GROUP_CRITERION_RARELY_SERVED",
+          "status": "Apto",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -41886,7 +41886,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-FOTOGRAMETRÍACONDRONES",
           "status": "Apto",
-          "impressions": 276,
+          "impressions": 281,
           "cost": 51.61,
           "clicks": 24,
           "conversions": 1,
@@ -41950,7 +41950,7 @@
           "cost": 0,
           "clicks": 0,
           "conversions": 0,
-          "qualityScore": 3
+          "qualityScore": 5
         },
         {
           "keyword": "Fotogrametría con drones",
@@ -42041,7 +42041,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "status": "Apto",
-          "impressions": 261,
+          "impressions": 262,
           "cost": 48.26,
           "clicks": 23,
           "conversions": 2,
@@ -42836,7 +42836,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "status": "Apto",
-          "impressions": 77,
+          "impressions": 83,
           "cost": 37.43,
           "clicks": 7,
           "conversions": 0
@@ -43158,7 +43158,7 @@
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "status": "UNKNOWN",
           "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
-          "impressions": 95,
+          "impressions": 99,
           "cost": 69.98,
           "clicks": 11,
           "conversions": 0,
@@ -43171,7 +43171,7 @@
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "status": "UNKNOWN",
           "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
-          "impressions": 88,
+          "impressions": 91,
           "cost": 38.12,
           "clicks": 4,
           "conversions": 0,
@@ -43903,7 +43903,7 @@
   "drive": {
     "folderId": "1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO",
     "discovery": "apps script",
-    "lastSync": "2026-11-19T23:26:27Z",
+    "lastSync": "2026-11-20T11:29:39Z",
     "files": [
       {
         "id": "17oCEc4yhZfWSY8y_km3IPYb0hmH2VKHBXOi60LvHd0w",
@@ -43948,12 +43948,12 @@
       {
         "id": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
         "name": "Aquarius KW noviembre 2026",
-        "modifiedTime": "2026-11-19T23:12:22.504Z"
+        "modifiedTime": "2026-11-20T11:11:41.624Z"
       },
       {
         "id": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
         "name": "Aquarius KW octubre 2026",
-        "modifiedTime": "2026-11-19T23:11:36.980Z"
+        "modifiedTime": "2026-11-20T11:10:57.198Z"
       },
       {
         "id": "1tJ7B5yQydbvGxOczu0XxnAoot8ew7_vZjFOJOU3cabw",
