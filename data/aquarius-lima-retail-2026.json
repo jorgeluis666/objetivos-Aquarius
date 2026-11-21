@@ -5556,21 +5556,21 @@
         {
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "type": "Búsqueda",
-          "cost": 302.39,
-          "impressions": 4966,
-          "clicks": 493,
-          "cpc": 0.61,
-          "ctr": 0.0993,
-          "conversions": 34.5,
-          "costPerConversion": 8.76,
+          "cost": 305.4,
+          "impressions": 4968,
+          "clicks": 494,
+          "cpc": 0.62,
+          "ctr": 0.09939999999999999,
+          "conversions": 35.5,
+          "costPerConversion": 8.6,
           "status": "Habilitada",
           "dailyBudget": 34.89,
-          "costDelta": 0.4571607555898225,
-          "ctrDelta": -0.1220159151193635,
-          "clicksDelta": 4.189473684210526,
-          "conversionsDelta": 1.225806451612903,
-          "costPerConversionDelta": -0.34578043315907403,
-          "impressionsDelta": 4.911904761904762
+          "costDelta": 0.4716653816499612,
+          "ctrDelta": -0.12113174182139719,
+          "clicksDelta": 4.2,
+          "conversionsDelta": 1.2903225806451615,
+          "costPerConversionDelta": -0.35772964899178494,
+          "impressionsDelta": 4.914285714285715
         },
         {
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
@@ -5728,7 +5728,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "type": "Búsqueda",
           "cost": 196.98,
-          "impressions": 1749,
+          "impressions": 1750,
           "clicks": 183,
           "cpc": 1.08,
           "ctr": 0.10460000000000001,
@@ -5741,7 +5741,7 @@
           "clicksDelta": 0.8673469387755102,
           "conversionsDelta": -0.5294117647058824,
           "costPerConversionDelta": 0.7038062283737025,
-          "impressionsDelta": 0.4822033898305085
+          "impressionsDelta": 0.48305084745762716
         },
         {
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-DIAGNOSTICOSISTEMACONTROLINTERNOTICO",
@@ -5766,35 +5766,35 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "type": "Búsqueda",
           "cost": 230.42,
-          "impressions": 338,
+          "impressions": 340,
           "clicks": 30,
           "cpc": 7.68,
-          "ctr": 0.0888,
+          "ctr": 0.0882,
           "conversions": 0,
           "costPerConversion": 0,
           "status": "Habilitada",
           "dailyBudget": 13.24,
           "costDelta": -0.07872536084122994,
-          "ctrDelta": 0.24022346368715097,
+          "ctrDelta": 0.23184357541899447,
           "clicksDelta": 0.19999999999999996,
           "conversionsDelta": null,
           "costPerConversionDelta": null,
-          "impressionsDelta": -0.03151862464183386
+          "impressionsDelta": -0.025787965616045794
         }
       ],
       "sourceFile": "Aquarius - Noviembre 2026",
       "driveFileId": "1kvfVAUFZok8QZIoJd4gKWj-F8OH7VVSHbmHWOZTTTls",
       "totals": {
-        "cost": 1657.28,
-        "impressions": 29510,
-        "clicks": 1937,
-        "conversions": 101.0,
-        "ctr": 0.06563876651982378,
-        "costPerConversion": 16.41
+        "cost": 1660.29,
+        "impressions": 29515,
+        "clicks": 1938,
+        "conversions": 102.0,
+        "ctr": 0.06566152803659156,
+        "costPerConversion": 16.28
       },
       "period": {
         "start": "2026-11-01",
-        "end": "2026-11-20"
+        "end": "2026-11-21"
       },
       "dailyBudget": 163.62,
       "excluded": [
@@ -5982,10 +5982,18 @@
             [
               20,
               0,
-              2.21292,
-              2,
+              5.22292,
+              3,
+              1,
+              51
+            ],
+            [
+              21,
               0,
-              49
+              0,
+              0,
+              0,
+              0
             ],
             [
               1,
@@ -6148,6 +6156,14 @@
               11
             ],
             [
+              21,
+              1,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
               1,
               2,
               0,
@@ -6306,6 +6322,14 @@
               1,
               0,
               20
+            ],
+            [
+              21,
+              2,
+              0,
+              0,
+              0,
+              2
             ],
             [
               1,
@@ -6468,6 +6492,14 @@
               16
             ],
             [
+              21,
+              3,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
               1,
               4,
               8.781995,
@@ -6628,6 +6660,14 @@
               402
             ],
             [
+              21,
+              4,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
               1,
               5,
               1.24,
@@ -6785,7 +6825,15 @@
               12.938281,
               7,
               0,
-              57
+              58
+            ],
+            [
+              21,
+              5,
+              0,
+              0,
+              0,
+              0
             ],
             [
               1,
@@ -6948,6 +6996,14 @@
               18
             ],
             [
+              21,
+              6,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
               1,
               7,
               0,
@@ -7106,13 +7162,21 @@
               2,
               0,
               22
+            ],
+            [
+              21,
+              7,
+              0,
+              0,
+              0,
+              0
             ]
           ]
         },
         "sourceFile": "Aquarius diario - Noviembre 2026",
         "period": {
           "start": "2026-11-01",
-          "end": "2026-11-20"
+          "end": "2026-11-21"
         }
       }
     }
@@ -7485,21 +7549,21 @@
     {
       "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
       "type": "Búsqueda",
-      "cost": 302.39,
-      "impressions": 4966,
-      "clicks": 493,
-      "cpc": 0.61,
-      "ctr": 0.0993,
-      "conversions": 34.5,
-      "costPerConversion": 8.76,
+      "cost": 305.4,
+      "impressions": 4968,
+      "clicks": 494,
+      "cpc": 0.62,
+      "ctr": 0.09939999999999999,
+      "conversions": 35.5,
+      "costPerConversion": 8.6,
       "status": "Habilitada",
       "dailyBudget": 34.89,
-      "costDelta": 0.4571607555898225,
-      "ctrDelta": -0.1220159151193635,
-      "clicksDelta": 4.189473684210526,
-      "conversionsDelta": 1.225806451612903,
-      "costPerConversionDelta": -0.34578043315907403,
-      "impressionsDelta": 4.911904761904762
+      "costDelta": 0.4716653816499612,
+      "ctrDelta": -0.12113174182139719,
+      "clicksDelta": 4.2,
+      "conversionsDelta": 1.2903225806451615,
+      "costPerConversionDelta": -0.35772964899178494,
+      "impressionsDelta": 4.914285714285715
     },
     {
       "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
@@ -7657,7 +7721,7 @@
       "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
       "type": "Búsqueda",
       "cost": 196.98,
-      "impressions": 1749,
+      "impressions": 1750,
       "clicks": 183,
       "cpc": 1.08,
       "ctr": 0.10460000000000001,
@@ -7670,7 +7734,7 @@
       "clicksDelta": 0.8673469387755102,
       "conversionsDelta": -0.5294117647058824,
       "costPerConversionDelta": 0.7038062283737025,
-      "impressionsDelta": 0.4822033898305085
+      "impressionsDelta": 0.48305084745762716
     },
     {
       "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-DIAGNOSTICOSISTEMACONTROLINTERNOTICO",
@@ -7695,41 +7759,41 @@
       "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
       "type": "Búsqueda",
       "cost": 230.42,
-      "impressions": 338,
+      "impressions": 340,
       "clicks": 30,
       "cpc": 7.68,
-      "ctr": 0.0888,
+      "ctr": 0.0882,
       "conversions": 0,
       "costPerConversion": 0,
       "status": "Habilitada",
       "dailyBudget": 13.24,
       "costDelta": -0.07872536084122994,
-      "ctrDelta": 0.24022346368715097,
+      "ctrDelta": 0.23184357541899447,
       "clicksDelta": 0.19999999999999996,
       "conversionsDelta": null,
       "costPerConversionDelta": null,
-      "impressionsDelta": -0.03151862464183386
+      "impressionsDelta": -0.025787965616045794
     }
   ],
   "drive": {
     "folderId": "1MBCTlit_mxS6wOXyGsXZL3HcS5SPTEIk",
     "discovery": "apps script",
-    "lastSync": "2026-11-20T23:26:06Z",
+    "lastSync": "2026-11-21T11:29:30Z",
     "files": [
       {
         "id": "1bw2qbKbwUAiPYgubFqHyu-pCs8ocBkpod5w8a-tOxeY",
         "name": "Aquarius diario - Noviembre 2026",
-        "modifiedTime": "2026-11-20T23:20:13.246Z"
+        "modifiedTime": "2026-11-21T11:20:12.381Z"
       },
       {
         "id": "1kvfVAUFZok8QZIoJd4gKWj-F8OH7VVSHbmHWOZTTTls",
         "name": "Aquarius - Noviembre 2026",
-        "modifiedTime": "2026-11-20T23:10:41.805Z"
+        "modifiedTime": "2026-11-21T11:10:45.151Z"
       },
       {
         "id": "1k1IzR19ez6ROh4S5FCIX1Lj8vgYl1iIec1YbHqBQMjg",
         "name": "Aquarius - Octubre 2026",
-        "modifiedTime": "2026-11-20T23:09:58.446Z"
+        "modifiedTime": "2026-11-21T11:10:00.644Z"
       },
       {
         "id": "1rfM0tWPenL751aA7XpeOYv-QthwNEEH-kPRxtK4HHmE",
