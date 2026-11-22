@@ -24270,7 +24270,7 @@
       "driveFileId": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
       "period": {
         "start": "2026-11-01",
-        "end": "2026-11-21"
+        "end": "2026-11-22"
       },
       "keywords": [
         {
@@ -38469,7 +38469,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 312,
+          "impressions": 313,
           "cost": 65.02,
           "clicks": 36,
           "conversions": 4
@@ -38570,7 +38570,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 172,
+          "impressions": 174,
           "cost": 27.93,
           "clicks": 14,
           "conversions": 6
@@ -43158,9 +43158,9 @@
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "status": "UNKNOWN",
           "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
-          "impressions": 137,
-          "cost": 84.68,
-          "clicks": 12,
+          "impressions": 139,
+          "cost": 100.78,
+          "clicks": 14,
           "conversions": 0,
           "qualityScore": 2
         },
@@ -43171,7 +43171,7 @@
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "status": "UNKNOWN",
           "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
-          "impressions": 94,
+          "impressions": 96,
           "cost": 42.56,
           "clicks": 5,
           "conversions": 0,
@@ -43903,7 +43903,7 @@
   "drive": {
     "folderId": "1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO",
     "discovery": "apps script",
-    "lastSync": "2026-11-21T23:26:15Z",
+    "lastSync": "2026-11-22T11:29:40Z",
     "files": [
       {
         "id": "17oCEc4yhZfWSY8y_km3IPYb0hmH2VKHBXOi60LvHd0w",
@@ -43948,12 +43948,12 @@
       {
         "id": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
         "name": "Aquarius KW noviembre 2026",
-        "modifiedTime": "2026-11-21T23:11:56.701Z"
+        "modifiedTime": "2026-11-22T11:11:27.946Z"
       },
       {
         "id": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
         "name": "Aquarius KW octubre 2026",
-        "modifiedTime": "2026-11-21T23:11:06.337Z"
+        "modifiedTime": "2026-11-22T11:10:43.434Z"
       },
       {
         "id": "1tJ7B5yQydbvGxOczu0XxnAoot8ew7_vZjFOJOU3cabw",
