@@ -20100,8 +20100,7 @@
           "matchType": "Concordancia de frase",
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
-          "status": "No apto",
-          "reasons": "AD_GROUP_CRITERION_RARELY_SERVED",
+          "status": "Apto",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -37575,7 +37574,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ACTIVOSFIJOS",
           "status": "Apto",
-          "impressions": 108,
+          "impressions": 114,
           "cost": 16.03,
           "clicks": 8,
           "conversions": 2,
@@ -38332,7 +38331,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 59,
+          "impressions": 65,
           "cost": 9.38,
           "clicks": 3,
           "conversions": 2
@@ -38354,7 +38353,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 3,
+          "impressions": 5,
           "cost": 0,
           "clicks": 0,
           "conversions": 0,
@@ -38469,7 +38468,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 332,
+          "impressions": 344,
           "cost": 67.93,
           "clicks": 38,
           "conversions": 4
@@ -38559,7 +38558,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 0,
+          "impressions": 1,
           "cost": 0,
           "clicks": 0,
           "conversions": 0
@@ -38570,9 +38569,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-GESTIONLOGISTICA",
           "status": "Apto",
-          "impressions": 185,
-          "cost": 29.21,
-          "clicks": 15,
+          "impressions": 198,
+          "cost": 33.3,
+          "clicks": 17,
           "conversions": 6
         },
         {
@@ -38852,7 +38851,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "status": "Apto",
-          "impressions": 70,
+          "impressions": 73,
           "cost": 18.71,
           "clicks": 10,
           "conversions": 1
@@ -39074,9 +39073,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "status": "Apto",
-          "impressions": 64,
-          "cost": 16.61,
-          "clicks": 9,
+          "impressions": 71,
+          "cost": 19.52,
+          "clicks": 10,
           "conversions": 1
         },
         {
@@ -39085,7 +39084,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-OUTSOURCINGDEALMACENES",
           "status": "Apto",
-          "impressions": 98,
+          "impressions": 105,
           "cost": 9.39,
           "clicks": 7,
           "conversions": 1,
@@ -39279,7 +39278,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "status": "Apto",
-          "impressions": 302,
+          "impressions": 303,
           "cost": 7.97,
           "clicks": 8,
           "conversions": 0
@@ -39358,9 +39357,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "status": "Apto",
-          "impressions": 4109,
-          "cost": 136.47,
-          "clicks": 183,
+          "impressions": 4153,
+          "cost": 139.69,
+          "clicks": 186,
           "conversions": 5
         },
         {
@@ -39380,7 +39379,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-PRODUCTOSTI",
           "status": "Apto",
-          "impressions": 73,
+          "impressions": 74,
           "cost": 3.29,
           "clicks": 3,
           "conversions": 0
@@ -39525,10 +39524,10 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "status": "Apto",
-          "impressions": 0,
-          "cost": 0,
-          "clicks": 0,
-          "conversions": 0
+          "impressions": 2,
+          "cost": 3.93,
+          "clicks": 1,
+          "conversions": 1
         },
         {
           "keyword": "Valuaciones comerciales",
@@ -39736,8 +39735,7 @@
           "matchType": "Concordancia de frase",
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
-          "status": "No apto",
-          "reasons": "AD_GROUP_CRITERION_RARELY_SERVED",
+          "status": "Apto",
           "impressions": 0,
           "cost": 0,
           "clicks": 0,
@@ -39844,9 +39842,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "status": "Apto",
-          "impressions": 90,
-          "cost": 10.92,
-          "clicks": 7,
+          "impressions": 95,
+          "cost": 12.32,
+          "clicks": 9,
           "conversions": 0,
           "qualityScore": 5
         },
@@ -39914,7 +39912,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "status": "Apto",
-          "impressions": 151,
+          "impressions": 162,
           "cost": 69.49,
           "clicks": 21,
           "conversions": 3
@@ -39959,9 +39957,9 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-VALUACIONESCOMERCIALES",
           "status": "Apto",
-          "impressions": 531,
-          "cost": 118.76,
-          "clicks": 39,
+          "impressions": 573,
+          "cost": 119.53,
+          "clicks": 40,
           "conversions": 1
         },
         {
@@ -42041,7 +42039,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "status": "Apto",
-          "impressions": 311,
+          "impressions": 318,
           "cost": 54.51,
           "clicks": 27,
           "conversions": 2,
@@ -42532,7 +42530,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "status": "Apto",
-          "impressions": 160,
+          "impressions": 164,
           "cost": 17.27,
           "clicks": 13,
           "conversions": 1,
@@ -42601,7 +42599,7 @@
           "campaign": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ALMACENAMIENTO",
           "status": "Apto",
-          "impressions": 247,
+          "impressions": 256,
           "cost": 65.61,
           "clicks": 26,
           "conversions": 2
@@ -43158,9 +43156,9 @@
           "adGroup": "IDG_AQUARIUSCONSULTING_PE_SKAG-ESTUDIOTECNICODEMERMAS",
           "status": "UNKNOWN",
           "reasons": "AD_GROUP_CRITERION_LOW_QUALITY",
-          "impressions": 147,
-          "cost": 111.33,
-          "clicks": 15,
+          "impressions": 148,
+          "cost": 117.04,
+          "clicks": 16,
           "conversions": 0,
           "qualityScore": 2
         },
@@ -43903,7 +43901,7 @@
   "drive": {
     "folderId": "1bhxYOpSsRq2l8W8BGu_fb99-Ur73DdCO",
     "discovery": "apps script",
-    "lastSync": "2026-11-23T18:25:34Z",
+    "lastSync": "2026-11-23T23:26:23Z",
     "files": [
       {
         "id": "17oCEc4yhZfWSY8y_km3IPYb0hmH2VKHBXOi60LvHd0w",
@@ -43948,12 +43946,12 @@
       {
         "id": "1CdpbN92kjkzNcxeI4XyHcY2vnmjpx7brbi1KRJVA_P0",
         "name": "Aquarius KW noviembre 2026",
-        "modifiedTime": "2026-11-23T18:12:15.739Z"
+        "modifiedTime": "2026-11-23T23:11:46.273Z"
       },
       {
         "id": "1jWXvL4r3UyYAk3g8kEd6N_0jTnL-fxnL7InNAPil0XI",
         "name": "Aquarius KW octubre 2026",
-        "modifiedTime": "2026-11-23T18:11:29.293Z"
+        "modifiedTime": "2026-11-23T23:11:00.041Z"
       },
       {
         "id": "1tJ7B5yQydbvGxOczu0XxnAoot8ew7_vZjFOJOU3cabw",
